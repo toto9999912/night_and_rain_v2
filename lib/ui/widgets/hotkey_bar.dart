@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:night_and_rain_v2/providers/inventory_provider.dart';
+import 'package:night_and_rain_v2/providers/player_provider.dart';
 
 /// 熱鍵欄
-class HotkeyBar extends StatelessWidget {
+class HotkeyBar extends ConsumerWidget {
   HotkeyBar({super.key});
 
   final List<String> hotkeys = ['1', '2', '3', '4', '5'];
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final inventory = ref.watch(inventoryProvider);
     return FittedBox(
       // 確保能夠在較小屏幕上顯示
       fit: BoxFit.scaleDown,
@@ -22,21 +26,18 @@ class HotkeyBar extends StatelessWidget {
         ),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children:
-              hotkeys
-                  .map(
-                    (key) => Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: HotkeyButton(
-                        label: key,
-                        onPressed: () {
-                          // TODO: 使用綁定的物品
-                        },
-                      ),
-                    ),
-                  )
-                  .toList(),
+          children: List.generate(5, (index) {
+            final slot = index + 1;
+            final item = inventory.hotkeyBindings[slot];
+            return HotkeyButton(
+              onPressed: () {
+                if (item == null) return;
+                ref.read(playerProvider.notifier).useItem(item);
+              },
+              isActive: item != null,
+              icon: item?.icon ?? Icons.close,
+            );
+          }),
         ),
       ),
     );
@@ -45,13 +46,13 @@ class HotkeyBar extends StatelessWidget {
 
 /// 熱鍵按鈕
 class HotkeyButton extends StatelessWidget {
-  final String label;
+  final IconData icon;
   final VoidCallback onPressed;
   final bool isActive;
 
   const HotkeyButton({
     super.key,
-    required this.label,
+    required this.icon,
     required this.onPressed,
     this.isActive = false,
   });
@@ -121,21 +122,7 @@ class HotkeyButton extends StatelessWidget {
               alignment: Alignment.topCenter,
               child: Padding(
                 padding: const EdgeInsets.only(top: 6),
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.9),
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    shadows: const [
-                      Shadow(
-                        color: Colors.black,
-                        offset: Offset(0, 1),
-                        blurRadius: 2,
-                      ),
-                    ],
-                  ),
-                ),
+                child: Icon(icon),
               ),
             ),
 

@@ -1,4 +1,5 @@
 import 'package:flame/components.dart';
+import '../managers/effect_manager.dart';
 import 'armor.dart';
 import 'inventory.dart';
 import 'item.dart';
@@ -18,7 +19,10 @@ class Player {
   Armor? equippedArmor;
 
   // 背包
-  Inventory inventory;
+  final Inventory inventory;
+
+  // 效果管理器
+  late final EffectManager effectManager;
 
   // 構造函數
   Player({
@@ -33,7 +37,10 @@ class Player {
     Inventory? playerInventory,
   }) : equippedWeapon = weapon,
        equippedArmor = armor,
-       inventory = playerInventory ?? Inventory(capacity: 20);
+       inventory = playerInventory ?? Inventory(capacity: 20) {
+    // 初始化效果管理器
+    effectManager = EffectManager(this);
+  }
 
   // 玩家行為管理
   void move(Vector2 direction) {
@@ -66,7 +73,7 @@ class Player {
     equippedArmor = armor;
   }
 
-  // 扣除魔力值
+  // 扣除魔力值 - 返回是否成功消耗
   bool consumeMana(int amount) {
     if (mana >= amount) {
       mana -= amount;
@@ -86,6 +93,7 @@ class Player {
   void takeDamage(int amount) {
     health -= amount;
     if (health < 0) health = 0;
+    // 在這裡可以檢查玩家是否死亡
   }
 
   // 增加生命值
@@ -113,12 +121,43 @@ class Player {
     if (mana < 0) mana = 0;
   }
 
-  // 扣除金錢
+  // 扣除金錢 - 返回是否成功消費
   bool spendMoney(int amount) {
     if (money >= amount) {
       money -= amount;
       return true;
     }
     return false;
+  }
+
+  // 更新效果
+  void update(double dt) {
+    // 更新所有效果
+    effectManager.update(dt);
+  }
+
+  // 添加 copyWith 方法用於狀態更新
+  Player copyWith({
+    int? health,
+    int? maxHealth,
+    int? mana,
+    int? maxMana,
+    double? speed,
+    int? money,
+    Weapon? equippedWeapon,
+    Armor? equippedArmor,
+    Inventory? inventory,
+  }) {
+    return Player(
+      health: health ?? this.health,
+      maxHealth: maxHealth ?? this.maxHealth,
+      mana: mana ?? this.mana,
+      maxMana: maxMana ?? this.maxMana,
+      speed: speed ?? this.speed,
+      money: money ?? this.money,
+      weapon: equippedWeapon ?? this.equippedWeapon,
+      armor: equippedArmor ?? this.equippedArmor,
+      playerInventory: inventory ?? this.inventory,
+    );
   }
 }

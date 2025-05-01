@@ -3,9 +3,11 @@ import 'package:flame/events.dart';
 import 'package:flame_riverpod/flame_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../managers/weapon_manager.dart';
 import '../providers/player_provider.dart';
 import 'package:flame/events.dart' as flame_events;
 import '../main.dart';
+import '../providers/weapon_manager_provider.dart';
 
 class PlayerComponent extends PositionComponent
     with
@@ -16,7 +18,7 @@ class PlayerComponent extends PositionComponent
         RiverpodComponentMixin {
   final Set<LogicalKeyboardKey> _keysPressed = {};
 
-  // 1. 將 weaponManager 宣告為可為空
+  late WeaponManager? _weaponManager;
 
   // 2. 新增初始化標記
   bool _weaponManagerInitialized = false;
@@ -47,15 +49,14 @@ class PlayerComponent extends PositionComponent
     // 我們會在 update 中初始化
   }
 
-  // 5. 新增初始化方法
+  // 修改初始化方法
   void _initializeWeaponManager() {
     try {
-      // 確保只有在 ref 可用時才嘗試讀取
       if (_weaponManagerInitialized) return;
 
+      _weaponManager = ref.read(weaponManagerProvider);
       _weaponManagerInitialized = true;
     } catch (e) {
-      // 如果 provider 還沒準備好，我們會在下一幀再試
       debugPrint('武器管理器初始化失敗: $e');
     }
   }
@@ -145,6 +146,12 @@ class PlayerComponent extends PositionComponent
     if (_keysPressed.contains(LogicalKeyboardKey.keyD) ||
         _keysPressed.contains(LogicalKeyboardKey.arrowRight)) {
       move.x = 1;
+    }
+
+    if (_isShooting && _shootCooldown <= 0 && _weaponManagerInitialized) {
+      if (_weaponManager!.attack(aimDirection)) {
+        _shootCooldown = _weaponManager!.currentWeapon?.cooldown ?? 0.5;
+      }
     }
 
     // 移動玩家
