@@ -1,17 +1,13 @@
 // 當前武器展示
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:night_and_rain_v2/models/weapon.dart';
 import '../../enum/weapon_type.dart';
 
 class CurrentWeaponDisplay extends ConsumerWidget {
-  final String weaponName;
-  final WeaponType weaponType;
+  final Weapon? weapon;
 
-  const CurrentWeaponDisplay({
-    super.key,
-    required this.weaponName,
-    required this.weaponType,
-  });
+  const CurrentWeaponDisplay({super.key, required this.weapon});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -58,7 +54,7 @@ class CurrentWeaponDisplay extends ConsumerWidget {
                     ),
                   ],
                 ),
-                child: _getWeaponIcon(weaponType),
+                child: _getWeaponIcon(weapon),
               ),
               const SizedBox(width: 10),
               // 武器名稱和彈藥信息
@@ -77,7 +73,7 @@ class CurrentWeaponDisplay extends ConsumerWidget {
                       ),
                     ),
                     Text(
-                      weaponName,
+                      weapon?.name ?? "尚未裝備武器",
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 14,
@@ -100,28 +96,8 @@ class CurrentWeaponDisplay extends ConsumerWidget {
   }
 
   // 根據武器類型獲取圖標
-  Widget _getWeaponIcon(WeaponType type) {
-    IconData iconData;
-
-    switch (type) {
-      case WeaponType.pistol:
-        iconData = Icons.sports_handball;
-        break;
-      case WeaponType.machineGun:
-        iconData = Icons.settings_input_component;
-        break;
-      case WeaponType.shotgun:
-        iconData = Icons.open_with;
-        break;
-      case WeaponType.sniper:
-        iconData = Icons.center_focus_strong;
-        break;
-      case WeaponType.sword:
-        iconData = Icons.sports_martial_arts;
-        break;
-    }
-
-    return Icon(iconData, color: Colors.white, size: 20);
+  Widget _getWeaponIcon(Weapon? type) {
+    return Icon(type?.icon ?? Icons.abc, color: Colors.white, size: 20);
   }
 
   // 根據武器類型獲取冷卻條顏色

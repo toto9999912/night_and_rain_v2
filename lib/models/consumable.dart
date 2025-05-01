@@ -1,13 +1,18 @@
-import 'package:flame/effects.dart';
-
 import '../enum/item_type.dart';
 import 'item.dart';
 import 'player.dart';
 
+// 如果需要效果系統，可以導入
+// import '../effects/player_effect.dart';
+
 class Consumable extends Item {
   final int healthRestore;
   final int manaRestore;
-  final List<Effect> effects;
+  // 移除對 Flame Effect 的依賴
+  // final List<Effect> effects;
+
+  // 如果需要效果系統，可以使用以下註釋行
+  // final List<PlayerEffect> effects;
 
   Consumable({
     required super.id,
@@ -15,19 +20,41 @@ class Consumable extends Item {
     required super.description,
     required super.rarity,
     required super.icon,
-    required super.price, // 添加價格參數
+    required super.price,
     this.healthRestore = 0,
     this.manaRestore = 0,
-    this.effects = const [],
+    // this.effects = const [],
   }) : super(type: ItemType.consumable);
+
   @override
   void use(Player player) {
-    player.updateHealth(player.health + healthRestore);
-    player.updateMana(player.mana + manaRestore);
+    // 使用 Player 的正確方法
+    if (healthRestore > 0) {
+      player.heal(healthRestore);
+    }
 
-    // // 應用效果
+    if (manaRestore > 0) {
+      player.addMana(manaRestore);
+    }
+
+    // 如果將來實現效果系統
     // for (final effect in effects) {
-    //   effect.apply(player);
+    //   player.effectManager.addEffect(effect);
     // }
+  }
+
+  @override
+  String getDescription() {
+    String desc = '${super.getDescription()}\n';
+
+    if (healthRestore > 0) {
+      desc += '恢復生命值: +$healthRestore\n';
+    }
+
+    if (manaRestore > 0) {
+      desc += '恢復魔力值: +$manaRestore\n';
+    }
+
+    return desc;
   }
 }

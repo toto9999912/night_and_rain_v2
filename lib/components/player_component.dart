@@ -3,11 +3,9 @@ import 'package:flame/events.dart';
 import 'package:flame_riverpod/flame_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../managers/weapon_manager.dart';
-import '../providers/player_provider.dart';
 import 'package:flame/events.dart' as flame_events;
 import '../main.dart';
-import '../providers/weapon_manager_provider.dart';
+import '../providers/player_provider.dart';
 
 class PlayerComponent extends PositionComponent
     with
@@ -18,10 +16,8 @@ class PlayerComponent extends PositionComponent
         RiverpodComponentMixin {
   final Set<LogicalKeyboardKey> _keysPressed = {};
 
-  late WeaponManager? _weaponManager;
-
-  // 2. 新增初始化標記
-  bool _weaponManagerInitialized = false;
+  // 移除 WeaponManager，改為直接使用 Player
+  bool _isProviderInitialized = false;
 
   // 瞄準方向（默認向上）
   Vector2 aimDirection = Vector2(0, -1);
@@ -32,7 +28,7 @@ class PlayerComponent extends PositionComponent
   // 射擊控制
   bool _isShooting = false;
 
-  // 新增射擊冷卻計時器
+  // 射擊冷卻計時器
   double _shootCooldown = 0;
 
   @override
@@ -44,20 +40,18 @@ class PlayerComponent extends PositionComponent
 
     // 瞄準方向指示器
     add(AimDirectionIndicator());
-
-    // 3. 移除在 onLoad 中初始化武器管理器的代碼
-    // 我們會在 update 中初始化
   }
 
-  // 修改初始化方法
-  void _initializeWeaponManager() {
+  // 簡化初始化方法
+  void _initializeProvider() {
     try {
-      if (_weaponManagerInitialized) return;
+      if (_isProviderInitialized) return;
 
-      _weaponManager = ref.read(weaponManagerProvider);
-      _weaponManagerInitialized = true;
+      // 嘗試訪問 provider，測試是否可用
+      ref.read(playerProvider);
+      _isProviderInitialized = true;
     } catch (e) {
-      debugPrint('武器管理器初始化失敗: $e');
+      debugPrint('Provider 初始化失敗: $e');
     }
   }
 
@@ -76,6 +70,13 @@ class PlayerComponent extends PositionComponent
         event.logicalKey == LogicalKeyboardKey.space) {
       debugPrint('空格鍵停止射擊');
       _isShooting = false;
+    }
+
+    // 武器切換 (Q鍵切換武器)
+    if (event is KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.keyQ &&
+        _isProviderInitialized) {
+      ref.read(playerProvider.notifier).switchToNextWeapon();
     }
 
     return true;
@@ -118,16 +119,17 @@ class PlayerComponent extends PositionComponent
   void update(double dt) {
     super.update(dt);
 
-    // 6. 嘗試初始化武器管理器（如果尚未初始化）
-    if (!_weaponManagerInitialized) {
-      _initializeWeaponManager();
+    // 嘗試初始化 Provider（如果尚未初始化）
+    if (!_isProviderInitialized) {
+      _initializeProvider();
 
       // 如果仍未初始化成功，則跳過此幀的剩餘更新
-      if (!_weaponManagerInitialized) return;
+      if (!_isProviderInitialized) return;
     }
 
     // 獲取移動速度
-    final speed = ref.watch(playerProvider).speed;
+    final player = ref.watch(playerProvider);
+    final speed = player.speed;
     final move = Vector2.zero();
 
     // 處理移動
@@ -148,9 +150,21 @@ class PlayerComponent extends PositionComponent
       move.x = 1;
     }
 
-    if (_isShooting && _shootCooldown <= 0 && _weaponManagerInitialized) {
-      if (_weaponManager!.attack(aimDirection)) {
-        _shootCooldown = _weaponManager!.currentWeapon?.cooldown ?? 0.5;
+    // 更新射擊冷卻
+    if (_shootCooldown > 0) {
+      _shootCooldown -= dt;
+    }
+
+    // 射擊邏輯 - 直接使用 playerProvider
+    if (_isShooting && _shootCooldown <= 0 && _isProviderInitialized) {
+      final playerNotifier = ref.read(playerProvider.notifier);
+
+      if (playerNotifier.attack(aimDirection)) {
+        // 攻擊成功，設置冷卻
+        final currentWeapon = player.equippedWeapon;
+        if (currentWeapon != null) {
+          _shootCooldown = currentWeapon.cooldown;
+        }
       }
     }
 
@@ -165,7 +179,7 @@ class PlayerComponent extends PositionComponent
   }
 }
 
-// 瞄準方向指示器
+// AimDirectionIndicator 類保持不變
 class AimDirectionIndicator extends PositionComponent {
   final Paint _paint =
       Paint()

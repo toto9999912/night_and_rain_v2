@@ -1,13 +1,17 @@
 import 'package:flame/components.dart';
+import 'package:flame/events.dart';
 import 'package:flame/game.dart';
 import 'package:flame/input.dart';
 import 'package:flame_riverpod/flame_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'models/weapon.dart';
+import 'providers/items_data_provider.dart';
+import 'providers/player_provider.dart';
 import 'ui/overlays/hud_overlay.dart';
 import 'components/player_component.dart';
-import 'player_dashboard_overlay.dart';
+import 'ui/overlays/player_dashboard_overlay.dart';
 
 final GlobalKey<RiverpodAwareGameWidgetState<NightAndRainGame>> gameWidgetKey =
     GlobalKey<RiverpodAwareGameWidgetState<NightAndRainGame>>();
@@ -91,6 +95,23 @@ class NightAndRainGame extends FlameGame
 
     // 相機跟隨
     _cameraComponent.follow(_player);
+
+    // 在這裡為玩家添加初始武器
+    await _initializePlayerWeapon();
+  }
+
+  Future<void> _initializePlayerWeapon() async {
+    // 等待一幀以確保 Provider 已完全初始化
+    await Future.delayed(Duration.zero);
+
+    // 從 itemsDataProvider 獲取初始武器
+    final itemsData = ref.read(itemsDataProvider);
+    final initialWeapon = itemsData['pistol_1'] as Weapon;
+
+    // 添加到玩家庫存並裝備
+    final playerNotifier = ref.read(playerProvider.notifier);
+    playerNotifier.addItemToInventory(initialWeapon);
+    playerNotifier.equipWeapon(initialWeapon);
   }
 }
 

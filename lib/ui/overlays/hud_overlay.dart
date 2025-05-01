@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/game.dart';
 import '../../providers/player_provider.dart';
 
+import '../widgets/current_weapon_display.dart';
 import '../widgets/hotkey_bar.dart';
 import '../widgets/status_group.dart';
 
@@ -32,14 +33,11 @@ class HudOverlay extends ConsumerWidget {
             ),
 
             // 左下角武器展示
-            // Positioned(
-            //   left: 16,
-            //   bottom: 16,
-            //   child: CurrentWeaponDisplay(
-            //     weaponName: weapon.name,
-            //     weaponType: weapon.weaponType,
-            //   ),
-            // ),
+            Positioned(
+              left: 16,
+              bottom: 16,
+              child: CurrentWeaponDisplay(weapon: player.equippedWeapon),
+            ),
 
             // 底部中間數字熱鍵
             Positioned(

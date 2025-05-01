@@ -1,9 +1,9 @@
 import 'package:flame/components.dart';
-import '../managers/effect_manager.dart';
 import 'armor.dart';
 import 'inventory.dart';
 import 'item.dart';
 import 'weapon.dart';
+import 'ranged_weapon.dart';
 
 class Player {
   // 基礎屬性
@@ -14,15 +14,12 @@ class Player {
   double speed;
   int money;
 
-  // 裝備欄
-  Weapon? equippedWeapon;
+  // 裝備
+  Weapon? _equippedWeapon;
   Armor? equippedArmor;
 
   // 背包
   final Inventory inventory;
-
-  // 效果管理器
-  late final EffectManager effectManager;
 
   // 構造函數
   Player({
@@ -35,45 +32,76 @@ class Player {
     Weapon? weapon,
     Armor? armor,
     Inventory? playerInventory,
-  }) : equippedWeapon = weapon,
+  }) : _equippedWeapon = weapon,
        equippedArmor = armor,
-       inventory = playerInventory ?? Inventory(capacity: 20) {
-    // 初始化效果管理器
-    effectManager = EffectManager(this);
+       inventory = playerInventory ?? Inventory(capacity: 20);
+
+  // 當前武器的 getter
+  Weapon? get equippedWeapon => _equippedWeapon;
+
+  // 計算屬性：是否為遠程武器
+  bool get hasRangedWeapon =>
+      _equippedWeapon != null && _equippedWeapon!.weaponType.isRanged;
+
+  // 計算屬性：當前武器的魔力消耗
+  int? get weaponManaCost {
+    if (_equippedWeapon is RangedWeapon) {
+      return (_equippedWeapon as RangedWeapon).manaCost;
+    }
+    return null;
   }
 
-  // 玩家行為管理
-  void move(Vector2 direction) {
-    // 在遊戲組件中實現移動邏輯
-    // 這裡僅作為數據模型
+  // 計算屬性：是否有足夠魔力射擊
+  bool get canShoot {
+    if (_equippedWeapon is RangedWeapon) {
+      return mana >= (_equippedWeapon as RangedWeapon).manaCost;
+    }
+    return true; // 不是遠程武器或沒有武器時，默認可以"射擊"
   }
 
-  void aim(Vector2 direction) {
-    // 在遊戲組件中實現瞄準邏輯
-    // 這裡僅作為數據模型
+  // 裝備武器
+  void equipWeapon(Weapon weapon) {
+    _equippedWeapon = weapon;
   }
 
-  void shoot() {
-    // 在遊戲組件中實現射擊邏輯
-    // 這裡僅作為數據模型
+  // 使用當前武器攻擊
+  bool attack(Vector2 direction) {
+    if (_equippedWeapon == null) return false;
+
+    // 執行攻擊
+    return _equippedWeapon!.attack(direction, this);
   }
 
+  // 切換到下一個武器
+  void switchToNextWeapon() {
+    if (inventory.items.isEmpty) return;
+
+    // 找出所有武器
+    final weapons = inventory.items.whereType<Weapon>().toList();
+    if (weapons.isEmpty) return;
+
+    // 找到當前武器的索引
+    int currentIndex = -1;
+    if (_equippedWeapon != null) {
+      currentIndex = weapons.indexWhere((w) => w.id == _equippedWeapon!.id);
+    }
+
+    // 切換到下一個武器
+    int nextIndex = (currentIndex + 1) % weapons.length;
+    equipWeapon(weapons[nextIndex]);
+  }
+
+  // 使用物品
   void useItem(Item item) {
-    // 使用物品
     item.use(this);
   }
 
-  void equipWeapon(Weapon weapon) {
-    // 裝備武器
-    equippedWeapon = weapon;
-  }
-
+  // 裝備護甲
   void equipArmor(Armor armor) {
-    // 裝備護甲
     equippedArmor = armor;
   }
 
-  // 扣除魔力值 - 返回是否成功消耗
+  // 扣除魔力值
   bool consumeMana(int amount) {
     if (mana >= amount) {
       mana -= amount;
@@ -93,7 +121,6 @@ class Player {
   void takeDamage(int amount) {
     health -= amount;
     if (health < 0) health = 0;
-    // 在這裡可以檢查玩家是否死亡
   }
 
   // 增加生命值
@@ -107,21 +134,7 @@ class Player {
     money += amount;
   }
 
-  // 更新生命值
-  void updateHealth(int newHealth) {
-    health = newHealth;
-    if (health > maxHealth) health = maxHealth;
-    if (health < 0) health = 0;
-  }
-
-  // 更新魔力值
-  void updateMana(int newMana) {
-    mana = newMana;
-    if (mana > maxMana) mana = maxMana;
-    if (mana < 0) mana = 0;
-  }
-
-  // 扣除金錢 - 返回是否成功消費
+  // 扣除金錢
   bool spendMoney(int amount) {
     if (money >= amount) {
       money -= amount;
@@ -130,13 +143,7 @@ class Player {
     return false;
   }
 
-  // 更新效果
-  void update(double dt) {
-    // 更新所有效果
-    effectManager.update(dt);
-  }
-
-  // 添加 copyWith 方法用於狀態更新
+  // 複製對象（用於 Riverpod 狀態更新）
   Player copyWith({
     int? health,
     int? maxHealth,
@@ -146,7 +153,6 @@ class Player {
     int? money,
     Weapon? equippedWeapon,
     Armor? equippedArmor,
-    Inventory? inventory,
   }) {
     return Player(
       health: health ?? this.health,
@@ -157,7 +163,7 @@ class Player {
       money: money ?? this.money,
       weapon: equippedWeapon ?? this.equippedWeapon,
       armor: equippedArmor ?? this.equippedArmor,
-      playerInventory: inventory ?? this.inventory,
+      playerInventory: this.inventory,
     );
   }
 }
