@@ -126,7 +126,7 @@ class PlayerComponent extends PositionComponent
     }
 
     // 獲取移動速度
-    final speed = ref.watch(speedProvider);
+    final speed = ref.watch(playerProvider).speed;
     final move = Vector2.zero();
 
     // 處理移動

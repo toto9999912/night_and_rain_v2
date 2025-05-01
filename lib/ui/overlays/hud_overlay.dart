@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/game.dart';
-import 'providers/player_provider.dart';
-import 'widgets/current_weapon_display.dart';
-import 'widgets/hotkey_bar.dart';
-import 'widgets/status_group.dart';
+import '../../providers/player_provider.dart';
+
+import '../widgets/hotkey_bar.dart';
+import '../widgets/status_group.dart';
 
 class HudOverlay extends ConsumerWidget {
   final FlameGame game;
@@ -12,8 +12,8 @@ class HudOverlay extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final health = ref.watch(healthProvider);
-    final mana = ref.watch(manaProvider);
+    final player = ref.watch(playerProvider);
+
     // final weapon = ref.watch(currentWeaponProvider);
     final screenSize = MediaQuery.of(context).size;
 
@@ -28,7 +28,7 @@ class HudOverlay extends ConsumerWidget {
             Positioned(
               top: 16,
               left: 16,
-              child: StatusGroup(health: health, mana: mana),
+              child: StatusGroup(health: player.health, mana: player.mana),
             ),
 
             // 左下角武器展示

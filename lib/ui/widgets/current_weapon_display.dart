@@ -1,7 +1,7 @@
 // 當前武器展示
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../enum/weapon_type.dart';
+import '../../enum/weapon_type.dart';
 
 class CurrentWeaponDisplay extends ConsumerWidget {
   final String weaponName;

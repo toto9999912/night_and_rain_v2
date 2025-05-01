@@ -9,9 +9,8 @@ class PlayerDashboardOverlay extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final health = ref.watch(healthProvider);
-    final mana = ref.watch(manaProvider);
-    final speed = ref.watch(speedProvider);
+    final player = ref.watch(playerProvider);
+
     // final weapon = ref.watch(currentWeaponProvider);
     // final armor     = ref.watch(currentArmorProvider);
     // final inventory = ref.watch(inventoryProvider);
@@ -44,12 +43,12 @@ class PlayerDashboardOverlay extends ConsumerWidget {
               // 角色狀態
               Text('角色狀態', style: TextStyle(color: Colors.white, fontSize: 18)),
               const SizedBox(height: 4),
-              _buildBar('HP', health / 100, Colors.red),
+              _buildBar('HP', player.health / 100, Colors.red),
               const SizedBox(height: 4),
-              _buildBar('MP', mana / 100, Colors.blue),
+              _buildBar('MP', player.mana / 100, Colors.blue),
               const SizedBox(height: 4),
               Text(
-                'Speed: ${speed.toStringAsFixed(0)}',
+                'Speed: ${player.speed.toStringAsFixed(0)}',
                 style: TextStyle(color: Colors.white),
               ),
               const SizedBox(height: 12),

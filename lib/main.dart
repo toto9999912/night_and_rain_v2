@@ -5,8 +5,8 @@ import 'package:flame_riverpod/flame_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'hud_overlay.dart';
-import 'player/player_component.dart';
+import 'ui/overlays/hud_overlay.dart';
+import 'components/player_component.dart';
 import 'player_dashboard_overlay.dart';
 
 final GlobalKey<RiverpodAwareGameWidgetState<NightAndRainGame>> gameWidgetKey =
