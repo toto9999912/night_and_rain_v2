@@ -4,10 +4,9 @@ import 'npc_component.dart';
 
 /// 米蟲商店員NPC
 class ShopkeeperBug extends NpcComponent {
-  ShopkeeperBug({required Vector2 position})
+  ShopkeeperBug({required super.position})
     : super(
         name: '米蟲商店員',
-        position: position,
         size: Vector2(40, 40),
         color: Colors.amber,
         greetings: [

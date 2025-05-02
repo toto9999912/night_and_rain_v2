@@ -3,7 +3,6 @@ import 'armor.dart';
 import 'inventory.dart';
 import 'item.dart';
 import 'weapon.dart';
-import 'ranged_weapon.dart';
 
 class Player {
   // 基礎屬性
@@ -44,24 +43,26 @@ class Player {
       _equippedWeapon != null && _equippedWeapon!.weaponType.isRanged;
 
   // 計算屬性：當前武器的魔力消耗
-  int? get weaponManaCost {
-    if (_equippedWeapon is RangedWeapon) {
-      return (_equippedWeapon as RangedWeapon).manaCost;
-    }
-    return null;
-  }
+  int get weaponManaCost => _equippedWeapon?.manaCost ?? 0;
 
   // 計算屬性：是否有足夠魔力射擊
   bool get canShoot {
-    if (_equippedWeapon is RangedWeapon) {
-      return mana >= (_equippedWeapon as RangedWeapon).manaCost;
-    }
-    return true; // 不是遠程武器或沒有武器時，默認可以"射擊"
+    if (_equippedWeapon == null) return true;
+    return mana >= weaponManaCost;
   }
 
   // 裝備武器
   void equipWeapon(Weapon weapon) {
+    // 檢查物品是否在背包中，如果不在則自動添加
+    if (!inventory.items.contains(weapon)) {
+      inventory.addItem(weapon);
+    }
     _equippedWeapon = weapon;
+  }
+
+  // 卸下武器
+  void unequipWeapon() {
+    _equippedWeapon = null;
   }
 
   // 使用當前武器攻擊
@@ -77,7 +78,7 @@ class Player {
     if (inventory.items.isEmpty) return;
 
     // 找出所有武器
-    final weapons = inventory.items.whereType<Weapon>().toList();
+    final weapons = inventory.getWeapons();
     if (weapons.isEmpty) return;
 
     // 找到當前武器的索引
@@ -91,13 +92,47 @@ class Player {
     equipWeapon(weapons[nextIndex]);
   }
 
+  // 切換到上一個武器
+  void switchToPreviousWeapon() {
+    if (inventory.items.isEmpty) return;
+
+    // 找出所有武器
+    final weapons = inventory.getWeapons();
+    if (weapons.isEmpty) return;
+
+    // 找到當前武器的索引
+    int currentIndex = -1;
+    if (_equippedWeapon != null) {
+      currentIndex = weapons.indexWhere((w) => w.id == _equippedWeapon!.id);
+    }
+
+    // 切換到上一個武器
+    int prevIndex = currentIndex <= 0 ? weapons.length - 1 : currentIndex - 1;
+    equipWeapon(weapons[prevIndex]);
+  }
+
   // 使用物品
   void useItem(Item item) {
-    item.use(this);
+    // 確保物品在背包中
+    if (inventory.items.contains(item)) {
+      // 先使用物品
+      item.use(this);
+
+      // 如果是可堆疊物品，則減少數量
+      if (item.isStackable) {
+        inventory.removeItem(item, quantityToRemove: 1);
+      } else {
+        // 非堆疊物品（如武器和防具）使用後不消耗
+      }
+    }
   }
 
   // 裝備護甲
   void equipArmor(Armor armor) {
+    // 檢查物品是否在背包中，如果不在則自動添加
+    if (!inventory.items.contains(armor)) {
+      inventory.addItem(armor);
+    }
     equippedArmor = armor;
   }
 

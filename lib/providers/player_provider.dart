@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/components.dart';
 
+import '../enum/weapon_type.dart';
 import '../models/armor.dart';
 import '../models/item.dart';
 import '../models/player.dart';
@@ -16,6 +17,15 @@ final currentWeaponProvider = Provider<Weapon?>((ref) {
   final player = ref.watch(playerProvider);
   return player.equippedWeapon;
 });
+
+// 便於 UI 直接訪問背包中所有武器的 Provider
+final playerWeaponsProvider = Provider<List<Weapon>>((ref) {
+  final player = ref.watch(playerProvider);
+  return player.inventory.getWeapons();
+});
+
+// 武器庫存情況變化通知 Provider
+final weaponInventoryChangedProvider = StateProvider<bool>((ref) => false);
 
 class PlayerNotifier extends StateNotifier<Player> {
   PlayerNotifier() : super(Player());
@@ -59,6 +69,11 @@ class PlayerNotifier extends StateNotifier<Player> {
     state = state.copyWith();
   }
 
+  void unequipWeapon() {
+    state.unequipWeapon();
+    state = state.copyWith();
+  }
+
   bool attack(Vector2 direction) {
     final result = state.attack(direction);
 
@@ -75,6 +90,37 @@ class PlayerNotifier extends StateNotifier<Player> {
   void switchToNextWeapon() {
     state.switchToNextWeapon();
     state = state.copyWith();
+  }
+
+  void switchToPreviousWeapon() {
+    state.switchToPreviousWeapon();
+    state = state.copyWith();
+  }
+
+  // 獲取特定類型的武器列表
+  List<Weapon> getWeaponsByType(WeaponType type) {
+    return state.inventory.getWeaponsByType(type);
+  }
+
+  // 獲取排序後的武器列表
+  List<Weapon> getSortedWeapons({
+    required String sortBy,
+    bool ascending = false,
+  }) {
+    return state.inventory.getSortedWeapons(
+      sortBy: sortBy,
+      ascending: ascending,
+    );
+  }
+
+  // 裝備指定武器類型的最佳武器（根據傷害值）
+  void equipBestWeaponOfType(WeaponType type) {
+    final weapons = getWeaponsByType(type);
+    if (weapons.isEmpty) return;
+
+    // 按傷害排序
+    weapons.sort((a, b) => b.damage.compareTo(a.damage));
+    equipWeapon(weapons.first);
   }
 
   // 護甲相關方法

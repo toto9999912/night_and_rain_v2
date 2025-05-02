@@ -10,6 +10,7 @@ import 'components/map_component.dart';
 import 'components/astrologer_mumu.dart';
 import 'components/shopkeeper_bug.dart';
 import 'components/wandering_npc.dart';
+import 'models/consumable.dart';
 import 'models/weapon.dart';
 import 'providers/items_data_provider.dart';
 import 'providers/player_provider.dart';
@@ -172,12 +173,33 @@ class NightAndRainGame extends FlameGame
 
     // 從 itemsDataProvider 獲取初始武器
     final itemsData = ref.read(itemsDataProvider);
-    final initialWeapon = itemsData['shotgun_1'] as Weapon;
+    final initialWeapon = itemsData['pistol_1'] as Weapon;
+    final giftWeapons = itemsData['shotgun_1'] as Weapon;
 
-    // 添加到玩家庫存並裝備
+    // 獲取紅藥水和藍藥水的原型
+    final healthPotionPrototype = itemsData['health_potion'] as Consumable;
+    final manaPotionPrototype = itemsData['mana_potion'] as Consumable;
+
+    // 添加到玩家庫存並裝備武器
     final playerNotifier = ref.read(playerProvider.notifier);
     playerNotifier.addItemToInventory(initialWeapon);
+    playerNotifier.addItemToInventory(giftWeapons);
     playerNotifier.equipWeapon(initialWeapon);
+
+    // 添加三瓶紅藥水（每次創建新的藥水物件）
+    // 添加三瓶紅藥水（使用相同ID以實現堆疊）
+    for (int i = 0; i < 3; i++) {
+      final healthPotion = healthPotionPrototype.copyWith(
+        // 保持與原型相同的ID
+        quantity: 1, // 每次添加一個
+      );
+      playerNotifier.addItemToInventory(healthPotion);
+    }
+    // 添加三瓶藍藥水（每次創建新的藥水物件）
+    for (int i = 0; i < 3; i++) {
+      final manaPotion = manaPotionPrototype.copyWith(quantity: 1);
+      playerNotifier.addItemToInventory(manaPotion);
+    }
   }
 
   @override

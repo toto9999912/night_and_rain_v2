@@ -1,3 +1,9 @@
+import 'package:flutter/src/widgets/icon_data.dart';
+
+import 'package:night_and_rain_v2/enum/item_rarity.dart';
+
+import 'package:night_and_rain_v2/models/weapon.dart';
+
 import '../enum/item_type.dart';
 import 'item.dart';
 import 'player.dart';
@@ -23,6 +29,7 @@ class Consumable extends Item {
     required super.price,
     this.healthRestore = 0,
     this.manaRestore = 0,
+    super.quantity,
     // this.effects = const [],
   }) : super(type: ItemType.consumable);
 
@@ -56,5 +63,32 @@ class Consumable extends Item {
     }
 
     return desc;
+  }
+
+  @override
+  Item copyWith({
+    String? id,
+    String? name,
+    String? description,
+    ItemType? type,
+    ItemRarity? rarity,
+    IconData? icon,
+    int? price,
+    Weapon? weaponItem,
+    int? quantity,
+    int? healthRestore,
+    int? manaRestore,
+  }) {
+    return Consumable(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      rarity: rarity ?? this.rarity,
+      icon: icon ?? this.icon,
+      price: price ?? this.price,
+      healthRestore: healthRestore ?? this.healthRestore,
+      manaRestore: manaRestore ?? this.manaRestore,
+      quantity: quantity ?? this.quantity,
+    );
   }
 }

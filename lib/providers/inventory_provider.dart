@@ -3,11 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/inventory.dart';
 import '../models/item.dart';
+import 'player_provider.dart';
 
-final inventoryProvider = StateNotifierProvider<InventoryNotifier, Inventory>((
-  ref,
-) {
-  return InventoryNotifier();
+final inventoryProvider = Provider<Inventory>((ref) {
+  return ref.watch(playerProvider).inventory;
 });
 
 class InventoryNotifier extends StateNotifier<Inventory> {
