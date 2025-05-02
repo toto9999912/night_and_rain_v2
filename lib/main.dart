@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'components/map_component.dart';
 import 'components/astrologer_mumu.dart';
+import 'components/npc_component.dart';
 import 'components/shopkeeper_bug.dart';
 import 'components/wandering_npc.dart';
 import 'models/consumable.dart';
@@ -18,6 +19,7 @@ import 'providers/player_provider.dart';
 import 'ui/overlays/hud_overlay.dart';
 import 'components/player_component.dart';
 import 'ui/overlays/player_dashboard_overlay.dart';
+import 'ui/overlays/dialog_overlay.dart';
 
 final GlobalKey<RiverpodAwareGameWidgetState<NightAndRainGame>> gameWidgetKey =
     GlobalKey<RiverpodAwareGameWidgetState<NightAndRainGame>>();
@@ -53,6 +55,9 @@ class NightAndRainApp extends StatelessWidget {
           'HudOverlay': (context, game) => HudOverlay(game: game),
           'InventoryOverlay':
               (context, game) => PlayerDashboardOverlay(game: game),
+          'DialogOverlay':
+              (context, game) =>
+                  DialogOverlay(game: game, npc: game.dialogNpc!),
         },
         initialActiveOverlays: const ['HudOverlay'],
       ),
@@ -71,6 +76,9 @@ class NightAndRainGame extends FlameGame
   late final CameraComponent _cameraComponent;
   late final PlayerComponent _player;
   late final MapComponent _mapComponent;
+
+  // 當前對話的NPC
+  NpcComponent? dialogNpc;
 
   // 設定固定地圖大小
   final Vector2 mapSize = Vector2(1500, 1500);

@@ -13,6 +13,7 @@ import '../providers/inventory_provider.dart';
 import '../models/weapon.dart';
 import 'bullet_component.dart';
 import 'map_component.dart';
+import 'npc_component.dart';
 
 class PlayerComponent extends PositionComponent
     with
@@ -28,6 +29,9 @@ class PlayerComponent extends PositionComponent
 
   // Provider 初始化狀態
   bool _isProviderInitialized = false;
+
+  // 當前可互動的NPC
+  NpcComponent? _interactiveNpc;
 
   // 熱鍵綁定 - 存儲熱鍵對應的物品ID
 
@@ -102,6 +106,18 @@ class PlayerComponent extends PositionComponent
         event.logicalKey == LogicalKeyboardKey.space) {
       debugPrint('空格鍵停止射擊');
       _isShooting = false;
+    }
+
+    // E鍵與NPC對話
+    if (event is KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.keyE &&
+        _interactiveNpc != null &&
+        !game.overlays.isActive('InventoryOverlay') &&
+        !game.overlays.isActive('DialogOverlay')) {
+      debugPrint('E鍵與NPC [${_interactiveNpc!.name}] 對話');
+      // 啟動新的對話覆蓋層
+      _openDialogWithNpc(_interactiveNpc!);
+      return true;
     }
 
     // 武器切換 (Q鍵切換武器)
@@ -182,7 +198,7 @@ class PlayerComponent extends PositionComponent
     if (!_isProviderInitialized) {
       _initializeProvider();
 
-      // 如果仍未初始化成功，則跳過此幀的剩餘更新
+      // 如果仍未初始化成功，則跳過此幀的剩余更新
       if (!_isProviderInitialized) return;
     }
 
@@ -449,6 +465,31 @@ class PlayerComponent extends PositionComponent
     } catch (e) {
       debugPrint('使用熱鍵物品失敗: $e');
     }
+  }
+
+  // 設置當前可互動的NPC
+  void setInteractiveNpc(NpcComponent npc) {
+    _interactiveNpc = npc;
+  }
+
+  // 清除當前互動的NPC
+  void clearInteractiveNpc(NpcComponent npc) {
+    // 只有當前互動的NPC與參數相同時才清除
+    if (_interactiveNpc == npc) {
+      _interactiveNpc = null;
+    }
+  }
+
+  // 打開與NPC的對話介面
+  void _openDialogWithNpc(NpcComponent npc) {
+    // 確保覆蓋層不會重複添加
+    if (game.overlays.isActive('DialogOverlay')) return;
+
+    // 添加覆蓋層前，確保NPC的對話參數已傳遞
+    game.dialogNpc = npc;
+
+    // 開始對話
+    npc.startDialogue();
   }
 }
 

@@ -17,6 +17,14 @@ class AstrologerMumu extends NpcComponent {
           '想了解你的未來嗎？',
         ],
         interactionRadius: 120,
+        supportConversation: true,
+        conversations: [
+          '哎呀，命運的軌跡在你身上交織成美麗的圖案！',
+          '我在星象中看到了你的潛力，勇敢的冒險者。',
+          '大難臨頭之際，記得仰望夜空。星辰會指引你前進的方向。',
+          '這個世界的秘密遠比你想像的要多。想要了解更多，就繼續你的旅程吧！',
+          '如果你收集到了星辰碎片，可以帶來給我。我會為你解讀其中的力量。',
+        ],
       );
 
   @override

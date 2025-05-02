@@ -23,7 +23,7 @@ class ExplosionEffect extends PositionComponent {
       particleCount,
       (i) =>
           Paint()
-            ..color = color.withOpacity(1.0 - (i / particleCount))
+            ..color = color.withValues(alpha: 1.0 - (i / particleCount))
             ..style = PaintingStyle.fill,
     );
 
@@ -48,7 +48,7 @@ class ExplosionEffect extends PositionComponent {
     final progress = _timer / duration;
     for (int i = 0; i < _paints.length; i++) {
       final opacity = (1.0 - progress) * (1.0 - (i / _paints.length));
-      _paints[i].color = color.withOpacity(opacity);
+      _paints[i].color = color.withValues(alpha: opacity);
     }
   }
 

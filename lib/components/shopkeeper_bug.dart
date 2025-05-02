@@ -18,6 +18,14 @@ class ShopkeeperBug extends NpcComponent {
           '我們接受金幣和寶石交易！',
         ],
         interactionRadius: 120,
+        supportConversation: true,
+        conversations: [
+          '歡迎光臨米蟲雜貨店！我是老闆米蟲，有什麼需要的嗎？',
+          '我們店裡各種商品應有盡有，從武器到藥水，從裝備到食物，保證讓你滿意！',
+          '最近森林深處的怪物越來越多，很多冒險者都在搶購我們的高級藥水。',
+          '聽說你是新來的冒險者？第一次購物可以享受9折優惠哦！',
+          '如果你找到了稀有材料，也可以帶來給我。我收購的價格絕對公道！',
+        ],
       );
 
   @override
