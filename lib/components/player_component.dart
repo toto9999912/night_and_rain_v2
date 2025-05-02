@@ -98,6 +98,19 @@ class PlayerComponent extends PositionComponent
       ref.read(playerProvider.notifier).switchToNextWeapon();
     }
 
+    // 添加C鍵打開背包功能
+    if (event is KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.keyC &&
+        _isProviderInitialized) {
+      debugPrint('C鍵打開背包');
+      // 檢查背包是否已打開
+      if (game.overlays.isActive('InventoryOverlay')) {
+        game.overlays.remove('InventoryOverlay');
+      } else {
+        game.overlays.add('InventoryOverlay');
+      }
+    }
+
     return true;
   }
 
