@@ -1,7 +1,5 @@
 import 'package:flame/components.dart';
 import 'armor.dart';
-import 'inventory.dart';
-import 'item.dart';
 import 'weapon.dart';
 
 class Player {
@@ -17,8 +15,8 @@ class Player {
   Weapon? _equippedWeapon;
   Armor? equippedArmor;
 
-  // 背包
-  final Inventory inventory;
+  // 背包ID - 不再直接引用背包，而是使用 ID 來關聯背包
+  final String playerId;
 
   // 構造函數
   Player({
@@ -30,10 +28,10 @@ class Player {
     this.money = 0,
     Weapon? weapon,
     Armor? armor,
-    Inventory? playerInventory,
+    String? id,
   }) : _equippedWeapon = weapon,
        equippedArmor = armor,
-       inventory = playerInventory ?? Inventory(capacity: 20);
+       playerId = id ?? 'player_${DateTime.now().millisecondsSinceEpoch}';
 
   // 當前武器的 getter
   Weapon? get equippedWeapon => _equippedWeapon;
@@ -51,12 +49,8 @@ class Player {
     return mana >= weaponManaCost;
   }
 
-  // 裝備武器
+  // 裝備武器 - 簡化，不再涉及背包操作
   void equipWeapon(Weapon weapon) {
-    // 檢查物品是否在背包中，如果不在則自動添加
-    if (!inventory.items.contains(weapon)) {
-      inventory.addItem(weapon);
-    }
     _equippedWeapon = weapon;
   }
 
@@ -73,66 +67,8 @@ class Player {
     return _equippedWeapon!.attack(direction, this);
   }
 
-  // 切換到下一個武器
-  void switchToNextWeapon() {
-    if (inventory.items.isEmpty) return;
-
-    // 找出所有武器
-    final weapons = inventory.getWeapons();
-    if (weapons.isEmpty) return;
-
-    // 找到當前武器的索引
-    int currentIndex = -1;
-    if (_equippedWeapon != null) {
-      currentIndex = weapons.indexWhere((w) => w.id == _equippedWeapon!.id);
-    }
-
-    // 切換到下一個武器
-    int nextIndex = (currentIndex + 1) % weapons.length;
-    equipWeapon(weapons[nextIndex]);
-  }
-
-  // 切換到上一個武器
-  void switchToPreviousWeapon() {
-    if (inventory.items.isEmpty) return;
-
-    // 找出所有武器
-    final weapons = inventory.getWeapons();
-    if (weapons.isEmpty) return;
-
-    // 找到當前武器的索引
-    int currentIndex = -1;
-    if (_equippedWeapon != null) {
-      currentIndex = weapons.indexWhere((w) => w.id == _equippedWeapon!.id);
-    }
-
-    // 切換到上一個武器
-    int prevIndex = currentIndex <= 0 ? weapons.length - 1 : currentIndex - 1;
-    equipWeapon(weapons[prevIndex]);
-  }
-
-  // 使用物品
-  void useItem(Item item) {
-    // 確保物品在背包中
-    if (inventory.items.contains(item)) {
-      // 先使用物品
-      item.use(this);
-
-      // 如果是可堆疊物品，則減少數量
-      if (item.isStackable) {
-        inventory.removeItem(item, quantityToRemove: 1);
-      } else {
-        // 非堆疊物品（如武器和防具）使用後不消耗
-      }
-    }
-  }
-
-  // 裝備護甲
+  // 裝備護甲 - 簡化，不再涉及背包操作
   void equipArmor(Armor armor) {
-    // 檢查物品是否在背包中，如果不在則自動添加
-    if (!inventory.items.contains(armor)) {
-      inventory.addItem(armor);
-    }
     equippedArmor = armor;
   }
 
@@ -198,7 +134,7 @@ class Player {
       money: money ?? this.money,
       weapon: equippedWeapon ?? this.equippedWeapon,
       armor: equippedArmor ?? this.equippedArmor,
-      playerInventory: this.inventory,
+      id: playerId,
     );
   }
 }

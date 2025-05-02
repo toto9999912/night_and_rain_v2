@@ -23,20 +23,14 @@ class WanderingNpc extends NpcComponent {
   late final Vector2 _initialPosition;
 
   WanderingNpc({
-    required String name,
+    required super.name,
     required Vector2 position,
-    required Color color,
-    List<String>? greetings,
+    required super.color,
+    super.greetings,
     this.speed = 50.0,
     this.movementInterval = 3.0,
     this.wanderRadius = 150.0,
-  }) : super(
-         name: name,
-         position: position,
-         size: Vector2(35, 35),
-         color: color,
-         greetings: greetings,
-       ) {
+  }) : super(position: position, size: Vector2(35, 35)) {
     _initialPosition = position.clone();
   }
 

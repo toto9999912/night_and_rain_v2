@@ -8,7 +8,7 @@ import '../enum/weapon_type.dart';
 
 class RangedWeapon extends Weapon {
   final bool hasAutoFire;
-  final int manaCost; // 新增：魔力消耗
+  // 移除重複定義的 manaCost 字段，使用父類的
 
   RangedWeapon({
     required super.id,
@@ -22,9 +22,8 @@ class RangedWeapon extends Weapon {
     required super.attackSpeed,
     required super.range,
     super.cooldown,
-
+    required super.manaCost, // 使用 super 關鍵字傳遞到父類
     this.hasAutoFire = false,
-    required this.manaCost, // 每次射擊消耗的魔力值
   }) : assert(weaponType != WeaponType.sword);
 
   @override

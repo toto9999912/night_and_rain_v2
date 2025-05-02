@@ -2,7 +2,7 @@ import 'package:flame/components.dart';
 import 'package:flame/collisions.dart';
 import 'package:flutter/material.dart';
 import 'map_component.dart';
-import 'explosion_effect.dart';
+import '../effects/explosion_effect.dart';
 
 class BulletComponent extends PositionComponent
     with HasGameReference, CollisionCallbacks {

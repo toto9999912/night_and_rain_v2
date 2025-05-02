@@ -4,10 +4,9 @@ import 'npc_component.dart';
 
 /// 姆姆占星員NPC
 class AstrologerMumu extends NpcComponent {
-  AstrologerMumu({required Vector2 position})
+  AstrologerMumu({required super.position})
     : super(
         name: '姆姆占星員',
-        position: position,
         size: Vector2(40, 40),
         color: Colors.purple,
         greetings: [

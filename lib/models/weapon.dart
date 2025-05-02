@@ -89,7 +89,6 @@ class Weapon extends Item {
   }
 
   // 獲取武器描述
-  @override
   String getStats() {
     String stats =
         '傷害: ${damage.toStringAsFixed(1)}\n'

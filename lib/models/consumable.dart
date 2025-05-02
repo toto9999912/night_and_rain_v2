@@ -1,9 +1,6 @@
-import 'package:flutter/src/widgets/icon_data.dart';
-
+import 'package:flutter/material.dart';
 import 'package:night_and_rain_v2/enum/item_rarity.dart';
-
 import 'package:night_and_rain_v2/models/weapon.dart';
-
 import '../enum/item_type.dart';
 import 'item.dart';
 import 'player.dart';

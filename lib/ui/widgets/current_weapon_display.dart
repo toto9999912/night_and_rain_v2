@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:night_and_rain_v2/models/weapon.dart';
-import '../../enum/weapon_type.dart';
 
 class CurrentWeaponDisplay extends ConsumerWidget {
   final Weapon? weapon;
@@ -98,21 +97,5 @@ class CurrentWeaponDisplay extends ConsumerWidget {
   // 根據武器類型獲取圖標
   Widget _getWeaponIcon(Weapon? type) {
     return Icon(type?.icon ?? Icons.abc, color: Colors.white, size: 20);
-  }
-
-  // 根據武器類型獲取冷卻條顏色
-  Color _getCooldownColor(WeaponType type) {
-    switch (type) {
-      case WeaponType.pistol:
-        return Colors.yellow.withValues(alpha: 0.7);
-      case WeaponType.machineGun:
-        return Colors.orange.withValues(alpha: 0.7);
-      case WeaponType.shotgun:
-        return Colors.red.withValues(alpha: 0.7);
-      case WeaponType.sniper:
-        return Colors.purple.withValues(alpha: 0.7);
-      default:
-        return Colors.blue.withValues(alpha: 0.7);
-    }
   }
 }

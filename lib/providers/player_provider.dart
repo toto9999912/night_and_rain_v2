@@ -6,10 +6,11 @@ import '../models/armor.dart';
 import '../models/item.dart';
 import '../models/player.dart';
 import '../models/weapon.dart';
+import 'inventory_provider.dart';
 
 // 基本 Player Provider
 final playerProvider = StateNotifierProvider<PlayerNotifier, Player>((ref) {
-  return PlayerNotifier();
+  return PlayerNotifier(ref);
 });
 
 // 便於 UI 直接訪問當前武器的 Provider
@@ -18,27 +19,20 @@ final currentWeaponProvider = Provider<Weapon?>((ref) {
   return player.equippedWeapon;
 });
 
-// 便於 UI 直接訪問背包中所有武器的 Provider
-final playerWeaponsProvider = Provider<List<Weapon>>((ref) {
-  final player = ref.watch(playerProvider);
-  return player.inventory.getWeapons();
-});
-
-// 武器庫存情況變化通知 Provider
-final weaponInventoryChangedProvider = StateProvider<bool>((ref) => false);
-
 class PlayerNotifier extends StateNotifier<Player> {
-  PlayerNotifier() : super(Player());
+  final Ref _ref;
+
+  PlayerNotifier(this._ref) : super(Player());
 
   // 生命值相關方法
   void heal(int amount) {
     state.heal(amount);
-    state = state.copyWith(); // 觸發 UI 更新
+    updateState();
   }
 
   void takeDamage(int amount) {
     state.takeDamage(amount);
-    state = state.copyWith();
+    updateState();
   }
 
   void setHealth(int value) {
@@ -48,13 +42,13 @@ class PlayerNotifier extends StateNotifier<Player> {
   // 魔力相關方法
   void addMana(int amount) {
     state.addMana(amount);
-    state = state.copyWith();
+    updateState();
   }
 
   bool consumeMana(int amount) {
     final result = state.consumeMana(amount);
     if (result) {
-      state = state.copyWith();
+      updateState();
     }
     return result;
   }
@@ -65,13 +59,20 @@ class PlayerNotifier extends StateNotifier<Player> {
 
   // 武器相關方法
   void equipWeapon(Weapon weapon) {
+    // 確保武器在背包中
+    final inventoryNotifier = _ref.read(inventoryProvider.notifier);
+    if (!inventoryNotifier.hasItem(weapon.id)) {
+      inventoryNotifier.addItem(weapon);
+    }
+
+    // 裝備武器
     state.equipWeapon(weapon);
-    state = state.copyWith();
+    updateState();
   }
 
   void unequipWeapon() {
     state.unequipWeapon();
-    state = state.copyWith();
+    updateState();
   }
 
   bool attack(Vector2 direction) {
@@ -80,7 +81,7 @@ class PlayerNotifier extends StateNotifier<Player> {
     // 使用 Future 延遲更新 UI，避免在渲染過程中修改狀態
     if (result) {
       Future(() {
-        state = state.copyWith(); // 魔力可能變化，更新 UI
+        updateState(); // 魔力可能變化，更新 UI
       });
     }
 
@@ -88,100 +89,83 @@ class PlayerNotifier extends StateNotifier<Player> {
   }
 
   void switchToNextWeapon() {
-    state.switchToNextWeapon();
-    state = state.copyWith();
+    final weapons = _ref.read(inventoryProvider).getWeapons();
+    if (weapons.isEmpty) return;
+
+    // 找到當前武器的索引
+    int currentIndex = -1;
+    if (state.equippedWeapon != null) {
+      currentIndex = weapons.indexWhere(
+        (w) => w.id == state.equippedWeapon!.id,
+      );
+    }
+
+    // 切換到下一個武器
+    int nextIndex = (currentIndex + 1) % weapons.length;
+    equipWeapon(weapons[nextIndex]);
   }
 
   void switchToPreviousWeapon() {
-    state.switchToPreviousWeapon();
-    state = state.copyWith();
-  }
+    final weapons = _ref.read(inventoryProvider).getWeapons();
+    if (weapons.isEmpty) return;
 
-  // 獲取特定類型的武器列表
-  List<Weapon> getWeaponsByType(WeaponType type) {
-    return state.inventory.getWeaponsByType(type);
-  }
+    // 找到當前武器的索引
+    int currentIndex = -1;
+    if (state.equippedWeapon != null) {
+      currentIndex = weapons.indexWhere(
+        (w) => w.id == state.equippedWeapon!.id,
+      );
+    }
 
-  // 獲取排序後的武器列表
-  List<Weapon> getSortedWeapons({
-    required String sortBy,
-    bool ascending = false,
-  }) {
-    return state.inventory.getSortedWeapons(
-      sortBy: sortBy,
-      ascending: ascending,
-    );
+    // 切換到上一個武器
+    int prevIndex = currentIndex <= 0 ? weapons.length - 1 : currentIndex - 1;
+    equipWeapon(weapons[prevIndex]);
   }
 
   // 裝備指定武器類型的最佳武器（根據傷害值）
   void equipBestWeaponOfType(WeaponType type) {
-    final weapons = getWeaponsByType(type);
-    if (weapons.isEmpty) return;
-
-    // 按傷害排序
-    weapons.sort((a, b) => b.damage.compareTo(a.damage));
-    equipWeapon(weapons.first);
+    _ref.read(inventoryProvider.notifier).equipBestWeaponOfType(type);
   }
 
   // 護甲相關方法
   void equipArmor(Armor armor) {
+    // 確保護甲在背包中
+    final inventoryNotifier = _ref.read(inventoryProvider.notifier);
+    if (!inventoryNotifier.hasItem(armor.id)) {
+      inventoryNotifier.addItem(armor);
+    }
+
+    // 裝備護甲
     state.equipArmor(armor);
-    state = state.copyWith();
+    updateState();
   }
 
-  // 物品相關方法
+  // 物品相關方法 - 現在僅是代理到 InventoryProvider
   void useItem(Item item) {
-    state.useItem(item);
-    state = state.copyWith();
+    _ref.read(inventoryProvider.notifier).useItem(item);
   }
 
   // 金錢相關方法
   void addMoney(int amount) {
     state.addMoney(amount);
-    state = state.copyWith();
+    updateState();
   }
 
   bool spendMoney(int amount) {
     final result = state.spendMoney(amount);
     if (result) {
-      state = state.copyWith();
+      updateState();
     }
     return result;
   }
 
-  // 背包相關方法
-  bool addItemToInventory(Item item) {
-    final result = state.inventory.addItem(item);
-    if (result) {
-      state = state.copyWith();
-    }
-    return result;
-  }
-
-  bool removeItemFromInventory(Item item) {
-    final result = state.inventory.removeItem(item);
-    if (result) {
-      state = state.copyWith();
-    }
-    return result;
-  }
-
-  // 熱鍵相關方法
-  void bindHotkey(int slot, Item item) {
-    state.inventory.bindHotkey(slot, item);
-    state = state.copyWith();
-  }
-
-  void unbindHotkey(int slot) {
-    state.inventory.unbindHotkey(slot);
-    state = state.copyWith();
-  }
-
+  // 使用熱鍵綁定的物品
   void useHotkeyItem(int slot) {
-    final item = state.inventory.hotkeyBindings[slot];
-    if (item != null) {
-      state.useItem(item);
-      state = state.copyWith();
-    }
+    _ref.read(inventoryProvider.notifier).useHotkeyItem(slot);
+  }
+
+  // 用於強制更新狀態以觸發UI重繪
+  void updateState() {
+    state = state.copyWith();
   }
 }

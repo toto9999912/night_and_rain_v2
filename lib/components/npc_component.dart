@@ -121,7 +121,10 @@ class NpcComponent extends PositionComponent
       const Radius.circular(10),
     );
 
-    canvas.drawRRect(rrect, Paint()..color = Colors.white.withOpacity(0.8));
+    canvas.drawRRect(
+      rrect,
+      Paint()..color = Colors.white.withValues(alpha: 0.8),
+    );
 
     // 繪製氣泡小尖角
     final path =
@@ -131,7 +134,7 @@ class NpcComponent extends PositionComponent
           ..lineTo(bubblePosition.x + 10, bubblePosition.y + bubbleHeight / 2)
           ..close();
 
-    canvas.drawPath(path, Paint()..color = Colors.white.withOpacity(0.8));
+    canvas.drawPath(path, Paint()..color = Colors.white.withValues(alpha: 0.8));
 
     // 繪製文字
     final textStyle = TextStyle(color: Colors.black, fontSize: fontSize);

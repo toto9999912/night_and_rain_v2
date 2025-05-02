@@ -1,4 +1,3 @@
-import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -46,8 +45,8 @@ class _PlayerDashboardOverlayState extends ConsumerState<PlayerDashboardOverlay>
     if (event is KeyDownEvent &&
         event.logicalKey == LogicalKeyboardKey.keyE &&
         selectedItem != null) {
-      // 使用當前選中的物品
-      ref.read(playerProvider.notifier).useItem(selectedItem!);
+      // 使用當前選中的物品 - 現在通過 inventoryProvider
+      ref.read(inventoryProvider.notifier).useItem(selectedItem!);
 
       // 如果物品用完了，取消選中
       if (selectedItem!.isStackable && selectedItem!.quantity <= 1) {
@@ -65,7 +64,7 @@ class _PlayerDashboardOverlayState extends ConsumerState<PlayerDashboardOverlay>
   @override
   Widget build(BuildContext context) {
     final player = ref.watch(playerProvider);
-    final inventory = player.inventory;
+    final inventory = ref.watch(inventoryProvider);
     final weapon = player.equippedWeapon;
 
     return Material(
@@ -126,7 +125,7 @@ class _PlayerDashboardOverlayState extends ConsumerState<PlayerDashboardOverlay>
                 Container(
                   padding: EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.3),
+                    color: Colors.blue.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Row(

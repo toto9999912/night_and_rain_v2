@@ -9,6 +9,7 @@ import '../enum/weapon_type.dart';
 import '../main.dart';
 import '../models/ranged_weapon.dart';
 import '../providers/player_provider.dart';
+import '../providers/inventory_provider.dart';
 import '../models/weapon.dart';
 import 'bullet_component.dart';
 import 'map_component.dart';
@@ -25,8 +26,10 @@ class PlayerComponent extends PositionComponent
   final Set<LogicalKeyboardKey> _keysPressed = {};
   final MapComponent mapComponent;
 
-  // 移除 WeaponManager，改為直接使用 Player
+  // Provider 初始化狀態
   bool _isProviderInitialized = false;
+
+  // 熱鍵綁定 - 存儲熱鍵對應的物品ID
 
   Timer? _manaRegenerationTimer;
   final double _manaRegenerationInterval = 0.5; // 0.5秒恢復一次
@@ -119,6 +122,17 @@ class PlayerComponent extends PositionComponent
       } else {
         game.overlays.add('InventoryOverlay');
       }
+    }
+
+    // 數字鍵 1-9 熱鍵功能
+    if (event is KeyDownEvent &&
+        _isProviderInitialized &&
+        event.logicalKey.keyId >= LogicalKeyboardKey.digit1.keyId &&
+        event.logicalKey.keyId <= LogicalKeyboardKey.digit9.keyId) {
+      final hotkeyIndex =
+          event.logicalKey.keyId - LogicalKeyboardKey.digit1.keyId + 1;
+      _useHotkeyItem(hotkeyIndex);
+      return true;
     }
 
     return true;
@@ -421,6 +435,18 @@ class PlayerComponent extends PositionComponent
         return Colors.red;
       default:
         return Colors.white;
+    }
+  }
+
+  // 使用熱鍵綁定的物品
+  void _useHotkeyItem(int hotkeyIndex) {
+    debugPrint('使用熱鍵 $hotkeyIndex');
+
+    // 直接調用 inventoryProvider 的 useHotkeyItem 方法
+    try {
+      ref.read(inventoryProvider.notifier).useHotkeyItem(hotkeyIndex);
+    } catch (e) {
+      debugPrint('使用熱鍵物品失敗: $e');
     }
   }
 }
