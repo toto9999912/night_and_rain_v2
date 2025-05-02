@@ -5,6 +5,7 @@ import 'package:night_and_rain_v2/models/item.dart';
 
 import '../enum/item_rarity.dart';
 import '../enum/weapon_type.dart';
+import '../models/ranged_weapon.dart';
 import '../models/weapon.dart';
 
 final itemsDataProvider = Provider<Map<String, Item>>((ref) {
@@ -22,7 +23,7 @@ final itemsDataProvider = Provider<Map<String, Item>>((ref) {
       price: 200,
       range: 300,
     ),
-    'shotgun_1': Weapon(
+    'shotgun_1': RangedWeapon(
       id: 'shotgun_1',
       name: '標準霰彈槍',
       description: '標準配發的霰彈槍，性能可靠',
@@ -33,6 +34,7 @@ final itemsDataProvider = Provider<Map<String, Item>>((ref) {
       attackSpeed: 1.5,
       price: 200,
       range: 600,
+      manaCost: 5,
     ),
     // 其他物品...
   };

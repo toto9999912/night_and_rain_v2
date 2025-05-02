@@ -27,6 +27,9 @@ class PlayerComponent extends PositionComponent
   // 移除 WeaponManager，改為直接使用 Player
   bool _isProviderInitialized = false;
 
+  Timer? _manaRegenerationTimer;
+  final double _manaRegenerationInterval = 0.5; // 0.5秒恢復一次
+
   // 瞄準方向（默認向上）
   Vector2 aimDirection = Vector2(0, -1);
 
@@ -50,6 +53,12 @@ class PlayerComponent extends PositionComponent
   @override
   Future<void> onLoad() async {
     await super.onLoad();
+    // 初始化魔力恢復計時器
+    _manaRegenerationTimer = Timer(
+      _manaRegenerationInterval,
+      onTick: _regenerateMana,
+      repeat: true,
+    );
 
     // 玩家視覺效果
     add(RectangleComponent(size: size, paint: Paint()..color = Colors.white));
@@ -150,6 +159,8 @@ class PlayerComponent extends PositionComponent
   @override
   void update(double dt) {
     super.update(dt);
+    // 更新魔力恢復計時器
+    _manaRegenerationTimer?.update(dt);
 
     // 嘗試初始化 Provider（如果尚未初始化）
     if (!_isProviderInitialized) {
@@ -239,6 +250,25 @@ class PlayerComponent extends PositionComponent
 
     // 在移動後更新瞄準方向（因為玩家位置變化）
     _updateAimDirection();
+  }
+
+  void _regenerateMana() {
+    final playerNotifier = ref.read(playerProvider.notifier);
+    final player = ref.read(playerProvider);
+
+    // 只有在魔力未滿時才恢復
+    if (player.mana < player.maxMana) {
+      // 使用 Future 延遲更新狀態
+      Future(() {
+        playerNotifier.addMana(1);
+      });
+    }
+  }
+
+  @override
+  void onRemove() {
+    _manaRegenerationTimer?.stop();
+    super.onRemove();
   }
 
   // 碰撞檢測回調

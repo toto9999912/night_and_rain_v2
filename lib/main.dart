@@ -42,7 +42,7 @@ class NightAndRainApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: RiverpodAwareGameWidget<NightAndRainGame>(
-        game: NightAndRainGame(),
+        game: gameInstance,
         key: gameWidgetKey,
         overlayBuilderMap: {
           'HudOverlay': (context, game) => HudOverlay(game: game),

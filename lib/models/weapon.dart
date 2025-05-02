@@ -25,9 +25,9 @@ class Weapon extends Item {
     double? range,
     double? cooldown,
   }) : // 如果沒提供冷卻時間，則使用武器類型的預設值
-       this.cooldown = cooldown ?? weaponType.defaultCooldown,
+       cooldown = cooldown ?? weaponType.defaultCooldown,
        // 如果沒提供範圍，則根據武器類型設定預設範圍
-       this.range = range ?? (weaponType.isMelee ? 50 : 800),
+       range = range ?? (weaponType.isMelee ? 50 : 800),
        super(type: ItemType.weapon);
 
   @override

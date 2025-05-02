@@ -7,9 +7,6 @@ import 'package:flame/components.dart';
 import '../enum/weapon_type.dart';
 
 class RangedWeapon extends Weapon {
-  final int maxAmmo;
-  final int currentAmmo;
-  final double reloadTime;
   final bool hasAutoFire;
   final int manaCost; // 新增：魔力消耗
 
@@ -24,10 +21,8 @@ class RangedWeapon extends Weapon {
     required super.damage,
     required super.attackSpeed,
     required super.range,
-    required super.cooldown,
-    required this.maxAmmo,
-    this.currentAmmo = 0,
-    required this.reloadTime,
+    super.cooldown,
+
     this.hasAutoFire = false,
     required this.manaCost, // 每次射擊消耗的魔力值
   }) : assert(weaponType != WeaponType.sword);

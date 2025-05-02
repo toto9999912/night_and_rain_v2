@@ -61,7 +61,14 @@ class PlayerNotifier extends StateNotifier<Player> {
 
   bool attack(Vector2 direction) {
     final result = state.attack(direction);
-    state = state.copyWith(); // 魔力可能變化，更新 UI
+
+    // 使用 Future 延遲更新 UI，避免在渲染過程中修改狀態
+    if (result) {
+      Future(() {
+        state = state.copyWith(); // 魔力可能變化，更新 UI
+      });
+    }
+
     return result;
   }
 
