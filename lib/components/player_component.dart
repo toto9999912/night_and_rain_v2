@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flame/events.dart' as flame_events;
 import 'package:flame/collisions.dart';
+import '../enum/weapon_type.dart';
 import '../main.dart';
 import '../models/ranged_weapon.dart';
 import '../providers/player_provider.dart';
@@ -299,7 +300,6 @@ class PlayerComponent extends PositionComponent
     }
   }
 
-  // 添加射擊方法
   void shoot(Vector2 targetPosition) {
     // 確認 Provider 已初始化
     if (!_isProviderInitialized) return;
@@ -329,18 +329,14 @@ class PlayerComponent extends PositionComponent
             bulletSpeed = bulletParams['speed'] as double;
           }
 
-          // 創建子彈並添加到遊戲世界
-          final bullet = BulletComponent(
-            position: playerCenter.clone(),
-            direction: direction,
-            speed: bulletSpeed, // 使用從武器獲取的子彈速度
-            damage: weapon.damage.toDouble(),
-            range: weapon.range.toDouble(),
-            color: _getBulletColor(weapon),
-          );
-
-          // 將子彈添加到遊戲世界
-          game.gameWorld.add(bullet);
+          // 檢查是否為霰彈槍類型
+          if (weapon.weaponType == WeaponType.shotgun) {
+            // 霰彈槍發射5個子彈，呈扇形散射
+            _fireShotgunBlast(playerCenter, direction, bulletSpeed, weapon);
+          } else {
+            // 其他武器只發射一個子彈
+            _fireSingleBullet(playerCenter, direction, bulletSpeed, weapon);
+          }
 
           debugPrint('發射子彈：${weapon.name}，方向：$direction，速度：$bulletSpeed');
         } else {
@@ -352,6 +348,64 @@ class PlayerComponent extends PositionComponent
     } else {
       debugPrint('沒有裝備武器！');
     }
+  }
+
+  // 新增：霰彈槍發射多個子彈的方法
+  void _fireShotgunBlast(
+    Vector2 origin,
+    Vector2 centerDirection,
+    double speed,
+    Weapon weapon,
+  ) {
+    // 發射5個子彈，角度偏移
+    const int bulletCount = 5;
+    const double spreadAngle = 0.3; // 總散射角度（弧度）
+
+    for (int i = 0; i < bulletCount; i++) {
+      // 計算每個子彈的偏移角度
+      double angleOffset = spreadAngle * (i / (bulletCount - 1) - 0.5);
+
+      // 根據偏移角度旋轉方向向量
+      Vector2 bulletDirection = centerDirection.clone()..rotate(angleOffset);
+
+      // 輕微調整速度，使外側子彈略慢
+      double bulletSpeed =
+          speed * (1.0 - 0.1 * (angleOffset.abs() / (spreadAngle / 2)));
+
+      // 創建子彈
+      final bullet = BulletComponent(
+        position: origin.clone(),
+        direction: bulletDirection,
+        speed: bulletSpeed,
+        damage: weapon.damage.toDouble() * 0.6, // 每顆子彈傷害降低，但總傷害較高
+        range:
+            weapon.range.toDouble() *
+            (1.0 - 0.2 * (angleOffset.abs() / (spreadAngle / 2))), // 外側子彈射程略短
+        color: _getBulletColor(weapon),
+      );
+
+      // 添加到遊戲世界
+      game.gameWorld.add(bullet);
+    }
+  }
+
+  // 新增：標準單發射擊方法
+  void _fireSingleBullet(
+    Vector2 origin,
+    Vector2 direction,
+    double speed,
+    Weapon weapon,
+  ) {
+    final bullet = BulletComponent(
+      position: origin.clone(),
+      direction: direction,
+      speed: speed,
+      damage: weapon.damage.toDouble(),
+      range: weapon.range.toDouble(),
+      color: _getBulletColor(weapon),
+    );
+
+    game.gameWorld.add(bullet);
   }
 
   // 根據武器類型獲取子彈顏色
