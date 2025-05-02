@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 import 'player.dart';
 import 'weapon.dart';
 import 'package:flame/components.dart';
@@ -34,12 +36,40 @@ class RangedWeapon extends Weapon {
   bool attack(Vector2 direction, Player player) {
     // 檢查魔力是否足夠
     if (player.mana >= manaCost) {
-      // 實現遠程武器的攻擊邏輯
-      player.mana -= manaCost; // 消耗魔力
-      return true; // 攻擊成功
+      // 消耗魔力
+      player.mana -= manaCost;
+
+      // 返回攻擊成功，子彈會在 PlayerComponent 中生成
+      return true;
     } else {
       // 魔力不足，無法發射
-      return false; // 攻擊失敗
+      return false;
+    }
+  }
+
+  // 獲取子彈參數（可供擴展）
+  Map<String, dynamic> getBulletParameters() {
+    return {
+      'damage': damage,
+      'range': range,
+      'speed': 400.0, // 默認子彈速度
+      'color': _getBulletColorByType(),
+    };
+  }
+
+  // 根據武器類型獲取子彈顏色
+  Color _getBulletColorByType() {
+    switch (weaponType.name) {
+      case 'pistol':
+        return Colors.yellow;
+      case 'shotgun':
+        return Colors.orange;
+      case 'rifle':
+        return Colors.blue;
+      case 'machineGun':
+        return Colors.red;
+      default:
+        return Colors.white;
     }
   }
 

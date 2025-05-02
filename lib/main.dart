@@ -57,9 +57,9 @@ class NightAndRainApp extends StatelessWidget {
 class NightAndRainGame extends FlameGame
     with
         HasKeyboardHandlerComponents,
-        HasCollisionDetection, // 添加碰撞檢測功能
-        MouseMovementDetector, // 添加鼠標移動檢測
-        TapDetector, // 添加點擊檢測
+        HasCollisionDetection,
+        MouseMovementDetector,
+        TapDetector, // ← 新增這行
         RiverpodGameMixin {
   late final World gameWorld;
   late final CameraComponent _cameraComponent;
@@ -106,12 +106,22 @@ class NightAndRainGame extends FlameGame
 
     // 從 itemsDataProvider 獲取初始武器
     final itemsData = ref.read(itemsDataProvider);
-    final initialWeapon = itemsData['pistol_1'] as Weapon;
+    final initialWeapon = itemsData['shotgun_1'] as Weapon;
 
     // 添加到玩家庫存並裝備
     final playerNotifier = ref.read(playerProvider.notifier);
     playerNotifier.addItemToInventory(initialWeapon);
     playerNotifier.equipWeapon(initialWeapon);
+  }
+
+  @override
+  bool onTapDown(TapDownInfo info) {
+    // 取得畫布內座標
+    final pos = info.eventPosition.widget;
+    // 轉換為世界座標
+    final worldPos = _cameraComponent.viewfinder.globalToLocal(pos);
+    _player.shoot(worldPos);
+    return true;
   }
 }
 

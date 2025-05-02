@@ -6,11 +6,14 @@ import 'package:flutter/services.dart';
 import 'package:flame/events.dart' as flame_events;
 import '../main.dart';
 import '../providers/player_provider.dart';
+import '../models/weapon.dart';
+import 'bullet_component.dart';
 
 class PlayerComponent extends PositionComponent
     with
         KeyboardHandler,
         TapCallbacks,
+        DragCallbacks,
         HasGameReference<NightAndRainGame>,
         PointerMoveCallbacks,
         RiverpodComponentMixin {
@@ -155,17 +158,14 @@ class PlayerComponent extends PositionComponent
       _shootCooldown -= dt;
     }
 
-    // 射擊邏輯 - 直接使用 playerProvider
+    // 射擊邏輯 - 使用統一的射擊方法
     if (_isShooting && _shootCooldown <= 0 && _isProviderInitialized) {
-      final playerNotifier = ref.read(playerProvider.notifier);
+      // 計算玩家前方位置作為目標
+      final playerCenter = position + size / 2;
+      final targetPosition = playerCenter + aimDirection * 100;
 
-      if (playerNotifier.attack(aimDirection)) {
-        // 攻擊成功，設置冷卻
-        final currentWeapon = player.equippedWeapon;
-        if (currentWeapon != null) {
-          _shootCooldown = currentWeapon.cooldown;
-        }
-      }
+      // 調用統一的射擊方法
+      shoot(targetPosition);
     }
 
     // 移動玩家
@@ -175,6 +175,70 @@ class PlayerComponent extends PositionComponent
 
       // 在移動後更新瞄準方向（因為玩家位置變化）
       _updateAimDirection();
+    }
+  }
+
+  // 添加射擊方法
+  void shoot(Vector2 targetPosition) {
+    // 確認 Provider 已初始化
+    if (!_isProviderInitialized) return;
+
+    // 獲取玩家當前武器
+    final playerState = ref.read(playerProvider);
+    final weapon = playerState.equippedWeapon;
+
+    if (weapon != null) {
+      // 確認武器冷卻已結束
+      if (_shootCooldown <= 0) {
+        // 計算射擊方向
+        final playerCenter = position + size / 2;
+        final direction = (targetPosition - playerCenter).normalized();
+
+        // 使用攻擊方法（會消耗魔力）
+        if (ref.read(playerProvider.notifier).attack(direction)) {
+          // 攻擊成功，設置冷卻
+          _shootCooldown = weapon.cooldown;
+
+          // 創建子彈並添加到遊戲世界
+          final bullet = BulletComponent(
+            position: playerCenter.clone(),
+            direction: direction,
+            speed: 400, // 子彈速度，可以根據武器類型調整
+            damage:
+                weapon.damage.toDouble(), // 轉換為 double 以符合 BulletComponent 參數類型
+            range:
+                weapon.range.toDouble(), // 轉換為 double 以符合 BulletComponent 參數類型
+            color: _getBulletColor(weapon), // 根據武器類型設定子彈顏色
+          );
+
+          // 將子彈添加到遊戲世界
+          game.gameWorld.add(bullet);
+
+          debugPrint('發射子彈：${weapon.name}，方向：$direction');
+        } else {
+          debugPrint('魔力不足，無法射擊！');
+        }
+      } else {
+        debugPrint('武器冷卻中...');
+      }
+    } else {
+      debugPrint('沒有裝備武器！');
+    }
+  }
+
+  // 根據武器類型獲取子彈顏色
+  Color _getBulletColor(Weapon weapon) {
+    switch (weapon.weaponType.name) {
+      case 'pistol':
+        return Colors.yellow;
+      case 'shotgun':
+        return Colors.orange;
+      case 'rifle':
+        return Colors.blue;
+      case 'machineGun':
+        return Colors.red;
+      default:
+        return Colors.white;
     }
   }
 }
