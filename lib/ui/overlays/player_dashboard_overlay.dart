@@ -19,6 +19,8 @@ class PlayerDashboardOverlay extends ConsumerStatefulWidget {
 class _PlayerDashboardOverlayState extends ConsumerState<PlayerDashboardOverlay>
     with WidgetsBindingObserver {
   Item? selectedItem;
+  // 當前選中的熱鍵（1-5）
+  int? selectedHotkey;
   NightAndRainGame get game => widget.game;
 
   @override
@@ -41,7 +43,35 @@ class _PlayerDashboardOverlayState extends ConsumerState<PlayerDashboardOverlay>
 
   // 使用新的 HardwareKeyboard API 處理鍵盤事件
   bool _handleKeyboardEvent(KeyEvent event) {
-    // 只處理E鍵按下事件
+    // 處理數字鍵1-5的按下事件
+    if (event is KeyDownEvent &&
+        event.logicalKey.keyId >= LogicalKeyboardKey.digit1.keyId &&
+        event.logicalKey.keyId <= LogicalKeyboardKey.digit5.keyId) {
+      final hotkey =
+          event.logicalKey.keyId - LogicalKeyboardKey.digit1.keyId + 1;
+
+      // 如果有選中的物品，則綁定熱鍵
+      if (selectedItem != null) {
+        ref.read(inventoryProvider.notifier).bindHotkey(hotkey, selectedItem!);
+
+        setState(() {
+          selectedHotkey = null;
+          selectedItem = null;
+        });
+
+        // 顯示消息
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${selectedItem!.name} 已綁定到熱鍵 $hotkey'),
+            duration: Duration(seconds: 1),
+          ),
+        );
+
+        return true;
+      }
+    }
+
+    // 處理E鍵按下事件
     if (event is KeyDownEvent &&
         event.logicalKey == LogicalKeyboardKey.keyE &&
         selectedItem != null) {
@@ -125,7 +155,7 @@ class _PlayerDashboardOverlayState extends ConsumerState<PlayerDashboardOverlay>
                 Container(
                   padding: EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withValues(alpha: 0.3),
+                    color: Colors.blue.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Row(
@@ -137,14 +167,107 @@ class _PlayerDashboardOverlayState extends ConsumerState<PlayerDashboardOverlay>
                       SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          '已選擇: ${selectedItem!.name} - 按 E 使用',
+                          selectedHotkey != null
+                              ? '已選擇: ${selectedItem!.name} - 按數字鍵 ${selectedHotkey} 確認綁定到熱鍵'
+                              : '已選擇: ${selectedItem!.name} - 按 E 使用，或按數字鍵 1-5 綁定熱鍵',
                           style: TextStyle(color: Colors.white),
                         ),
                       ),
                     ],
                   ),
                 ),
-              const SizedBox(height: 8),
+
+              // 熱鍵綁定顯示
+              Container(
+                margin: EdgeInsets.symmetric(vertical: 8),
+                padding: EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.grey[850],
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: Colors.white30),
+                ),
+                height: 50,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: List.generate(5, (index) {
+                    final hotkey = index + 1;
+                    final item = inventory.hotkeyBindings[hotkey];
+
+                    return GestureDetector(
+                      onTap: () {
+                        if (selectedItem != null) {
+                          // 綁定物品到這個熱鍵
+                          ref
+                              .read(inventoryProvider.notifier)
+                              .bindHotkey(hotkey, selectedItem!);
+                          setState(() {
+                            selectedHotkey = null;
+                            selectedItem = null;
+                          });
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                '${selectedItem!.name} 已綁定到熱鍵 $hotkey',
+                              ),
+                              duration: Duration(seconds: 1),
+                            ),
+                          );
+                        } else {
+                          // 選擇這個熱鍵
+                          setState(() {
+                            selectedHotkey = hotkey;
+                          });
+                        }
+                      },
+                      child: Container(
+                        width: 60,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color:
+                              selectedHotkey == hotkey
+                                  ? Colors.blue.withOpacity(0.3)
+                                  : Colors.black38,
+                          border: Border.all(
+                            color:
+                                selectedHotkey == hotkey
+                                    ? Colors.yellow
+                                    : Colors.white30,
+                            width: 1,
+                          ),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Stack(
+                          children: [
+                            // 熱鍵數字
+                            Positioned(
+                              top: 1,
+                              left: 2,
+                              child: Text(
+                                '$hotkey',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+
+                            // 顯示綁定的物品圖示
+                            if (item != null)
+                              Center(
+                                child: Icon(
+                                  item.icon,
+                                  color: item.rarity.color,
+                                  size: 20,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+              ),
 
               // 背包格子
               Text('背包', style: TextStyle(color: Colors.white, fontSize: 18)),

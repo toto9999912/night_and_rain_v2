@@ -124,11 +124,12 @@ class PlayerComponent extends PositionComponent
       }
     }
 
-    // 數字鍵 1-9 熱鍵功能
+    // 數字鍵 1-5 熱鍵功能 - 只處理背包關閉時的數字鍵
     if (event is KeyDownEvent &&
         _isProviderInitialized &&
+        !game.overlays.isActive('InventoryOverlay') &&
         event.logicalKey.keyId >= LogicalKeyboardKey.digit1.keyId &&
-        event.logicalKey.keyId <= LogicalKeyboardKey.digit9.keyId) {
+        event.logicalKey.keyId <= LogicalKeyboardKey.digit5.keyId) {
       final hotkeyIndex =
           event.logicalKey.keyId - LogicalKeyboardKey.digit1.keyId + 1;
       _useHotkeyItem(hotkeyIndex);
