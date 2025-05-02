@@ -52,7 +52,7 @@ class RangedWeapon extends Weapon {
     return {
       'damage': damage,
       'range': range,
-      'speed': 400.0, // 默認子彈速度
+      'speed': weaponType.defaultBulletSpeed, // 使用武器類型的預設子彈速度
       'color': _getBulletColorByType(),
     };
   }

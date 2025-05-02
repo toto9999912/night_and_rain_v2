@@ -22,9 +22,13 @@ class Weapon extends Item {
     required this.weaponType,
     required this.damage,
     required this.attackSpeed,
-    required this.range,
-    required this.cooldown,
-  }) : super(type: ItemType.weapon);
+    double? range,
+    double? cooldown,
+  }) : // 如果沒提供冷卻時間，則使用武器類型的預設值
+       this.cooldown = cooldown ?? weaponType.defaultCooldown,
+       // 如果沒提供範圍，則根據武器類型設定預設範圍
+       this.range = range ?? (weaponType.isMelee ? 50 : 800),
+       super(type: ItemType.weapon);
 
   @override
   void use(Player player) {

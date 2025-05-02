@@ -4,10 +4,13 @@ import 'package:flame_riverpod/flame_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flame/events.dart' as flame_events;
+import 'package:flame/collisions.dart';
 import '../main.dart';
+import '../models/ranged_weapon.dart';
 import '../providers/player_provider.dart';
 import '../models/weapon.dart';
 import 'bullet_component.dart';
+import 'map_component.dart';
 
 class PlayerComponent extends PositionComponent
     with
@@ -16,8 +19,10 @@ class PlayerComponent extends PositionComponent
         DragCallbacks,
         HasGameReference<NightAndRainGame>,
         PointerMoveCallbacks,
-        RiverpodComponentMixin {
+        RiverpodComponentMixin,
+        CollisionCallbacks {
   final Set<LogicalKeyboardKey> _keysPressed = {};
+  final MapComponent mapComponent;
 
   // 移除 WeaponManager，改為直接使用 Player
   bool _isProviderInitialized = false;
@@ -34,6 +39,14 @@ class PlayerComponent extends PositionComponent
   // 射擊冷卻計時器
   double _shootCooldown = 0;
 
+  // 碰撞反彈參數
+  double _collisionCooldown = 0;
+  Vector2 _lastCollisionDirection = Vector2.zero();
+  static const double _collisionRecoilTime = 0.15; // 反彈時間
+  static const double _collisionRecoilForce = 100; // 反彈力度
+
+  PlayerComponent({required this.mapComponent}) : super();
+
   @override
   Future<void> onLoad() async {
     await super.onLoad();
@@ -43,6 +56,9 @@ class PlayerComponent extends PositionComponent
 
     // 瞄準方向指示器
     add(AimDirectionIndicator());
+
+    // 添加碰撞檢測盒
+    add(RectangleHitbox()..collisionType = CollisionType.active);
   }
 
   // 簡化初始化方法
@@ -168,13 +184,75 @@ class PlayerComponent extends PositionComponent
       shoot(targetPosition);
     }
 
-    // 移動玩家
-    if (move.length > 0) {
-      move.normalize();
-      position += move * speed * dt;
+    // 處理碰撞反彈
+    if (_collisionCooldown > 0) {
+      _collisionCooldown -= dt;
 
-      // 在移動後更新瞄準方向（因為玩家位置變化）
-      _updateAimDirection();
+      // 在反彈時，向反方向移動
+      position += _lastCollisionDirection * _collisionRecoilForce * dt;
+
+      // 如果還想要處理正常移動，可以在這裡繼續
+      if (_collisionCooldown <= 0) {
+        _lastCollisionDirection = Vector2.zero();
+      }
+    } else {
+      // 正常移動處理
+      if (move.length > 0) {
+        move.normalize();
+        final nextPosition = position + move * speed * dt;
+
+        // 檢查是否與障礙物碰撞
+        if (!mapComponent.checkObstacleCollision(nextPosition, size)) {
+          position = nextPosition;
+        } else {
+          // 嘗試分別在 X 和 Y 方向上移動（在牆邊滑動）
+          final nextPositionX = Vector2(nextPosition.x, position.y);
+          final nextPositionY = Vector2(position.x, nextPosition.y);
+
+          if (!mapComponent.checkObstacleCollision(nextPositionX, size)) {
+            position = nextPositionX;
+          }
+
+          if (!mapComponent.checkObstacleCollision(nextPositionY, size)) {
+            position = nextPositionY;
+          }
+        }
+      }
+    }
+
+    // 確保玩家不會走出地圖邊界
+    position.x = position.x.clamp(0, game.mapSize.x - size.x);
+    position.y = position.y.clamp(0, game.mapSize.y - size.y);
+
+    // 在移動後更新瞄準方向（因為玩家位置變化）
+    _updateAimDirection();
+  }
+
+  // 碰撞檢測回調
+  @override
+  void onCollisionStart(
+    Set<Vector2> intersectionPoints,
+    PositionComponent other,
+  ) {
+    super.onCollisionStart(intersectionPoints, other);
+
+    if (other is Obstacle || other is BoundaryWall) {
+      // 計算反彈方向（從碰撞點到玩家中心）
+      final playerCenter = position + size / 2;
+      final collisionCenter = Vector2.zero();
+
+      // 計算碰撞點的平均位置
+      for (final point in intersectionPoints) {
+        collisionCenter.add(point);
+      }
+
+      if (intersectionPoints.isNotEmpty) {
+        collisionCenter.scale(1 / intersectionPoints.length);
+
+        // 計算反彈方向（從碰撞點指向玩家中心）
+        _lastCollisionDirection = (playerCenter - collisionCenter)..normalize();
+        _collisionCooldown = _collisionRecoilTime;
+      }
     }
   }
 
@@ -199,22 +277,29 @@ class PlayerComponent extends PositionComponent
           // 攻擊成功，設置冷卻
           _shootCooldown = weapon.cooldown;
 
+          // 獲取子彈速度 - 從武器類型中獲取默認值
+          double bulletSpeed = weapon.weaponType.defaultBulletSpeed;
+
+          // 如果是RangedWeapon類型，則使用其提供的參數
+          if (weapon is RangedWeapon) {
+            final bulletParams = weapon.getBulletParameters();
+            bulletSpeed = bulletParams['speed'] as double;
+          }
+
           // 創建子彈並添加到遊戲世界
           final bullet = BulletComponent(
             position: playerCenter.clone(),
             direction: direction,
-            speed: 400, // 子彈速度，可以根據武器類型調整
-            damage:
-                weapon.damage.toDouble(), // 轉換為 double 以符合 BulletComponent 參數類型
-            range:
-                weapon.range.toDouble(), // 轉換為 double 以符合 BulletComponent 參數類型
-            color: _getBulletColor(weapon), // 根據武器類型設定子彈顏色
+            speed: bulletSpeed, // 使用從武器獲取的子彈速度
+            damage: weapon.damage.toDouble(),
+            range: weapon.range.toDouble(),
+            color: _getBulletColor(weapon),
           );
 
           // 將子彈添加到遊戲世界
           game.gameWorld.add(bullet);
 
-          debugPrint('發射子彈：${weapon.name}，方向：$direction');
+          debugPrint('發射子彈：${weapon.name}，方向：$direction，速度：$bulletSpeed');
         } else {
           debugPrint('魔力不足，無法射擊！');
         }

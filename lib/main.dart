@@ -6,6 +6,7 @@ import 'package:flame_riverpod/flame_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'components/map_component.dart';
 import 'models/weapon.dart';
 import 'providers/items_data_provider.dart';
 import 'providers/player_provider.dart';
@@ -59,36 +60,48 @@ class NightAndRainGame extends FlameGame
         HasKeyboardHandlerComponents,
         HasCollisionDetection,
         MouseMovementDetector,
-        TapDetector, // ← 新增這行
+        TapDetector,
         RiverpodGameMixin {
   late final World gameWorld;
   late final CameraComponent _cameraComponent;
   late final PlayerComponent _player;
+  late final MapComponent _mapComponent;
+
+  // 設定固定地圖大小
+  final Vector2 mapSize = Vector2(1500, 1500);
 
   @override
   Future<void> onLoad() async {
     await super.onLoad();
 
-    // world + camera (同之前)
+    // world + camera
     gameWorld = World();
     await add(gameWorld);
     _cameraComponent = CameraComponent(world: gameWorld)
       ..viewfinder.anchor = Anchor.center;
     await add(_cameraComponent);
 
-    // 背景 & 格線 & 玩家 (同之前)…
+    // 添加地圖背景
     gameWorld.add(
       RectangleComponent(
         position: Vector2.zero(),
-        size: size,
+        size: mapSize,
         paint: Paint()..color = Colors.lightGreen,
         priority: 0,
       ),
     );
-    gameWorld.add(_GridComponent(tileSize: 32)..priority = 1);
+
+    // 添加地圖組件（含邊界和障礙物）
+    _mapComponent = MapComponent(mapSize: mapSize);
+    gameWorld.add(_mapComponent);
+
+    // 添加格線
+    gameWorld.add(_GridComponent(tileSize: 32, mapSize: mapSize)..priority = 1);
+
+    // 添加玩家
     _player =
-        PlayerComponent()
-          ..position = size / 2
+        PlayerComponent(mapComponent: _mapComponent)
+          ..position = mapSize / 2
           ..size = Vector2.all(32)
           ..priority = 2;
     gameWorld.add(_player);
@@ -127,17 +140,18 @@ class NightAndRainGame extends FlameGame
 
 class _GridComponent extends Component with HasGameReference<FlameGame> {
   final double tileSize;
+  final Vector2 mapSize;
   final Paint _paint =
       Paint()
-        ..color = Colors.black.withValues(alpha: 0.3)
+        ..color = Colors.black.withAlpha(77)
         ..strokeWidth = 1;
 
-  _GridComponent({this.tileSize = 32});
+  _GridComponent({this.tileSize = 32, required this.mapSize});
 
   @override
   void render(Canvas canvas) {
-    final w = game.size.x;
-    final h = game.size.y;
+    final w = mapSize.x;
+    final h = mapSize.y;
 
     // 繪製垂直線
     for (double x = 0; x <= w; x += tileSize) {
