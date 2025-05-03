@@ -4,6 +4,7 @@ import 'package:flame/game.dart';
 import 'package:flame/input.dart';
 import 'package:flame_riverpod/flame_riverpod.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'components/map_component.dart';
@@ -79,6 +80,9 @@ class NightAndRainGame extends FlameGame
 
   // 當前對話的NPC
   NpcComponent? dialogNpc;
+
+  // 追蹤滑鼠在世界中的位置
+  Vector2 _lastMousePosition = Vector2.zero();
 
   // 設定固定地圖大小
   final Vector2 mapSize = Vector2(1500, 1500);
@@ -233,11 +237,42 @@ class NightAndRainGame extends FlameGame
   }
 
   @override
+  void onMouseMove(PointerHoverInfo info) {
+    super.onMouseMove(info);
+    // 將滑鼠位置從畫布座標轉換為世界座標
+    _lastMousePosition = _cameraComponent.viewfinder.globalToLocal(
+      info.eventPosition.widget,
+    );
+  }
+
+  @override
+  KeyEventResult onKeyEvent(
+    KeyEvent event,
+    Set<LogicalKeyboardKey> keysPressed,
+  ) {
+    final isKeyDown = event is KeyDownEvent || event is KeyRepeatEvent;
+
+    // 檢查是否按下空白鍵
+    if (isKeyDown &&
+        keysPressed.contains(LogicalKeyboardKey.space) &&
+        !overlays.isActive('InventoryOverlay') &&
+        !overlays.isActive('DialogOverlay')) {
+      // 使用最後記錄的滑鼠位置射擊
+      _player.shoot(_lastMousePosition);
+      return KeyEventResult.handled;
+    }
+
+    return super.onKeyEvent(event, keysPressed);
+  }
+
+  @override
   bool onTapDown(TapDownInfo info) {
     // 取得畫布內座標
     final pos = info.eventPosition.widget;
     // 轉換為世界座標
     final worldPos = _cameraComponent.viewfinder.globalToLocal(pos);
+    // 同時更新最後的滑鼠位置
+    _lastMousePosition = worldPos;
     _player.shoot(worldPos);
     return true;
   }

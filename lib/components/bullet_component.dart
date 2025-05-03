@@ -15,11 +15,15 @@ class BulletComponent extends PositionComponent
   final double range;
   final Color color;
   final ItemRarity? rarity; // 新增：子彈稀有度屬性
+  final String trailEffect; // 新增：尾隨效果類型
 
   double _distanceTraveled = 0;
   final Paint _paint;
   bool _hasCollided = false;
   Timer? _trailTimer; // 用於控制尾隨效果生成頻率
+
+  // 內部可繪製組件，用於應用特效
+  late final BulletVisual _bulletVisual;
 
   BulletComponent({
     required Vector2 position,
@@ -30,6 +34,7 @@ class BulletComponent extends PositionComponent
     this.color = Colors.yellow,
     this.rarity, // 稀有度參數
     double size = 6.0, // 可自定義大小
+    this.trailEffect = 'none', // 尾隨效果類型
   }) : _paint = Paint()..color = color,
        super(
          position: position,
@@ -44,8 +49,21 @@ class BulletComponent extends PositionComponent
     // 添加碰撞形狀，使用動態大小
     add(CircleHitbox(radius: size.x / 2)..collisionType = CollisionType.active);
 
+    // 添加可視化組件
+    _bulletVisual = BulletVisual(radius: size.x / 2, color: color);
+    add(_bulletVisual);
+
     // 根據稀有度添加視覺效果
     _addRarityVisualEffects();
+
+    // 如果有尾隨效果，設置定時器
+    if (trailEffect != 'none') {
+      _trailTimer = Timer(
+        0.03, // 每0.03秒產生一次尾隨效果
+        onTick: _generateTrailEffect,
+        repeat: true,
+      );
+    }
   }
 
   void _addRarityVisualEffects() {
@@ -66,8 +84,8 @@ class BulletComponent extends PositionComponent
         );
         break;
       case ItemRarity.silverBull:
-        // 銀牛級：添加顏色變化效果
-        add(
+        // 銀牛級：添加顏色變化效果 - 現在應用於 _bulletVisual
+        _bulletVisual.add(
           ColorEffect(
             Colors.white,
             EffectController(
@@ -81,7 +99,7 @@ class BulletComponent extends PositionComponent
         );
         break;
       case ItemRarity.goldBull:
-        // 金牛級：添加縮放和顏色效果
+        // 金牛級：添加縮放效果
         add(
           SequenceEffect([
             ScaleEffect.by(Vector2.all(1.2), EffectController(duration: 0.3)),
@@ -91,10 +109,76 @@ class BulletComponent extends PositionComponent
             ),
           ], infinite: true),
         );
-        // 添加發光效果 (通過設置 paint)
-        _paint
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.0)
-          ..color = color.withOpacity(0.8);
+        // 添加發光效果
+        _bulletVisual.addGlowEffect();
+        break;
+    }
+  }
+
+  void _generateTrailEffect() {
+    if (trailEffect == 'none') return;
+
+    // 根據尾隨效果類型產生不同的尾跡
+    switch (trailEffect) {
+      case 'simple':
+        // 簡單尾跡：小圓點
+        final trailDot = CircleComponent(
+          radius: 2,
+          paint: Paint()..color = color.withOpacity(0.5),
+          position: position.clone(),
+          anchor: Anchor.center,
+        );
+        trailDot.add(
+          OpacityEffect.fadeOut(
+            EffectController(duration: 0.3),
+            onComplete: () => trailDot.removeFromParent(),
+          ),
+        );
+        parent?.add(trailDot);
+        break;
+
+      case 'shine':
+        // 發光尾跡：帶模糊的小圓點
+        final shineDot = CircleComponent(
+          radius: 3,
+          paint:
+              Paint()
+                ..color = color.withOpacity(0.7)
+                ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
+          position: position.clone(),
+          anchor: Anchor.center,
+        );
+        shineDot.add(
+          OpacityEffect.fadeOut(
+            EffectController(duration: 0.5),
+            onComplete: () => shineDot.removeFromParent(),
+          ),
+        );
+        parent?.add(shineDot);
+        break;
+
+      case 'particles':
+        // 粒子尾跡：多個粒子效果
+        final particleComponent = ParticleSystemComponent(
+          particle: Particle.generate(
+            count: 5,
+            lifespan: 0.4,
+            generator:
+                (i) => AcceleratedParticle(
+                  acceleration: Vector2(0, 10),
+                  speed: Vector2(
+                    (direction.x * -20) + 40 * (i / 10 - 0.5),
+                    (direction.y * -20) + 40 * (i / 10 - 0.5),
+                  ),
+                  position: position.clone(),
+                  child: CircleParticle(
+                    radius: 1.5,
+                    paint: Paint()..color = color.withOpacity(0.6),
+                  ),
+                ),
+          ),
+        );
+        parent?.add(particleComponent);
         break;
     }
   }
@@ -127,7 +211,7 @@ class BulletComponent extends PositionComponent
   @override
   void render(Canvas canvas) {
     super.render(canvas);
-    canvas.drawCircle(Offset.zero, size.x / 2, _paint);
+    // 不在這裡繪製，而是通過子組件繪製
   }
 
   void _createExplosion(Color explosionColor, double explosionSize) {
@@ -199,5 +283,22 @@ class BulletComponent extends PositionComponent
     //   _createExplosion(Colors.red, 15);
     //   removeFromParent();
     // }
+  }
+}
+
+/// 子彈視覺化組件，專門用於顯示和應用特效
+class BulletVisual extends CircleComponent {
+  BulletVisual({required double radius, required Color color})
+    : super(
+        radius: radius,
+        paint: Paint()..color = color,
+        anchor: Anchor.center,
+      );
+
+  /// 添加發光效果
+  void addGlowEffect() {
+    paint
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.0)
+      ..color = paint.color.withOpacity(0.8);
   }
 }

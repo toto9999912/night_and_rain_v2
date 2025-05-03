@@ -100,15 +100,8 @@ class PlayerComponent extends PositionComponent
       ..clear()
       ..addAll(keysPressed);
 
-    // 空格鍵射擊（作為備用射擊方式）
-    if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.space) {
-      debugPrint('空格鍵射擊');
-      _isShooting = true;
-    } else if (event is KeyUpEvent &&
-        event.logicalKey == LogicalKeyboardKey.space) {
-      debugPrint('空格鍵停止射擊');
-      _isShooting = false;
-    }
+    // 這里不再處理空格鍵射擊，因為已經在 NightAndRainGame 中處理
+    // 空格鍵射擊已移至 NightAndRainGame.onKeyEvent 方法中處理
 
     // E鍵與NPC對話
     if (event is KeyDownEvent &&
