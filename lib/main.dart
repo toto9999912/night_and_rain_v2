@@ -21,6 +21,7 @@ import 'ui/overlays/hud_overlay.dart';
 import 'components/player_component.dart';
 import 'ui/overlays/player_dashboard_overlay.dart';
 import 'ui/overlays/dialog_overlay.dart';
+import 'ui/overlays/shop_overlay.dart';
 
 final GlobalKey<RiverpodAwareGameWidgetState<NightAndRainGame>> gameWidgetKey =
     GlobalKey<RiverpodAwareGameWidgetState<NightAndRainGame>>();
@@ -59,6 +60,9 @@ class NightAndRainApp extends StatelessWidget {
           'DialogOverlay':
               (context, game) =>
                   DialogOverlay(game: game, npc: game.dialogNpc!),
+          'ShopOverlay':
+              (context, game) =>
+                  ShopOverlay(game: game, shopkeeper: game.dialogNpc!),
         },
         initialActiveOverlays: const ['HudOverlay'],
       ),

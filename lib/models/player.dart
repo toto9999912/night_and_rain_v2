@@ -26,7 +26,7 @@ class Player {
     this.mana = 100,
     this.maxMana = 100,
     this.speed = 150.0,
-    this.money = 0,
+    this.money = 1000, // 初始金幣設為1000
     Weapon? weapon,
     Armor? armor,
     String? id,
