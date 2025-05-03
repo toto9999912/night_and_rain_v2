@@ -206,18 +206,18 @@ class NightAndRainGame extends FlameGame
     inventoryNotifier.addItem(giftWeapons);
 
     // 為測試目的，添加所有等級的手槍
-    inventoryNotifier.addItem(itemsData['pistol_ricebug'] as Weapon); // 米蟲級
-    inventoryNotifier.addItem(itemsData['pistol_silver'] as Weapon); // 銀牛級
-    inventoryNotifier.addItem(itemsData['pistol_gold'] as Weapon); // 金牛級
+    // inventoryNotifier.addItem(itemsData['pistol_ricebug'] as Weapon); // 米蟲級
+    // inventoryNotifier.addItem(itemsData['pistol_silver'] as Weapon); // 銀牛級
+    // inventoryNotifier.addItem(itemsData['pistol_gold'] as Weapon); // 金牛級
 
-    // 為測試目的，添加所有等級的霰彈槍
-    inventoryNotifier.addItem(itemsData['shotgun_ricebug'] as Weapon); // 米蟲級
+    // // 為測試目的，添加所有等級的霰彈槍
+    // inventoryNotifier.addItem(itemsData['shotgun_ricebug'] as Weapon); // 米蟲級
     inventoryNotifier.addItem(itemsData['shotgun_silver'] as Weapon); // 銀牛級
     inventoryNotifier.addItem(itemsData['shotgun_gold'] as Weapon); // 金牛級
 
-    // 為測試目的，添加高等級機關槍和狙擊槍
-    inventoryNotifier.addItem(itemsData['machinegun_gold'] as Weapon);
-    inventoryNotifier.addItem(itemsData['sniper_gold'] as Weapon);
+    // // 為測試目的，添加高等級機關槍和狙擊槍
+    // inventoryNotifier.addItem(itemsData['machinegun_gold'] as Weapon);
+    // inventoryNotifier.addItem(itemsData['sniper_gold'] as Weapon);
 
     playerNotifier.equipWeapon(initialWeapon);
 

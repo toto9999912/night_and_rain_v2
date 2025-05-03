@@ -3,11 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/game.dart';
 import 'package:night_and_rain_v2/enum/item_type.dart';
 import 'package:night_and_rain_v2/models/consumable.dart';
+import 'package:night_and_rain_v2/ui/widgets/item_decorations.dart';
 
 import '../../components/npc_component.dart';
 import '../../managers/shop_manager.dart';
 import '../../models/item.dart';
 import '../../models/inventory.dart';
+import '../../models/armor.dart';
+import '../../models/weapon.dart';
 import '../../providers/inventory_provider.dart';
 import '../../providers/player_provider.dart';
 import '../../enum/item_rarity.dart';
@@ -28,6 +31,13 @@ class _ShopOverlayState extends ConsumerState<ShopOverlay> {
   // 用於顯示提示信息
   final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey =
       GlobalKey<ScaffoldMessengerState>();
+
+  // 背包中選中的物品
+  Item? _selectedInventoryItem;
+  // 懸停顯示的物品
+  Item? _hoveredItem;
+  // 懸停位置
+  Offset? _hoverPosition;
 
   @override
   void initState() {
@@ -54,7 +64,7 @@ class _ShopOverlayState extends ConsumerState<ShopOverlay> {
           color: Colors.black.withOpacity(0.7),
           child: Center(
             child: Container(
-              width: MediaQuery.of(context).size.width * 0.8,
+              width: MediaQuery.of(context).size.width * 0.9, // 增加寬度以顯示背包
               height: MediaQuery.of(context).size.height * 0.8,
               decoration: BoxDecoration(
                 color: Colors.black87,
@@ -77,8 +87,14 @@ class _ShopOverlayState extends ConsumerState<ShopOverlay> {
                           child: _buildItemsList(shopItems, shopManager),
                         ),
 
-                        // 右側物品詳情和操作按鈕
+                        // 中間物品詳情和操作按鈕
                         Expanded(flex: 2, child: _buildItemDetails(inventory)),
+
+                        // 右側玩家背包區域
+                        Expanded(
+                          flex: 3,
+                          child: _buildPlayerInventory(inventory),
+                        ),
                       ],
                     ),
                   ),
@@ -203,12 +219,8 @@ class _ShopOverlayState extends ConsumerState<ShopOverlay> {
                           },
                           leading: Container(
                             padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: item.rarity.color.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: item.rarity.color.withOpacity(0.5),
-                              ),
+                            decoration: ItemDecorations.getItemIconDecoration(
+                              item.rarity,
                             ),
                             child: Icon(item.icon, color: item.rarity.color),
                           ),
@@ -295,13 +307,8 @@ class _ShopOverlayState extends ConsumerState<ShopOverlay> {
                     children: [
                       Container(
                         padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: _selectedItem!.rarity.color.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: _selectedItem!.rarity.color.withOpacity(0.5),
-                            width: 2,
-                          ),
+                        decoration: ItemDecorations.getItemIconDecoration(
+                          _selectedItem!.rarity,
                         ),
                         child: Icon(
                           _selectedItem!.icon,
@@ -433,40 +440,40 @@ class _ShopOverlayState extends ConsumerState<ShopOverlay> {
     );
   }
 
-  // 物品屬性展示
-  Widget _buildItemStats(Item item) {
-    // 取得物品的各種屬性並顯示
-    String statsText = "";
+  // // 物品屬性展示
+  // Widget _buildItemStats(Item item) {
+  //   // 取得物品的各種屬性並顯示
+  //   String statsText = "";
 
-    // 使用 item.getDescription() 中的格式來展示屬性
-    // 但不包括名稱、描述等已在其他地方顯示的內容
-    if (item.weaponItem != null) {
-      statsText = item.weaponItem!.getStats();
-    } else {
-      // 根據物品類型顯示不同的屬性
-      switch (item.type) {
-        case ItemType.consumable:
-          if (item is Consumable) {
-            if (item.healthRestore > 0) {
-              statsText += "生命恢復: +${item.healthRestore}\n";
-            }
-            if (item.manaRestore > 0) {
-              statsText += "魔力恢復: +${item.manaRestore}\n";
-            }
-          }
-          break;
-        // case ItemType.armor:
-        //   if (item is Armor) {
-        //     statsText += "防禦力: +${item.defense}\n";
-        //   }
-        //   break;
-        default:
-          statsText = "暫無詳細屬性";
-      }
-    }
+  //   // 使用 item.getDescription() 中的格式來展示屬性
+  //   // 但不包括名稱、描述等已在其他地方顯示的內容
+  //   if (item.weaponItem != null) {
+  //     statsText = item.weaponItem!.getStats();
+  //   } else {
+  //     // 根據物品類型顯示不同的屬性
+  //     switch (item.type) {
+  //       case ItemType.consumable:
+  //         if (item is Consumable) {
+  //           if (item.healthRestore > 0) {
+  //             statsText += "生命恢復: +${item.healthRestore}\n";
+  //           }
+  //           if (item.manaRestore > 0) {
+  //             statsText += "魔力恢復: +${item.manaRestore}\n";
+  //           }
+  //         }
+  //         break;
+  //       // case ItemType.armor:
+  //       //   if (item is Armor) {
+  //       //     statsText += "防禦力: +${item.defense}\n";
+  //       //   }
+  //       //   break;
+  //       default:
+  //         statsText = "暫無詳細屬性";
+  //     }
+  //   }
 
-    return Text(statsText, style: const TextStyle(color: Colors.white70));
-  }
+  //   return Text(statsText, style: const TextStyle(color: Colors.white70));
+  // }
 
   // 購買物品的方法
   void _purchaseItem(Item item) {
@@ -527,5 +534,478 @@ class _ShopOverlayState extends ConsumerState<ShopOverlay> {
       case ItemType.quest:
         return "任務物品";
     }
+  }
+
+  // 玩家背包部分
+  Widget _buildPlayerInventory(Inventory inventory) {
+    final player = ref.watch(playerProvider);
+
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: const BoxDecoration(
+        border: Border(left: BorderSide(color: Colors.white24, width: 1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 背包標題和金幣顯示
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                "我的背包",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.monetization_on,
+                    color: Colors.amber,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    "${player.money}",
+                    style: const TextStyle(
+                      color: Colors.amber,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          // 物品數量顯示
+          Text(
+            "物品: ${inventory.items.length}/${inventory.capacity}",
+            style: const TextStyle(color: Colors.white70, fontSize: 14),
+          ),
+          const SizedBox(height: 8),
+
+          // 背包物品列表
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.black26,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.white24),
+              ),
+              padding: const EdgeInsets.all(8),
+              child:
+                  inventory.items.isEmpty
+                      ? const Center(
+                        child: Text(
+                          "背包是空的",
+                          style: TextStyle(color: Colors.white60),
+                        ),
+                      )
+                      : GridView.builder(
+                        itemCount: inventory.capacity,
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 4, // 4列
+                              mainAxisSpacing: 8,
+                              crossAxisSpacing: 8,
+                              childAspectRatio: 1.0, // 保持方形
+                            ),
+                        itemBuilder: (_, idx) {
+                          final hasItem = idx < inventory.items.length;
+                          final item = hasItem ? inventory.items[idx] : null;
+
+                          return MouseRegion(
+                            onEnter:
+                                hasItem
+                                    ? (event) {
+                                      setState(() {
+                                        _hoveredItem = item;
+                                        _hoverPosition = event.position;
+                                      });
+                                    }
+                                    : null,
+                            onHover:
+                                hasItem
+                                    ? (event) {
+                                      setState(() {
+                                        _hoverPosition = event.position;
+                                      });
+                                    }
+                                    : null,
+                            onExit:
+                                hasItem
+                                    ? (_) {
+                                      setState(() {
+                                        _hoveredItem = null;
+                                        _hoverPosition = null;
+                                      });
+                                    }
+                                    : null,
+                            child: GestureDetector(
+                              onTap:
+                                  hasItem
+                                      ? () {
+                                        // 選中背包物品
+                                        setState(() {
+                                          _selectedInventoryItem =
+                                              _selectedInventoryItem == item
+                                                  ? null
+                                                  : item;
+                                        });
+                                      }
+                                      : null,
+                              child: Container(
+                                decoration:
+                                    hasItem
+                                        ? ItemDecorations.getItemBorderDecoration(
+                                          item!.rarity,
+                                          isSelected:
+                                              item == _selectedInventoryItem,
+                                        )
+                                        : BoxDecoration(
+                                          color: Colors.black38,
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
+                                          border: Border.all(
+                                            color: Colors.white38,
+                                          ),
+                                        ),
+                                child:
+                                    hasItem
+                                        ? Stack(
+                                          children: [
+                                            // 物品圖示
+                                            Center(
+                                              child: Icon(
+                                                item!.icon,
+                                                color: item.rarity.color,
+                                                size: 24,
+                                              ),
+                                            ),
+
+                                            // 物品稀有度顯示
+                                            Positioned(
+                                              top: 2,
+                                              left: 2,
+                                              child: Container(
+                                                width: 8,
+                                                height: 8,
+                                                decoration: BoxDecoration(
+                                                  color: item.rarity.color
+                                                      .withOpacity(0.7),
+                                                  shape: BoxShape.circle,
+                                                ),
+                                              ),
+                                            ),
+
+                                            // 如果是可堆疊物品且數量大於1，顯示數量
+                                            if (item.isStackable &&
+                                                item.quantity > 1)
+                                              Positioned(
+                                                right: 2,
+                                                bottom: 2,
+                                                child: Container(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 4,
+                                                        vertical: 2,
+                                                      ),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.black87,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          4,
+                                                        ),
+                                                    border: Border.all(
+                                                      color: Colors.white24,
+                                                    ),
+                                                  ),
+                                                  child: Text(
+                                                    '${item.quantity}',
+                                                    style: const TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 9,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                          ],
+                                        )
+                                        : null,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+            ),
+          ),
+
+          // 如果選擇了背包中的物品，顯示該物品的詳情
+          if (_selectedInventoryItem != null)
+            Container(
+              margin: const EdgeInsets.only(top: 8),
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.black45,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: _selectedInventoryItem!.rarity.color.withOpacity(0.5),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        _selectedInventoryItem!.icon,
+                        color: _selectedInventoryItem!.rarity.color,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _selectedInventoryItem!.name,
+                          style: TextStyle(
+                            color: _selectedInventoryItem!.rarity.color,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      if (_selectedInventoryItem!.price > 0)
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.monetization_on,
+                              color: Colors.amber,
+                              size: 12,
+                            ),
+                            const SizedBox(width: 2),
+                            Text(
+                              '${_selectedInventoryItem!.price}',
+                              style: const TextStyle(
+                                color: Colors.amber,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _selectedInventoryItem!.description,
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  // 顯示物品詳情卡片
+  Widget _buildItemDetailCard(Item item) {
+    return Card(
+      color: Colors.black87,
+      elevation: 8,
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(color: item.rarity.color.withOpacity(0.7), width: 2),
+        // 添加陰影效果，金牛級物品會更明顯發光
+      ),
+      child: Container(
+        constraints: BoxConstraints(maxWidth: 200),
+        padding: EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          boxShadow:
+              item.rarity == ItemRarity.goldBull
+                  ? [
+                    BoxShadow(
+                      color: item.rarity.color.withOpacity(0.2),
+                      spreadRadius: 1,
+                      blurRadius: 8,
+                      offset: const Offset(0, 0),
+                    ),
+                  ]
+                  : null,
+          gradient:
+              item.rarity == ItemRarity.silverBull ||
+                      item.rarity == ItemRarity.goldBull
+                  ? RadialGradient(
+                    colors: [
+                      item.rarity.color.withOpacity(0.05),
+                      Colors.transparent,
+                    ],
+                    center: Alignment.center,
+                    radius: 0.8,
+                  )
+                  : null,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 物品名稱和圖標
+            Row(
+              children: [
+                Container(
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: Colors.black45,
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: Colors.white24),
+                  ),
+                  child: Icon(item.icon, color: item.rarity.color, size: 20),
+                ),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    item.name,
+                    style: TextStyle(
+                      color: item.rarity.color,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            // 物品描述
+            if (item.description.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 8, bottom: 8),
+                child: Text(
+                  item.description,
+                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+              ),
+
+            // 物品屬性 - 依據物品類型顯示不同屬性
+            _buildItemStats(item),
+
+            // 物品底部資訊 (堆疊、價格等)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                if (item.isStackable)
+                  Text(
+                    '數量: ${item.quantity}',
+                    style: TextStyle(color: Colors.white70, fontSize: 11),
+                  ),
+                Row(
+                  children: [
+                    Icon(Icons.monetization_on, color: Colors.amber, size: 12),
+                    SizedBox(width: 2),
+                    Text(
+                      '${item.price}',
+                      style: TextStyle(color: Colors.amber, fontSize: 11),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 根據物品類型構建不同的屬性顯示
+  Widget _buildItemStats(Item item) {
+    if (item is Weapon) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildStatRow('武器類型', item.weaponType.name),
+          _buildStatRow('傷害', item.damage.toString(), color: Colors.redAccent),
+          _buildStatRow('攻擊速度', item.attackSpeed.toString()),
+          _buildStatRow('攻擊範圍', item.range.toString()),
+          _buildStatRow('冷卻時間', '${item.cooldown}秒'),
+          if (item.manaCost > 0)
+            _buildStatRow(
+              '魔力消耗',
+              item.manaCost.toString(),
+              color: Colors.blueAccent,
+            ),
+          SizedBox(height: 4),
+        ],
+      );
+    } else if (item is Consumable) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildStatRow('類型', '消耗品'),
+          if (item.healthRestore > 0)
+            _buildStatRow(
+              '生命恢復',
+              '+${item.healthRestore}',
+              color: Colors.redAccent,
+            ),
+          if (item.manaRestore > 0)
+            _buildStatRow(
+              '魔力恢復',
+              '+${item.manaRestore}',
+              color: Colors.blueAccent,
+            ),
+          SizedBox(height: 4),
+        ],
+      );
+    } else if (item is Armor) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildStatRow('類型', '防具'),
+          _buildStatRow(
+            '防禦力',
+            item.defense.toString(),
+            color: Colors.blueAccent,
+          ),
+          SizedBox(height: 4),
+        ],
+      );
+    }
+
+    return SizedBox.shrink(); // 默認為空
+  }
+
+  // 構建屬性行顯示
+  Widget _buildStatRow(String label, String value, {Color? color}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          Text(
+            '$label: ',
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              color: color ?? Colors.white,
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
