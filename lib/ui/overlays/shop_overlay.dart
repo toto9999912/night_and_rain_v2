@@ -13,7 +13,6 @@ import '../../models/armor.dart';
 import '../../models/weapon.dart';
 import '../../providers/inventory_provider.dart';
 import '../../providers/player_provider.dart';
-import '../../enum/item_rarity.dart';
 
 class ShopOverlay extends ConsumerStatefulWidget {
   final FlameGame game;
@@ -809,117 +808,6 @@ class _ShopOverlayState extends ConsumerState<ShopOverlay> {
               ),
             ),
         ],
-      ),
-    );
-  }
-
-  // 顯示物品詳情卡片
-  Widget _buildItemDetailCard(Item item) {
-    return Card(
-      color: Colors.black87,
-      elevation: 8,
-      margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: BorderSide(color: item.rarity.color.withOpacity(0.7), width: 2),
-        // 添加陰影效果，金牛級物品會更明顯發光
-      ),
-      child: Container(
-        constraints: BoxConstraints(maxWidth: 200),
-        padding: EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          boxShadow:
-              item.rarity == ItemRarity.goldBull
-                  ? [
-                    BoxShadow(
-                      color: item.rarity.color.withOpacity(0.2),
-                      spreadRadius: 1,
-                      blurRadius: 8,
-                      offset: const Offset(0, 0),
-                    ),
-                  ]
-                  : null,
-          gradient:
-              item.rarity == ItemRarity.silverBull ||
-                      item.rarity == ItemRarity.goldBull
-                  ? RadialGradient(
-                    colors: [
-                      item.rarity.color.withOpacity(0.05),
-                      Colors.transparent,
-                    ],
-                    center: Alignment.center,
-                    radius: 0.8,
-                  )
-                  : null,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // 物品名稱和圖標
-            Row(
-              children: [
-                Container(
-                  width: 30,
-                  height: 30,
-                  decoration: BoxDecoration(
-                    color: Colors.black45,
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: Colors.white24),
-                  ),
-                  child: Icon(item.icon, color: item.rarity.color, size: 20),
-                ),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    item.name,
-                    style: TextStyle(
-                      color: item.rarity.color,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            // 物品描述
-            if (item.description.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 8, bottom: 8),
-                child: Text(
-                  item.description,
-                  style: TextStyle(color: Colors.white70, fontSize: 12),
-                ),
-              ),
-
-            // 物品屬性 - 依據物品類型顯示不同屬性
-            _buildItemStats(item),
-
-            // 物品底部資訊 (堆疊、價格等)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                if (item.isStackable)
-                  Text(
-                    '數量: ${item.quantity}',
-                    style: TextStyle(color: Colors.white70, fontSize: 11),
-                  ),
-                Row(
-                  children: [
-                    Icon(Icons.monetization_on, color: Colors.amber, size: 12),
-                    SizedBox(width: 2),
-                    Text(
-                      '${item.price}',
-                      style: TextStyle(color: Colors.amber, fontSize: 11),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ],
-        ),
       ),
     );
   }

@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/components.dart';
 
@@ -7,10 +8,37 @@ import '../models/item.dart';
 import '../models/player.dart';
 import '../models/weapon.dart';
 import 'inventory_provider.dart';
+import 'player_buffs_provider.dart';
 
 // 基本 Player Provider
 final playerProvider = StateNotifierProvider<PlayerNotifier, Player>((ref) {
   return PlayerNotifier(ref);
+});
+
+// 結合加成效果的玩家速度Provider
+final playerSpeedProvider = Provider<double>((ref) {
+  final player = ref.watch(playerProvider);
+  final buffs = ref.watch(playerBuffsProvider);
+
+  // 基礎速度加上所有未過期的速度加成
+  return player.speed + buffs.speedBuffValue;
+});
+
+// 結合加成效果的玩家最大生命值Provider
+final playerMaxHealthProvider = Provider<int>((ref) {
+  final player = ref.watch(playerProvider);
+  final buffs = ref.watch(playerBuffsProvider);
+
+  // 基礎最大生命值加上所有未過期的最大生命值加成
+  return player.maxHealth + buffs.maxHealthBuffValue.toInt();
+});
+
+// 當前玩家生命值Provider - 確保界面一致獲取相同的生命值
+final playerHealthProvider = Provider<(int current, int max)>((ref) {
+  final player = ref.watch(playerProvider);
+  final maxHealth = ref.watch(playerMaxHealthProvider);
+
+  return (player.health, maxHealth);
 });
 
 // 便於 UI 直接訪問當前武器的 Provider
@@ -28,7 +56,31 @@ class PlayerNotifier extends StateNotifier<Player> {
 
   // 生命值相關方法
   void heal(int amount) {
-    state = state.withHealing(amount);
+    debugPrint('開始治療: 嘗試恢復 $amount 點生命值');
+    try {
+      // 獲取包含加成效果的最大生命值
+      // 這裡直接使用 state.maxHealth 而不是 playerMaxHealthProvider
+      // 避免產生循環依賴
+      final maxHealthBase = state.maxHealth;
+      final buffs = _ref.read(playerBuffsProvider);
+      final maxHealthWithBuff =
+          maxHealthBase + buffs.maxHealthBuffValue.toInt();
+
+      debugPrint('基礎最大生命值: $maxHealthBase, 加成後最大生命值: $maxHealthWithBuff');
+
+      // 計算新的生命值，使用帶加成的最大生命值作為上限
+      final newHealth =
+          state.health + amount > maxHealthWithBuff
+              ? maxHealthWithBuff
+              : state.health + amount;
+
+      debugPrint('當前生命值: ${state.health}, 恢復後生命值: $newHealth');
+
+      // 更新玩家狀態
+      state = state.copyWith(health: newHealth);
+    } catch (e) {
+      debugPrint('治療過程中出錯: $e');
+    }
   }
 
   void takeDamage(int amount) {

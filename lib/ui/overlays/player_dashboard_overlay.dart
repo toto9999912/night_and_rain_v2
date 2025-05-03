@@ -641,13 +641,18 @@ class InventoryItemCard extends StatelessWidget {
 }
 
 // 角色狀態卡片
-class PlayerStatusCard extends StatelessWidget {
+class PlayerStatusCard extends ConsumerWidget {
   final dynamic player;
 
   const PlayerStatusCard({super.key, required this.player});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // 使用統一的生命值Provider
+    final healthData = ref.watch(playerHealthProvider);
+    final currentHealth = healthData.$1;
+    final maxHealth = healthData.$2;
+
     return Container(
       padding: EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -668,14 +673,14 @@ class PlayerStatusCard extends StatelessWidget {
           const SizedBox(height: 8),
           StatusBar(
             label: 'HP',
-            value: player.health / 100,
+            value: currentHealth / maxHealth, // 使用統一的生命值數據
             color: Colors.red.shade400,
-            label2: '${player.health}/${player.maxHealth}',
+            label2: '$currentHealth/$maxHealth', // 顯示統一的生命值數據
           ),
           const SizedBox(height: 6),
           StatusBar(
             label: 'MP',
-            value: player.mana / 100,
+            value: player.mana / player.maxMana,
             color: Colors.blue.shade400,
             label2: '${player.mana}/${player.maxMana}',
           ),
@@ -685,7 +690,7 @@ class PlayerStatusCard extends StatelessWidget {
               Icon(Icons.bolt, color: Colors.orange, size: 18),
               const SizedBox(width: 8),
               Text(
-                '移動速度: ${player.speed.toStringAsFixed(0)}',
+                '移動速度: ${ref.watch(playerSpeedProvider).toStringAsFixed(0)}', // 顯示包含加成的速度
                 style: TextStyle(color: Colors.white),
               ),
             ],

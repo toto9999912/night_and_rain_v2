@@ -14,6 +14,8 @@ class HudOverlay extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final player = ref.watch(playerProvider);
+    // 使用統一的生命值Provider
+    final healthData = ref.watch(playerHealthProvider);
 
     // final weapon = ref.watch(currentWeaponProvider);
     final screenSize = MediaQuery.of(context).size;
@@ -29,7 +31,11 @@ class HudOverlay extends ConsumerWidget {
             Positioned(
               top: 16,
               left: 16,
-              child: StatusGroup(health: player.health, mana: player.mana),
+              child: StatusGroup(
+                health: healthData.$1, // 使用統一的當前生命值
+                maxHealth: healthData.$2, // 使用統一的最大生命值
+                mana: player.mana,
+              ),
             ),
 
             // 左下角武器展示

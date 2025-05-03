@@ -1,4 +1,5 @@
 // 使用 Riverpod 管理庫存
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../enum/weapon_type.dart';
@@ -52,6 +53,8 @@ class InventoryNotifier extends StateNotifier<Inventory> {
 
   // 使用物品 - 會與 PlayerNotifier 互動
   void useItem(Item item) {
+    debugPrint('開始使用物品: ${item.name} (ID: ${item.id})');
+
     final playerNotifier = _ref.read(playerProvider.notifier);
     final player = _ref.read(playerProvider);
 
@@ -65,23 +68,42 @@ class InventoryNotifier extends StateNotifier<Inventory> {
         // 裝備護甲
         playerNotifier.equipArmor(item);
       } else if (item is Consumable) {
-        // 處理消耗品的效果
-        if (item.healthRestore > 0) {
-          playerNotifier.heal(item.healthRestore);
-        }
+        debugPrint(
+          '使用消耗品: ${item.name}，健康恢復值: ${item.healthRestore}，魔法恢復值: ${item.manaRestore}',
+        );
 
-        if (item.manaRestore > 0) {
-          playerNotifier.addMana(item.manaRestore);
-        }
+        try {
+          // 處理消耗品的效果，避免直接依賴循環引用
+          if (item.healthRestore > 0) {
+            // 使用正確的healing方法恢復生命值，它會考慮最大生命值（含加成）
+            playerNotifier.heal(item.healthRestore);
+            debugPrint(
+              '恢復${item.healthRestore}點生命值，當前生命值: ${_ref.read(playerProvider).health}',
+            );
+          }
 
-        // 如果是消耗品，使用後減少數量
-        if (item.isStackable) {
-          removeItem(item, quantityToRemove: 1);
+          if (item.manaRestore > 0) {
+            playerNotifier.addMana(item.manaRestore);
+            debugPrint(
+              '恢復${item.manaRestore}點魔力值，當前魔力值: ${_ref.read(playerProvider).mana}',
+            );
+          }
+
+          // 如果是消耗品，使用後減少數量
+          if (item.isStackable) {
+            removeItem(item, quantityToRemove: 1);
+            debugPrint('物品使用後數量減少1');
+          }
+        } catch (e) {
+          debugPrint('使用消耗品時出錯: $e');
         }
       } else {
         // 其他類型物品的使用邏輯 - 用 applyEffects 獲取效果描述，但實際效果由 Provider 實現
+        debugPrint('使用其他類型物品: ${item.name}');
         item.applyEffects(player);
       }
+    } else {
+      debugPrint('物品不在背包中，無法使用');
     }
   }
 

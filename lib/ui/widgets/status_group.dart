@@ -1,22 +1,41 @@
 // 狀態條組
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../providers/player_buffs_provider.dart';
+import '../../providers/player_provider.dart';
 
-class StatusGroup extends StatelessWidget {
+class StatusGroup extends ConsumerWidget {
   final int health;
   final int mana;
+  // 添加最大生命值參數
+  final int? maxHealth;
 
-  const StatusGroup({super.key, required this.health, required this.mana});
+  const StatusGroup({
+    super.key,
+    required this.health,
+    required this.mana,
+    this.maxHealth,
+  });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // 獲取玩家狀態
+
+    // 使用傳入的最大生命值或從Provider獲取
+    // 確保有一個預設值，避免null值
+    final actualMaxHealth =
+        maxHealth ?? ref.watch(playerMaxHealthProvider) ?? 100;
+    // 獲取玩家加成效果
+    final buffs = ref.watch(playerBuffsProvider).activeBuffs;
+
     return Column(
       mainAxisSize: MainAxisSize.min, // 確保緊湊布局
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // 生命值條
         _StatusBar(
-          value: health / 100,
-          maxValue: 100,
+          value: (health / actualMaxHealth).clamp(0.0, 1.0),
+          maxValue: actualMaxHealth,
           currentValue: health,
           barColor: const Color(0xFFF24C6D),
           backgroundColor: const Color(0x99423042),
@@ -28,7 +47,7 @@ class StatusGroup extends StatelessWidget {
 
         // 魔力值條
         _StatusBar(
-          value: mana / 100,
+          value: (mana / 100).clamp(0.0, 1.0),
           maxValue: 100,
           currentValue: mana,
           barColor: const Color(0xFF5AB3FF),
@@ -36,6 +55,12 @@ class StatusGroup extends StatelessWidget {
           icon: Icons.auto_awesome,
           width: 160,
         ),
+
+        // 顯示加成效果
+        if (buffs.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          _BuffsDisplay(buffs: buffs),
+        ],
       ],
     );
   }
@@ -150,7 +175,7 @@ class _StatusBar extends StatelessWidget {
                         child: Padding(
                           padding: const EdgeInsets.only(left: 8),
                           child: Text(
-                            '$currentValue',
+                            '$currentValue/$maxValue',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 13,
@@ -173,6 +198,59 @@ class _StatusBar extends StatelessWidget {
               ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+}
+
+// 加成效果顯示組件
+class _BuffsDisplay extends StatelessWidget {
+  final List<PlayerBuff> buffs;
+
+  const _BuffsDisplay({required this.buffs});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 160,
+      decoration: BoxDecoration(
+        color: Colors.black45,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white24),
+      ),
+      padding: const EdgeInsets.all(4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (final buff in buffs)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: buff.color.withOpacity(0.3),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(buff.icon, color: buff.color, size: 12),
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      buff.description,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );
