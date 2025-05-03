@@ -5,8 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flame/events.dart' as flame_events;
 import 'package:flame/collisions.dart';
+import '../enum/item_rarity.dart';
 import '../enum/weapon_type.dart';
 import '../main.dart';
+import '../models/melee_weapon.dart';
 import '../models/ranged_weapon.dart';
 import '../providers/player_provider.dart';
 import '../providers/inventory_provider.dart';
@@ -335,53 +337,60 @@ class PlayerComponent extends PositionComponent
     // 確認 Provider 已初始化
     if (!_isProviderInitialized) return;
 
-    // 獲取玩家當前武器
-    final playerState = ref.read(playerProvider);
-    final weapon = playerState.equippedWeapon;
+    // 計算射擊方向
+    final playerCenter = position + size / 2;
+    final direction = (targetPosition - playerCenter).normalized();
 
-    if (weapon != null) {
-      // 確認武器冷卻已結束
-      if (_shootCooldown <= 0) {
-        // 計算射擊方向
-        final playerCenter = position + size / 2;
-        final direction = (targetPosition - playerCenter).normalized();
+    // 使用 PlayerNotifier 的 attack 方法（會處理魔力消耗和攻擊邏輯）
+    final playerNotifier = ref.read(playerProvider.notifier);
+    final player = ref.read(playerProvider);
+    final weapon = player.equippedWeapon;
 
-        // 使用攻擊方法（會消耗魔力）
-        if (ref.read(playerProvider.notifier).attack(direction)) {
-          // 攻擊成功，設置冷卻
-          _shootCooldown = weapon.cooldown;
-
-          // 獲取子彈速度 - 從武器類型中獲取默認值
-          double bulletSpeed = weapon.weaponType.defaultBulletSpeed;
-
-          // 如果是RangedWeapon類型，則使用其提供的參數
-          if (weapon is RangedWeapon) {
-            final bulletParams = weapon.getBulletParameters();
-            bulletSpeed = bulletParams['speed'] as double;
-          }
-
-          // 檢查是否為霰彈槍類型
-          if (weapon.weaponType == WeaponType.shotgun) {
-            // 霰彈槍發射5個子彈，呈扇形散射
-            _fireShotgunBlast(playerCenter, direction, bulletSpeed, weapon);
-          } else {
-            // 其他武器只發射一個子彈
-            _fireSingleBullet(playerCenter, direction, bulletSpeed, weapon);
-          }
-
-          debugPrint('發射子彈：${weapon.name}，方向：$direction，速度：$bulletSpeed');
-        } else {
-          debugPrint('魔力不足，無法射擊！');
-        }
-      } else {
-        debugPrint('武器冷卻中...');
-      }
-    } else {
+    if (weapon == null) {
       debugPrint('沒有裝備武器！');
+      return;
+    }
+
+    // 檢查武器冷卻
+    if (_shootCooldown > 0) {
+      debugPrint('武器冷卻中...');
+      return;
+    }
+
+    // 嘗試攻擊（PlayerNotifier 會處理魔力消耗）
+    if (playerNotifier.attack(direction)) {
+      // 攻擊成功，設置冷卻
+      _shootCooldown = weapon.cooldown;
+
+      // 獲取子彈速度 - 從武器類型中獲取默認值
+      double bulletSpeed = weapon.weaponType.defaultBulletSpeed;
+
+      // 根據武器類型執行不同的攻擊邏輯
+      if (weapon is RangedWeapon) {
+        // 遠程武器邏輯
+        final bulletParams = weapon.getBulletParameters();
+        bulletSpeed = bulletParams['speed'] as double;
+
+        // 檢查是否為霰彈槍類型
+        if (weapon.weaponType == WeaponType.shotgun) {
+          // 霰彈槍發射多個子彈，呈扇形散射
+          _fireShotgunBlast(playerCenter, direction, bulletSpeed, weapon);
+        } else {
+          // 其他遠程武器只發射一個子彈
+          _fireSingleBullet(playerCenter, direction, bulletSpeed, weapon);
+        }
+      } else if (weapon is MeleeWeapon) {
+        // 近戰武器邏輯 - 可以在這裡添加劍氣效果等
+        // TODO: 實現近戰武器的效果
+      }
+
+      debugPrint('使用武器：${weapon.name}，方向：$direction');
+    } else {
+      debugPrint('無法使用武器！可能是魔力不足');
     }
   }
 
-  // 新增：霰彈槍發射多個子彈的方法
+  // 霰彈槍發射多個子彈的方法
   void _fireShotgunBlast(
     Vector2 origin,
     Vector2 centerDirection,
@@ -391,6 +400,33 @@ class PlayerComponent extends PositionComponent
     // 發射5個子彈，角度偏移
     const int bulletCount = 5;
     const double spreadAngle = 0.3; // 總散射角度（弧度）
+
+    // 檢查是否為 RangedWeapon 類型以獲取更多特效數據
+    Map<String, dynamic> bulletParams = {};
+    ItemRarity? rarity;
+    double size = 6.0;
+    String trailEffect = 'none';
+    Color bulletColor = Colors.lightBlue; // 默認統一顏色
+    WeaponType? weaponType;
+
+    if (weapon is RangedWeapon) {
+      bulletParams = weapon.getBulletParameters();
+      rarity = bulletParams['rarity'] as ItemRarity?;
+      size = bulletParams['size'] as double? ?? 6.0;
+      trailEffect = bulletParams['trailEffect'] as String? ?? 'none';
+      bulletColor = bulletParams['color'] as Color? ?? Colors.lightBlue;
+      weaponType = bulletParams['weaponType'] as WeaponType?;
+    }
+
+    // 霰彈槍特殊處理 - 僅調整大小和速度，顏色保持統一
+    if (weaponType == WeaponType.shotgun) {
+      size *= 1.2; // 霰彈槍彈丸稍大，但保持同一顏色
+      speed *= 0.7; // 霰彈槍彈丸速度減慢，提高可見性
+    }
+
+    debugPrint(
+      '武器發射: 類型=${weapon.weaponType.name}, 彈丸數量=$bulletCount, 彈丸大小=$size, 稀有度=${rarity?.name}',
+    );
 
     for (int i = 0; i < bulletCount; i++) {
       // 計算每個子彈的偏移角度
@@ -412,7 +448,9 @@ class PlayerComponent extends PositionComponent
         range:
             weapon.range.toDouble() *
             (1.0 - 0.2 * (angleOffset.abs() / (spreadAngle / 2))), // 外側子彈射程略短
-        color: _getBulletColor(weapon),
+        color: bulletColor, // 使用統一的顏色
+        rarity: rarity,
+        size: size, // 使用適當的彈丸尺寸
       );
 
       // 添加到遊戲世界
@@ -427,32 +465,31 @@ class PlayerComponent extends PositionComponent
     double speed,
     Weapon weapon,
   ) {
+    // 檢查是否為 RangedWeapon 類型以獲取更多特效數據
+    Map<String, dynamic> bulletParams = {};
+    ItemRarity? rarity;
+    double size = 6.0;
+    Color bulletColor = Colors.lightBlue; // 默認統一顏色
+
+    if (weapon is RangedWeapon) {
+      bulletParams = weapon.getBulletParameters();
+      rarity = bulletParams['rarity'] as ItemRarity?;
+      size = bulletParams['size'] as double? ?? 6.0;
+      bulletColor = bulletParams['color'] as Color? ?? Colors.lightBlue;
+    }
+
     final bullet = BulletComponent(
       position: origin.clone(),
       direction: direction,
       speed: speed,
       damage: weapon.damage.toDouble(),
       range: weapon.range.toDouble(),
-      color: _getBulletColor(weapon),
+      color: bulletColor, // 使用統一的顏色
+      rarity: rarity, // 傳遞稀有度
+      size: size, // 傳遞子彈大小
     );
 
     game.gameWorld.add(bullet);
-  }
-
-  // 根據武器類型獲取子彈顏色
-  Color _getBulletColor(Weapon weapon) {
-    switch (weapon.weaponType.name) {
-      case 'pistol':
-        return Colors.yellow;
-      case 'shotgun':
-        return Colors.orange;
-      case 'rifle':
-        return Colors.blue;
-      case 'machineGun':
-        return Colors.red;
-      default:
-        return Colors.white;
-    }
   }
 
   // 使用熱鍵綁定的物品

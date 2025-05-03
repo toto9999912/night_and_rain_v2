@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:night_and_rain_v2/enum/item_rarity.dart';
-
-import 'package:night_and_rain_v2/models/weapon.dart';
-
+import '../enum/item_rarity.dart';
 import '../enum/item_type.dart';
 import 'item.dart';
 import 'player.dart';
+import 'weapon.dart';
 
+/// 不可變的護甲類別
 class Armor extends Item {
   final int defense;
 
-  Armor({
+  const Armor({
     required super.id,
     required super.name,
     required super.description,
@@ -19,11 +18,15 @@ class Armor extends Item {
     required super.price,
     required this.defense,
     super.quantity,
-  }) : super(type: ItemType.material); // 暫時使用material類型，後續可增加專用類型
+  }) : super(
+         type: ItemType.material,
+         weaponItem: null,
+       ); // 暫時使用 material 類型，後續可增加專用類型
 
   @override
-  void use(Player player) {
-    player.equipArmor(this);
+  void applyEffects(Player player) {
+    // 不再直接修改 player 狀態，只描述效果
+    // 該邏輯會由 InventoryNotifier 調用並處理
   }
 
   @override

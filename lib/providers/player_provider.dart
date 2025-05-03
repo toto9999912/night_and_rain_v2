@@ -19,6 +19,8 @@ final currentWeaponProvider = Provider<Weapon?>((ref) {
   return player.equippedWeapon;
 });
 
+/// 統一管理 Player 狀態的 Notifier
+/// 所有狀態更新都經過這個類別處理，不再直接修改 Player 對象
 class PlayerNotifier extends StateNotifier<Player> {
   final Ref _ref;
 
@@ -26,13 +28,11 @@ class PlayerNotifier extends StateNotifier<Player> {
 
   // 生命值相關方法
   void heal(int amount) {
-    state.heal(amount);
-    updateState();
+    state = state.withHealing(amount);
   }
 
   void takeDamage(int amount) {
-    state.takeDamage(amount);
-    updateState();
+    state = state.withDamageTaken(amount);
   }
 
   void setHealth(int value) {
@@ -41,16 +41,15 @@ class PlayerNotifier extends StateNotifier<Player> {
 
   // 魔力相關方法
   void addMana(int amount) {
-    state.addMana(amount);
-    updateState();
+    state = state.withAddedMana(amount);
   }
 
   bool consumeMana(int amount) {
-    final result = state.consumeMana(amount);
-    if (result) {
-      updateState();
+    final (newState, success) = state.withManaConsumed(amount);
+    if (success) {
+      state = newState;
     }
-    return result;
+    return success;
   }
 
   void setMana(int value) {
@@ -66,26 +65,28 @@ class PlayerNotifier extends StateNotifier<Player> {
     }
 
     // 裝備武器
-    state.equipWeapon(weapon);
-    updateState();
+    state = state.withEquippedWeapon(weapon);
   }
 
   void unequipWeapon() {
-    state.unequipWeapon();
-    updateState();
+    state = state.withoutWeapon();
   }
 
   bool attack(Vector2 direction) {
-    final result = state.attack(direction);
+    // 檢查是否可以攻擊
+    if (!state.canAttack()) return false;
 
-    // 使用 Future 延遲更新 UI，避免在渲染過程中修改狀態
-    if (result) {
-      Future(() {
-        updateState(); // 魔力可能變化，更新 UI
-      });
+    final weapon = state.equippedWeapon!;
+
+    // 消耗魔力
+    if (weapon.manaCost > 0) {
+      final (newState, success) = state.withManaConsumed(weapon.manaCost);
+      if (!success) return false;
+      state = newState;
     }
 
-    return result;
+    // 執行武器攻擊邏輯 - 使用重構後的 performAttack 方法
+    return weapon.performAttack(direction);
   }
 
   void switchToNextWeapon() {
@@ -136,8 +137,7 @@ class PlayerNotifier extends StateNotifier<Player> {
     }
 
     // 裝備護甲
-    state.equipArmor(armor);
-    updateState();
+    state = state.withEquippedArmor(armor);
   }
 
   // 物品相關方法 - 現在僅是代理到 InventoryProvider
@@ -147,25 +147,19 @@ class PlayerNotifier extends StateNotifier<Player> {
 
   // 金錢相關方法
   void addMoney(int amount) {
-    state.addMoney(amount);
-    updateState();
+    state = state.withAddedMoney(amount);
   }
 
   bool spendMoney(int amount) {
-    final result = state.spendMoney(amount);
-    if (result) {
-      updateState();
+    final (newState, success) = state.withMoneySpent(amount);
+    if (success) {
+      state = newState;
     }
-    return result;
+    return success;
   }
 
   // 使用熱鍵綁定的物品
   void useHotkeyItem(int slot) {
     _ref.read(inventoryProvider.notifier).useHotkeyItem(slot);
-  }
-
-  // 用於強制更新狀態以觸發UI重繪
-  void updateState() {
-    state = state.copyWith();
   }
 }

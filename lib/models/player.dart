@@ -1,25 +1,26 @@
-import 'package:flame/components.dart';
 import 'armor.dart';
 import 'weapon.dart';
 
+/// 不可變的 Player 模型
+/// 所有狀態更新必須透過 copyWith 來產生新的實例
 class Player {
-  // 基礎屬性
-  int health;
-  int maxHealth;
-  int mana;
-  int maxMana;
-  double speed;
-  int money;
+  // 基礎屬性 - 所有屬性都是 final
+  final int health;
+  final int maxHealth;
+  final int mana;
+  final int maxMana;
+  final double speed;
+  final int money;
 
   // 裝備
-  Weapon? _equippedWeapon;
-  Armor? equippedArmor;
+  final Weapon? _equippedWeapon;
+  final Armor? equippedArmor;
 
   // 背包ID - 不再直接引用背包，而是使用 ID 來關聯背包
   final String playerId;
 
   // 構造函數
-  Player({
+  const Player({
     this.health = 100,
     this.maxHealth = 100,
     this.mana = 100,
@@ -31,7 +32,7 @@ class Player {
     String? id,
   }) : _equippedWeapon = weapon,
        equippedArmor = armor,
-       playerId = id ?? 'player_${DateTime.now().millisecondsSinceEpoch}';
+       playerId = id ?? 'player_1';
 
   // 當前武器的 getter
   Weapon? get equippedWeapon => _equippedWeapon;
@@ -49,69 +50,66 @@ class Player {
     return mana >= weaponManaCost;
   }
 
-  // 裝備武器 - 簡化，不再涉及背包操作
-  void equipWeapon(Weapon weapon) {
-    _equippedWeapon = weapon;
+  // 以下方法不再修改狀態，而是返回新的 Player 實例
+
+  // 裝備武器 - 回傳新的 Player 實例
+  Player withEquippedWeapon(Weapon weapon) {
+    return copyWith(equippedWeapon: weapon);
   }
 
-  // 卸下武器
-  void unequipWeapon() {
-    _equippedWeapon = null;
+  // 卸下武器 - 回傳新的 Player 實例
+  Player withoutWeapon() {
+    return copyWith(equippedWeapon: null);
   }
 
-  // 使用當前武器攻擊
-  bool attack(Vector2 direction) {
-    if (_equippedWeapon == null) return false;
-
-    // 執行攻擊
-    return _equippedWeapon!.attack(direction, this);
+  // 裝備護甲 - 回傳新的 Player 實例
+  Player withEquippedArmor(Armor armor) {
+    return copyWith(equippedArmor: armor);
   }
 
-  // 裝備護甲 - 簡化，不再涉及背包操作
-  void equipArmor(Armor armor) {
-    equippedArmor = armor;
-  }
-
-  // 扣除魔力值
-  bool consumeMana(int amount) {
+  // 扣除魔力值 - 回傳新的 Player 實例，攜帶操作是否成功的信息
+  (Player, bool) withManaConsumed(int amount) {
     if (mana >= amount) {
-      mana -= amount;
-      if (mana < 0) mana = 0;
-      return true;
+      return (copyWith(mana: mana - amount), true);
     }
-    return false;
+    return (this, false);
   }
 
-  // 增加魔力值
-  void addMana(int amount) {
-    mana += amount;
-    if (mana > maxMana) mana = maxMana;
+  // 增加魔力值 - 回傳新的 Player 實例
+  Player withAddedMana(int amount) {
+    final newMana = mana + amount > maxMana ? maxMana : mana + amount;
+    return copyWith(mana: newMana);
   }
 
-  // 扣除生命值
-  void takeDamage(int amount) {
-    health -= amount;
-    if (health < 0) health = 0;
+  // 扣除生命值 - 回傳新的 Player 實例
+  Player withDamageTaken(int amount) {
+    final newHealth = health - amount < 0 ? 0 : health - amount;
+    return copyWith(health: newHealth);
   }
 
-  // 增加生命值
-  void heal(int amount) {
-    health += amount;
-    if (health > maxHealth) health = maxHealth;
+  // 增加生命值 - 回傳新的 Player 實例
+  Player withHealing(int amount) {
+    final newHealth = health + amount > maxHealth ? maxHealth : health + amount;
+    return copyWith(health: newHealth);
   }
 
-  // 增加金錢
-  void addMoney(int amount) {
-    money += amount;
+  // 增加金錢 - 回傳新的 Player 實例
+  Player withAddedMoney(int amount) {
+    return copyWith(money: money + amount);
   }
 
-  // 扣除金錢
-  bool spendMoney(int amount) {
+  // 扣除金錢 - 回傳新的 Player 實例，攜帶操作是否成功的信息
+  (Player, bool) withMoneySpent(int amount) {
     if (money >= amount) {
-      money -= amount;
-      return true;
+      return (copyWith(money: money - amount), true);
     }
-    return false;
+    return (this, false);
+  }
+
+  // 使用當前武器攻擊 - 不修改狀態，只檢查是否可以攻擊
+  // 實際攻擊邏輯移至 PlayerNotifier 中
+  bool canAttack() {
+    return _equippedWeapon != null && canShoot;
   }
 
   // 複製對象（用於 Riverpod 狀態更新）

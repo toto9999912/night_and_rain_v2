@@ -3,19 +3,21 @@ import '../enum/weapon_type.dart';
 import 'item.dart';
 import 'weapon.dart';
 
+/// 不可變的 Inventory 模型
 class Inventory {
   final List<Item> items;
   final int capacity;
   final Map<int, Item> hotkeyBindings; // 快捷鍵綁定
 
-  Inventory({
-    List<Item>? startingItems,
+  // 構造函數 - 確保不可變性
+  const Inventory({
+    this.items = const [],
     this.capacity = 20,
-    Map<int, Item>? initialBindings,
-  }) : items = startingItems ?? [],
-       hotkeyBindings = initialBindings ?? {};
+    this.hotkeyBindings = const {},
+  });
 
-  bool addItem(Item item) {
+  /// 返回新增物品後的新 Inventory 實例
+  (Inventory, bool) withItemAdded(Item item) {
     // 檢查是否為可堆疊物品
     if (item.isStackable) {
       // 尋找相同ID的物品
@@ -28,31 +30,50 @@ class Inventory {
 
         // 複製一個新的物品但數量增加
         final updatedItem = existingItem.copyWith(quantity: newQuantity);
-        items[existingIndex] = updatedItem;
+
+        // 創建新的物品列表，替換更新後的物品
+        final newItems = List<Item>.from(items);
+        newItems[existingIndex] = updatedItem;
 
         // 更新快捷鍵綁定
+        final newBindings = Map<int, Item>.from(hotkeyBindings);
         hotkeyBindings.forEach((key, value) {
           if (value.id == item.id) {
-            hotkeyBindings[key] = updatedItem;
+            newBindings[key] = updatedItem;
           }
         });
 
-        return true;
+        return (
+          Inventory(
+            items: newItems,
+            capacity: capacity,
+            hotkeyBindings: newBindings,
+          ),
+          true,
+        );
       }
     }
 
     // 非堆疊物品或找不到相同ID的物品，則添加新物品
     if (items.length < capacity) {
-      items.add(item);
-      return true;
+      final newItems = List<Item>.from(items)..add(item);
+      return (
+        Inventory(
+          items: newItems,
+          capacity: capacity,
+          hotkeyBindings: Map<int, Item>.from(hotkeyBindings),
+        ),
+        true,
+      );
     }
-    return false;
+    return (this, false);
   }
 
-  bool removeItem(Item item, {int quantityToRemove = 1}) {
+  /// 返回移除物品後的新 Inventory 實例
+  (Inventory, bool) withItemRemoved(Item item, {int quantityToRemove = 1}) {
     // 查找物品索引
     final index = items.indexWhere((i) => i.id == item.id);
-    if (index < 0) return false;
+    if (index < 0) return (this, false);
 
     final existingItem = items[index];
 
@@ -61,39 +82,92 @@ class Inventory {
       // 減少數量但不移除物品
       final newQuantity = existingItem.quantity - quantityToRemove;
       final updatedItem = existingItem.copyWith(quantity: newQuantity);
-      items[index] = updatedItem;
+
+      final newItems = List<Item>.from(items);
+      newItems[index] = updatedItem;
 
       // 更新快捷鍵綁定
+      final newBindings = Map<int, Item>.from(hotkeyBindings);
       hotkeyBindings.forEach((key, value) {
         if (value.id == item.id) {
-          hotkeyBindings[key] = updatedItem;
+          newBindings[key] = updatedItem;
         }
       });
 
-      return true;
+      return (
+        Inventory(
+          items: newItems,
+          capacity: capacity,
+          hotkeyBindings: newBindings,
+        ),
+        true,
+      );
     } else {
       // 完全移除物品
-      final result = items.remove(item);
+      final newItems = List<Item>.from(items);
+      final removed = newItems.remove(existingItem);
 
-      // 如果物品被移除，同時也要從快捷鍵綁定中移除
-      if (result) {
-        hotkeyBindings.removeWhere((key, value) => value.id == item.id);
-      }
+      if (!removed) return (this, false);
 
-      return result;
+      // 從快捷鍵綁定中移除
+      final newBindings = Map<int, Item>.from(hotkeyBindings);
+      newBindings.removeWhere((key, value) => value.id == item.id);
+
+      return (
+        Inventory(
+          items: newItems,
+          capacity: capacity,
+          hotkeyBindings: newBindings,
+        ),
+        true,
+      );
     }
   }
 
-  void bindHotkey(int slot, Item item) {
+  /// 返回綁定熱鍵後的新 Inventory 實例
+  Inventory withHotkeyBound(int slot, Item item) {
     // 確保物品在背包中
-    if (items.contains(item)) {
-      hotkeyBindings[slot] = item;
-    }
+    if (!items.contains(item)) return this;
+
+    final newBindings = Map<int, Item>.from(hotkeyBindings);
+    newBindings[slot] = item;
+
+    return Inventory(
+      items: List<Item>.from(items),
+      capacity: capacity,
+      hotkeyBindings: newBindings,
+    );
   }
 
-  void unbindHotkey(int slot) {
-    hotkeyBindings.remove(slot);
+  /// 返回解除熱鍵綁定後的新 Inventory 實例
+  Inventory withHotkeyUnbound(int slot) {
+    final newBindings = Map<int, Item>.from(hotkeyBindings);
+    newBindings.remove(slot);
+
+    return Inventory(
+      items: List<Item>.from(items),
+      capacity: capacity,
+      hotkeyBindings: newBindings,
+    );
   }
+
+  /// 返回清空背包後的新 Inventory 實例
+  Inventory withClearedItems() {
+    return Inventory(capacity: capacity);
+  }
+
+  /// 返回新容量的 Inventory 實例
+  Inventory withCapacity(int newCapacity) {
+    if (newCapacity < items.length) return this;
+
+    return Inventory(
+      items: List<Item>.from(items),
+      capacity: newCapacity,
+      hotkeyBindings: Map<int, Item>.from(hotkeyBindings),
+    );
+  }
+
+  // 以下是查詢方法，不修改狀態
 
   Item? getItemById(String id) {
     for (var item in items) {
@@ -185,8 +259,7 @@ class Inventory {
     return items.isEmpty;
   }
 
-  void clear() {
-    items.clear();
-    hotkeyBindings.clear();
+  bool hasItem(String itemId) {
+    return getItemById(itemId) != null;
   }
 }

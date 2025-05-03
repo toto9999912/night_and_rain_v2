@@ -5,19 +5,14 @@ import '../enum/item_type.dart';
 import 'item.dart';
 import 'player.dart';
 
-// 如果需要效果系統，可以導入
-// import '../effects/player_effect.dart';
-
+/// 不可變的消耗品類別
 class Consumable extends Item {
   final int healthRestore;
   final int manaRestore;
-  // 移除對 Flame Effect 的依賴
-  // final List<Effect> effects;
-
   // 如果需要效果系統，可以使用以下註釋行
   // final List<PlayerEffect> effects;
 
-  Consumable({
+  const Consumable({
     required super.id,
     required super.name,
     required super.description,
@@ -28,23 +23,12 @@ class Consumable extends Item {
     this.manaRestore = 0,
     super.quantity,
     // this.effects = const [],
-  }) : super(type: ItemType.consumable);
+  }) : super(type: ItemType.consumable, weaponItem: null);
 
   @override
-  void use(Player player) {
-    // 使用 Player 的正確方法
-    if (healthRestore > 0) {
-      player.heal(healthRestore);
-    }
-
-    if (manaRestore > 0) {
-      player.addMana(manaRestore);
-    }
-
-    // 如果將來實現效果系統
-    // for (final effect in effects) {
-    //   player.effectManager.addEffect(effect);
-    // }
+  void applyEffects(Player player) {
+    // 不再直接修改 player 狀態，只描述效果
+    // 返回應用效果的描述，由 Provider 負責實際執行狀態變更
   }
 
   @override

@@ -180,10 +180,10 @@ class NightAndRainGame extends FlameGame
     // 等待一幀以確保 Provider 已完全初始化
     await Future.delayed(Duration.zero);
 
-    // 從 itemsDataProvider 獲取初始武器
+    // 從 itemsDataProvider 獲取初始武器 - 更新為新的物品 ID
     final itemsData = ref.read(itemsDataProvider);
-    final initialWeapon = itemsData['pistol_1'] as Weapon;
-    final giftWeapons = itemsData['shotgun_1'] as Weapon;
+    final initialWeapon = itemsData['pistol_copper'] as Weapon; // 銅牛級手槍
+    final giftWeapons = itemsData['shotgun_copper'] as Weapon; // 銅牛級霰彈槍
 
     // 獲取紅藥水和藍藥水的原型
     final healthPotionPrototype = itemsData['health_potion'] as Consumable;
@@ -196,6 +196,21 @@ class NightAndRainGame extends FlameGame
     // 添加到玩家庫存並裝備武器
     inventoryNotifier.addItem(initialWeapon);
     inventoryNotifier.addItem(giftWeapons);
+
+    // 為測試目的，添加所有等級的手槍
+    inventoryNotifier.addItem(itemsData['pistol_ricebug'] as Weapon); // 米蟲級
+    inventoryNotifier.addItem(itemsData['pistol_silver'] as Weapon); // 銀牛級
+    inventoryNotifier.addItem(itemsData['pistol_gold'] as Weapon); // 金牛級
+
+    // 為測試目的，添加所有等級的霰彈槍
+    inventoryNotifier.addItem(itemsData['shotgun_ricebug'] as Weapon); // 米蟲級
+    inventoryNotifier.addItem(itemsData['shotgun_silver'] as Weapon); // 銀牛級
+    inventoryNotifier.addItem(itemsData['shotgun_gold'] as Weapon); // 金牛級
+
+    // 為測試目的，添加高等級機關槍和狙擊槍
+    inventoryNotifier.addItem(itemsData['machinegun_gold'] as Weapon);
+    inventoryNotifier.addItem(itemsData['sniper_gold'] as Weapon);
+
     playerNotifier.equipWeapon(initialWeapon);
 
     // 添加三瓶紅藥水（使用相同ID以實現堆疊）
@@ -211,6 +226,10 @@ class NightAndRainGame extends FlameGame
       final manaPotion = manaPotionPrototype.copyWith(quantity: 1);
       inventoryNotifier.addItem(manaPotion);
     }
+
+    // 添加高級藥水
+    inventoryNotifier.addItem(itemsData['health_potion_premium'] as Consumable);
+    inventoryNotifier.addItem(itemsData['mana_potion_premium'] as Consumable);
   }
 
   @override

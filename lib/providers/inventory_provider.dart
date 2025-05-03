@@ -1,11 +1,12 @@
 // 使用 Riverpod 管理庫存
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../enum/weapon_type.dart';
+import '../models/armor.dart';
+import '../models/consumable.dart';
 import '../models/inventory.dart';
 import '../models/item.dart';
 import '../models/weapon.dart';
-import '../models/consumable.dart';
-import '../enum/weapon_type.dart';
 import 'player_provider.dart';
 
 // 全局單例 InventoryNotifier
@@ -22,39 +23,37 @@ final weaponsProvider = Provider<List<Weapon>>((ref) {
   return inventory.getWeapons();
 });
 
+/// 統一管理 Inventory 狀態的 Notifier
+/// 所有背包狀態更新都經過這個類別處理
 class InventoryNotifier extends StateNotifier<Inventory> {
   final Ref _ref;
 
-  InventoryNotifier(this._ref) : super(Inventory(capacity: 20));
+  InventoryNotifier(this._ref) : super(const Inventory(capacity: 20));
 
   // 基本物品操作
   bool addItem(Item item) {
-    final result = state.addItem(item);
-    if (result) {
-      state = Inventory(
-        startingItems: [...state.items],
-        capacity: state.capacity,
-        initialBindings: Map.from(state.hotkeyBindings),
-      );
+    final (newInventory, success) = state.withItemAdded(item);
+    if (success) {
+      state = newInventory;
     }
-    return result;
+    return success;
   }
 
   bool removeItem(Item item, {int quantityToRemove = 1}) {
-    final result = state.removeItem(item, quantityToRemove: quantityToRemove);
-    if (result) {
-      state = Inventory(
-        startingItems: [...state.items],
-        capacity: state.capacity,
-        initialBindings: Map.from(state.hotkeyBindings),
-      );
+    final (newInventory, success) = state.withItemRemoved(
+      item,
+      quantityToRemove: quantityToRemove,
+    );
+    if (success) {
+      state = newInventory;
     }
-    return result;
+    return success;
   }
 
-  // 使用物品 - 會與 PlayerProvider 互動
+  // 使用物品 - 會與 PlayerNotifier 互動
   void useItem(Item item) {
     final playerNotifier = _ref.read(playerProvider.notifier);
+    final player = _ref.read(playerProvider);
 
     // 確保物品在背包中
     if (state.items.contains(item)) {
@@ -62,40 +61,37 @@ class InventoryNotifier extends StateNotifier<Inventory> {
       if (item is Weapon) {
         // 裝備武器
         playerNotifier.equipWeapon(item);
+      } else if (item is Armor) {
+        // 裝備護甲
+        playerNotifier.equipArmor(item);
       } else if (item is Consumable) {
-        // 使用消耗品 - 對玩家產生效果
-        item.use(_ref.read(playerProvider));
-        playerNotifier.updateState();
+        // 處理消耗品的效果
+        if (item.healthRestore > 0) {
+          playerNotifier.heal(item.healthRestore);
+        }
+
+        if (item.manaRestore > 0) {
+          playerNotifier.addMana(item.manaRestore);
+        }
 
         // 如果是消耗品，使用後減少數量
         if (item.isStackable) {
           removeItem(item, quantityToRemove: 1);
         }
       } else {
-        // 其他類型物品的使用邏輯
-        item.use(_ref.read(playerProvider));
-        playerNotifier.updateState();
+        // 其他類型物品的使用邏輯 - 用 applyEffects 獲取效果描述，但實際效果由 Provider 實現
+        item.applyEffects(player);
       }
     }
   }
 
   // 熱鍵相關方法
   void bindHotkey(int slot, Item item) {
-    state.bindHotkey(slot, item);
-    state = Inventory(
-      startingItems: [...state.items],
-      capacity: state.capacity,
-      initialBindings: Map.from(state.hotkeyBindings),
-    );
+    state = state.withHotkeyBound(slot, item);
   }
 
   void unbindHotkey(int slot) {
-    state.unbindHotkey(slot);
-    state = Inventory(
-      startingItems: [...state.items],
-      capacity: state.capacity,
-      initialBindings: Map.from(state.hotkeyBindings),
-    );
+    state = state.withHotkeyUnbound(slot);
   }
 
   void useHotkeyItem(int slot) {
@@ -120,27 +116,17 @@ class InventoryNotifier extends StateNotifier<Inventory> {
 
   // 修改背包容量
   void setCapacity(int newCapacity) {
-    if (newCapacity >= state.items.length) {
-      state = Inventory(
-        startingItems: [...state.items],
-        capacity: newCapacity,
-        initialBindings: Map.from(state.hotkeyBindings),
-      );
-    }
+    state = state.withCapacity(newCapacity);
   }
 
   // 清空背包
   void clear() {
-    state = Inventory(
-      capacity: state.capacity,
-      startingItems: [],
-      initialBindings: {},
-    );
+    state = state.withClearedItems();
   }
 
   // 檢查是否有特定物品
   bool hasItem(String itemId) {
-    return state.getItemById(itemId) != null;
+    return state.hasItem(itemId);
   }
 
   // 裝備最佳武器

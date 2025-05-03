@@ -7,6 +7,7 @@ import '../enum/weapon_type.dart';
 import 'item.dart';
 import 'player.dart';
 
+/// 不可變的武器類別
 class Weapon extends Item {
   final WeaponType weaponType;
   final double damage;
@@ -39,35 +40,19 @@ class Weapon extends Item {
        );
 
   @override
-  void use(Player player) {
-    player.equipWeapon(this);
+  void applyEffects(Player player) {
+    // 不再直接修改 player 狀態，只描述效果
+    // 該邏輯會由 Notifier 調用並處理
   }
 
-  // 更新攻擊方法簽名以匹配RangedWeapon
-  bool attack(Vector2 direction, Player player) {
-    // 檢查玩家的魔力是否足夠使用武器
-    if (player.mana < manaCost) {
-      return false; // 魔力不足，無法攻擊
-    }
-
-    // 近戰武器的攻擊邏輯
-    if (weaponType.isMelee) {
-      // 近戰武器可能不消耗魔力，或消耗較少魔力
-      if (manaCost > 0) {
-        player.consumeMana(manaCost);
-      }
-      _performAttack(direction);
-      return true;
-    } else {
-      // 遠程武器消耗魔力
-      player.consumeMana(manaCost);
-      _performAttack(direction);
-      return true;
-    }
+  /// 檢查是否可以攻擊
+  bool canAttackWith(Player player) {
+    return player.mana >= manaCost;
   }
 
-  // 內部方法，執行實際攻擊動作
-  void _performAttack(Vector2 direction) {
+  /// 玩家使用此武器的攻擊邏輯 - 不直接修改玩家狀態
+  /// 由 PlayerNotifier 負責協調狀態更新
+  bool performAttack(Vector2 direction) {
     // 根據不同武器類型實現不同的攻擊邏輯
     switch (weaponType) {
       case WeaponType.sword:
@@ -86,6 +71,7 @@ class Weapon extends Item {
         // 狙擊槍邏輯
         break;
     }
+    return true;
   }
 
   // 獲取武器描述
