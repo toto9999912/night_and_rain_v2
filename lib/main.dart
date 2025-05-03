@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
@@ -9,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'components/map_component.dart';
 import 'components/astrologer_mumu.dart';
+import 'components/enemy_component.dart';
 import 'components/npc_component.dart';
 import 'components/shopkeeper_bug.dart';
 import 'components/wandering_npc.dart';
@@ -22,6 +25,7 @@ import 'components/player_component.dart';
 import 'ui/overlays/player_dashboard_overlay.dart';
 import 'ui/overlays/dialog_overlay.dart';
 import 'ui/overlays/shop_overlay.dart';
+import 'ui/overlays/game_over_overlay.dart';
 
 final GlobalKey<RiverpodAwareGameWidgetState<NightAndRainGame>> gameWidgetKey =
     GlobalKey<RiverpodAwareGameWidgetState<NightAndRainGame>>();
@@ -63,6 +67,7 @@ class NightAndRainApp extends StatelessWidget {
           'ShopOverlay':
               (context, game) =>
                   ShopOverlay(game: game, shopkeeper: game.dialogNpc!),
+          'GameOverOverlay': (context, game) => GameOverOverlay(game: game),
         },
         initialActiveOverlays: const ['HudOverlay'],
       ),
@@ -133,6 +138,9 @@ class NightAndRainGame extends FlameGame
     // 添加NPC到遊戲世界
     await _addNpcs();
 
+    // 添加敵人到遊戲世界
+    await _addEnemies();
+
     // 在這裡為玩家添加初始武器
     await _initializePlayerWeapon();
   }
@@ -158,7 +166,7 @@ class NightAndRainGame extends FlameGame
       name: '行人小明',
       position: Vector2(mapSize.x * 0.4, mapSize.y * 0.5),
       color: Colors.teal,
-      greetings: ['今天天氣真好！', '你好啊，冒險者！', '這個地方很危險，小心點。'],
+      greetings: ['今天天氣真好！', '你好啊，冒隠者！', '這個地方很危險，小心點。'],
     );
     gameWorld.add(wanderingNpc1);
 
@@ -279,6 +287,176 @@ class NightAndRainGame extends FlameGame
     _lastMousePosition = worldPos;
     _player.shoot(worldPos);
     return true;
+  }
+
+  // 添加敵人到遊戲世界
+  Future<void> _addEnemies() async {
+    // 使用固定位置添加敵人，確保不會生成在玩家附近
+    final random = math.Random();
+
+    // 1. 在地圖左下角區域添加一組近戰敵人
+    _addEnemyGroup(
+      center: Vector2(mapSize.x * 0.2, mapSize.y * 0.8),
+      count: 3,
+      radius: 80.0,
+      type: EnemyType.melee,
+      color: Colors.red.shade800,
+      health: 80,
+      damage: 10,
+      speed: 70,
+    );
+
+    // 2. 在地圖右下角區域添加一組遠程敵人
+    _addEnemyGroup(
+      center: Vector2(mapSize.x * 0.8, mapSize.y * 0.8),
+      count: 2,
+      radius: 120.0,
+      type: EnemyType.ranged,
+      color: Colors.purple.shade800,
+      health: 60,
+      damage: 15,
+      speed: 50,
+      attackRange: 200,
+    );
+
+    // 3. 在地圖右上角區域添加一組混合型敵人
+    _addEnemyGroup(
+      center: Vector2(mapSize.x * 0.8, mapSize.y * 0.2),
+      count: 2,
+      radius: 100.0,
+      type: EnemyType.hybrid,
+      color: Colors.amber.shade800,
+      health: 100,
+      damage: 12,
+      speed: 60,
+      attackRange: 150,
+    );
+
+    // 4. 在障礙物附近添加零散敵人
+    // 障礙物位置在地圖的一些關鍵點，所以我們在它們附近添加敵人
+    _addEnemyAt(
+      position: Vector2(mapSize.x * 0.3, mapSize.y * 0.4),
+      type: EnemyType.melee,
+      color: Colors.red.shade700,
+    );
+
+    _addEnemyAt(
+      position: Vector2(mapSize.x * 0.7, mapSize.y * 0.4),
+      type: EnemyType.ranged,
+      color: Colors.purple.shade700,
+      attackRange: 180,
+    );
+
+    _addEnemyAt(
+      position: Vector2(mapSize.x * 0.4, mapSize.y * 0.7),
+      type: EnemyType.hybrid,
+      color: Colors.amber.shade700,
+    );
+
+    // 5. 添加一個強大的「精英」敵人在地圖中心偏下的位置
+    _addEnemyAt(
+      position: Vector2(mapSize.x * 0.5, mapSize.y * 0.65),
+      type: EnemyType.hybrid,
+      color: Colors.deepOrange,
+      enemySize: 35, // 這裡已經修改為 enemySize
+      health: 200,
+      damage: 20,
+      speed: 50,
+      attackRange: 180,
+      detectionRange: 250,
+    );
+  }
+
+  // 在指定位置添加單個敵人
+  void _addEnemyAt({
+    required Vector2 position,
+    required EnemyType type,
+    Color color = Colors.red,
+    double enemySize = 24, // 參數名從 size 改為 enemySize
+    double health = 100,
+    double damage = 10,
+    double speed = 60,
+    double attackRange = 30,
+    double detectionRange = 200,
+    double attackCooldown = 1.0,
+  }) {
+    final enemy = EnemyComponent(
+      position: position,
+      type: type,
+      mapComponent: _mapComponent,
+      color: color,
+      enemySize: enemySize, // 參數名從 size 改為 enemySize
+      maxHealth: health,
+      damage: damage,
+      speed: speed,
+      attackRange: attackRange,
+      detectionRange: detectionRange,
+      attackCooldown: attackCooldown,
+    );
+
+    gameWorld.add(enemy);
+  }
+
+  // 在指定區域添加一組敵人
+  void _addEnemyGroup({
+    required Vector2 center,
+    required int count,
+    required double radius,
+    required EnemyType type,
+    Color color = Colors.red,
+    double enemySize = 24, // 參數名從 size 改為 enemySize
+    double health = 100,
+    double damage = 10,
+    double speed = 60,
+    double attackRange = 30,
+    double detectionRange = 200,
+    double attackCooldown = 1.0,
+  }) {
+    final random = math.Random();
+
+    for (int i = 0; i < count; i++) {
+      // 在圓形區域內隨機生成位置
+      final angle = random.nextDouble() * 2 * math.pi;
+      final distance = random.nextDouble() * radius;
+      final offset = Vector2(
+        math.cos(angle) * distance,
+        math.sin(angle) * distance,
+      );
+
+      final position = center + offset;
+
+      // 確保敵人不會生成在障礙物內
+      if (!_mapComponent.checkObstacleCollision(
+        position,
+        Vector2.all(enemySize),
+      )) {
+        // 使用 enemySize
+        _addEnemyAt(
+          position: position,
+          type: type,
+          color: color,
+          enemySize: enemySize, // 參數名從 size 改為 enemySize
+          health: health,
+          damage: damage,
+          speed: speed,
+          attackRange: attackRange,
+          detectionRange: detectionRange,
+          attackCooldown: attackCooldown,
+        );
+      }
+    }
+  }
+
+  // 重置玩家位置到地圖中央
+  void resetPlayerPosition() {
+    // 將玩家移至地圖中央
+    _player.position = mapSize / 2;
+
+    // 停止所有可能的移動
+    _player.stopAllMovement();
+
+    // 重新設置相機跟隨
+    _cameraComponent.follow(_player);
   }
 }
 

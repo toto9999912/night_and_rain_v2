@@ -116,104 +116,110 @@ class _PlayerDashboardOverlayState extends ConsumerState<PlayerDashboardOverlay>
       children: [
         Material(
           color: Colors.black.withOpacity(0.85),
-          child: Center(
-            child: Container(
-              width: 800, // 增加寬度以適應左右兩欄布局
-              height: 600, // 保持高度
-              decoration: BoxDecoration(
-                color: Color(0xFF212121), // 深灰色背景
-                border: Border.all(color: Color(0xFFDDDDDD), width: 2),
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black38,
-                    blurRadius: 15,
-                    spreadRadius: 5,
-                  ),
-                ],
-              ),
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 標題和關閉按鈕
-                  DashboardHeader(
-                    onClose: () => game.overlays.remove('InventoryOverlay'),
-                  ),
-
-                  Divider(color: Colors.white30, thickness: 1),
-                  const SizedBox(height: 8),
-
-                  // 主體內容 - 左右兩欄布局
-                  Expanded(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // 左側欄 - 背包和金錢
-                        Expanded(
-                          flex: 10, // 左側佔比
-                          child: LeftPanel(
-                            player: player,
-                            inventory: inventory,
-                            selectedItem: selectedItem,
-                            selectedHotkey: selectedHotkey,
-                            onItemSelected: (item) {
-                              setState(() {
-                                selectedItem = item;
-                              });
-                            },
-                            onItemHovered: (item, position) {
-                              setState(() {
-                                hoveredItem = item;
-                                hoverPosition = position;
-                              });
-                            },
-                            onItemHoverExited: () {
-                              setState(() {
-                                hoveredItem = null;
-                                hoverPosition = null;
-                              });
-                            },
-                          ),
-                        ),
-
-                        const SizedBox(width: 16), // 左右欄間距
-                        // 右側欄 - 角色狀態、裝備和熱鍵
-                        Expanded(
-                          flex: 8, // 右側佔比
-                          child: RightPanel(
-                            player: player,
-                            inventory: inventory,
-                            selectedItem: selectedItem,
-                            selectedHotkey: selectedHotkey,
-                            weapon: weapon,
-                            onHotkeySelected: (hotkey) {
-                              setState(() {
-                                selectedHotkey = hotkey;
-                              });
-                            },
-                            onItemBound: (hotkey, item) {
-                              ref
-                                  .read(inventoryProvider.notifier)
-                                  .bindHotkey(hotkey, item);
-                              setState(() {
-                                selectedHotkey = null;
-                                selectedItem = null;
-                              });
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('${item.name} 已綁定到熱鍵 $hotkey'),
-                                  duration: Duration(seconds: 1),
-                                  backgroundColor: Colors.green,
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ],
+          child: Scaffold(
+            // 添加 Scaffold 以支持 ScaffoldMessenger
+            backgroundColor: Colors.transparent, // 保持透明背景
+            body: Center(
+              child: Container(
+                width: 800, // 增加寬度以適應左右兩欄布局
+                height: 600, // 保持高度
+                decoration: BoxDecoration(
+                  color: Color(0xFF212121), // 深灰色背景
+                  border: Border.all(color: Color(0xFFDDDDDD), width: 2),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black38,
+                      blurRadius: 15,
+                      spreadRadius: 5,
                     ),
-                  ),
-                ],
+                  ],
+                ),
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 標題和關閉按鈕
+                    DashboardHeader(
+                      onClose: () => game.overlays.remove('InventoryOverlay'),
+                    ),
+
+                    Divider(color: Colors.white30, thickness: 1),
+                    const SizedBox(height: 8),
+
+                    // 主體內容 - 左右兩欄布局
+                    Expanded(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // 左側欄 - 背包和金錢
+                          Expanded(
+                            flex: 10, // 左側佔比
+                            child: LeftPanel(
+                              player: player,
+                              inventory: inventory,
+                              selectedItem: selectedItem,
+                              selectedHotkey: selectedHotkey,
+                              onItemSelected: (item) {
+                                setState(() {
+                                  selectedItem = item;
+                                });
+                              },
+                              onItemHovered: (item, position) {
+                                setState(() {
+                                  hoveredItem = item;
+                                  hoverPosition = position;
+                                });
+                              },
+                              onItemHoverExited: () {
+                                setState(() {
+                                  hoveredItem = null;
+                                  hoverPosition = null;
+                                });
+                              },
+                            ),
+                          ),
+
+                          const SizedBox(width: 16), // 左右欄間距
+                          // 右側欄 - 角色狀態、裝備和熱鍵
+                          Expanded(
+                            flex: 8, // 右側佔比
+                            child: RightPanel(
+                              player: player,
+                              inventory: inventory,
+                              selectedItem: selectedItem,
+                              selectedHotkey: selectedHotkey,
+                              weapon: weapon,
+                              onHotkeySelected: (hotkey) {
+                                setState(() {
+                                  selectedHotkey = hotkey;
+                                });
+                              },
+                              onItemBound: (hotkey, item) {
+                                ref
+                                    .read(inventoryProvider.notifier)
+                                    .bindHotkey(hotkey, item);
+                                setState(() {
+                                  selectedHotkey = null;
+                                  selectedItem = null;
+                                });
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      '${item.name} 已綁定到熱鍵 $hotkey',
+                                    ),
+                                    duration: Duration(seconds: 1),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

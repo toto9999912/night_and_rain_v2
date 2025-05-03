@@ -1,5 +1,7 @@
+import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
+import 'package:flame/effects.dart';
 import 'package:flame_riverpod/flame_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -25,7 +27,8 @@ class PlayerComponent extends PositionComponent
         HasGameReference<NightAndRainGame>,
         PointerMoveCallbacks,
         RiverpodComponentMixin,
-        CollisionCallbacks {
+        CollisionCallbacks,
+        HasPaint {
   final Set<LogicalKeyboardKey> _keysPressed = {};
   final MapComponent mapComponent;
 
@@ -494,6 +497,50 @@ class PlayerComponent extends PositionComponent
     } catch (e) {
       debugPrint('使用熱鍵物品失敗: $e');
     }
+  }
+
+  // 受到傷害
+  void takeDamage(int amount) {
+    // 確認 Provider 已初始化
+    if (!_isProviderInitialized) return;
+
+    // 使用 PlayerNotifier 更新玩家生命值
+    final playerNotifier = ref.read(playerProvider.notifier);
+
+    // 應用傷害並產生視覺效果
+    playerNotifier.takeDamage(amount);
+
+    // 顯示受傷效果（紅色閃爍）
+    add(
+      ColorEffect(Colors.red.withOpacity(0.5), EffectController(duration: 0.2)),
+    );
+
+    // 受傷反彈效果
+    _collisionCooldown = _collisionRecoilTime * 0.7;
+
+    // 如果無法確定敵人方向，使用隨機方向反彈
+    if (_lastCollisionDirection.length < 0.1) {
+      final angle = math.Random().nextDouble() * 2 * math.pi;
+      _lastCollisionDirection = Vector2(math.cos(angle), math.sin(angle));
+    }
+
+    debugPrint('玩家受到 $amount 點傷害');
+  }
+
+  // 停止所有移動和動作
+  void stopAllMovement() {
+    // 清空按鍵狀態
+    _keysPressed.clear();
+
+    // 停止射擊
+    _isShooting = false;
+
+    // 重置碰撞狀態
+    _collisionCooldown = 0;
+    _lastCollisionDirection = Vector2.zero();
+
+    // 確保冷卻計時器重置
+    _shootCooldown = 0;
   }
 
   // 設置當前可互動的NPC

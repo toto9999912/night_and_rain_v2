@@ -237,8 +237,8 @@ final itemsDataProvider = Provider<Map<String, Item>>((ref) {
     // 金牛級狙擊槍
     'sniper_gold': RangedWeapon(
       id: 'sniper_gold',
-      name: '神域狙擊槍',
-      description: '傳說中的狙擊槍，據說能一槍貫穿任何防禦',
+      name: '喂～金牛座之眼',
+      description: '傳說中的狙擊槍，是米蟲教的金牛星座使者專用的武器。任何被鎖定的',
       rarity: ItemRarity.goldBull,
       icon: FontAwesomeIcons.crosshairs,
       weaponType: WeaponType.sniper,

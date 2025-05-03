@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/components.dart';
+import 'package:night_and_rain_v2/main.dart';
 
 import '../enum/weapon_type.dart';
 import '../models/armor.dart';
@@ -84,7 +85,28 @@ class PlayerNotifier extends StateNotifier<Player> {
   }
 
   void takeDamage(int amount) {
+    // 更新生命值
     state = state.withDamageTaken(amount);
+
+    // 檢查生命值是否歸零，觸發死亡事件
+    if (state.health <= 0) {
+      debugPrint('玩家生命值歸零，觸發死亡事件');
+      playerDied();
+    }
+  }
+
+  // 玩家死亡處理方法
+  void playerDied() {
+    debugPrint('玩家已死亡');
+    // 在主線程上發送通知，避免在狀態更新過程中修改UI
+    Future(() {
+      // 檢查是否有遊戲實例並顯示遊戲結束覆蓋層
+      final gameWidgetState = gameWidgetKey.currentState;
+      if (gameWidgetState != null) {
+        final game = gameWidgetState.game;
+        game.overlays.add('GameOverOverlay');
+      }
+    });
   }
 
   void setHealth(int value) {
