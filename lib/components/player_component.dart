@@ -18,6 +18,7 @@ import '../models/weapon.dart';
 import 'bullet_component.dart';
 import 'map_component.dart';
 import 'npc_component.dart';
+import 'portal_component.dart';
 
 class PlayerComponent extends PositionComponent
     with
@@ -107,15 +108,27 @@ class PlayerComponent extends PositionComponent
     // 空格鍵射擊已移至 NightAndRainGame.onKeyEvent 方法中處理
 
     // E鍵與NPC對話
-    if (event is KeyDownEvent &&
-        event.logicalKey == LogicalKeyboardKey.keyE &&
-        _interactiveNpc != null &&
-        !game.overlays.isActive('InventoryOverlay') &&
-        !game.overlays.isActive('DialogOverlay')) {
-      debugPrint('E鍵與NPC [${_interactiveNpc!.name}] 對話');
-      // 啟動新的對話覆蓋層
-      _openDialogWithNpc(_interactiveNpc!);
-      return true;
+    if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.keyE) {
+      // 如果有可交互的NPC，優先與NPC交互
+      if (_interactiveNpc != null) {
+        _openDialogWithNpc(_interactiveNpc!);
+        return true;
+      }
+
+      // 檢查是否在傳送門附近
+      final playerCenter = position + size / 2;
+      final portalComponents =
+          game.gameWorld.children.whereType<PortalComponent>();
+
+      for (final portal in portalComponents) {
+        final distance = playerCenter.distanceTo(portal.position);
+
+        // 如果玩家在傳送門交互範圍內，激活傳送門
+        if (distance < portal.portalSize + 20) {
+          portal.activate();
+          return true;
+        }
+      }
     }
 
     // 武器切換 (Q鍵切換武器)

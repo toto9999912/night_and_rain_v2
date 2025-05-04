@@ -18,6 +18,8 @@ import 'components/npc_component.dart';
 import 'components/shopkeeper_bug.dart';
 import 'components/wandering_npc.dart';
 import 'components/sage_roy_npc.dart'; // 引入新的智者羅伊NPC
+import 'components/portal_component.dart'; // 引入傳送門組件
+import 'managers/dungeon_manager.dart'; // 引入地下城管理器
 import 'models/consumable.dart';
 import 'models/weapon.dart';
 import 'providers/inventory_provider.dart';
@@ -98,6 +100,13 @@ class NightAndRainGame extends FlameGame
 
   // 設定固定地圖大小
   final Vector2 mapSize = Vector2(1500, 1500);
+
+  // 地下城管理器
+  DungeonManager? dungeonManager;
+
+  // 交互提示信息
+  String? _interactionPrompt;
+  TextComponent? _interactionPromptComponent;
 
   @override
   Future<void> onLoad() async {
@@ -567,16 +576,103 @@ class NightAndRainGame extends FlameGame
     }
   }
 
-  // 重置玩家位置到地圖中央
-  void resetPlayerPosition() {
-    // 將玩家移至地圖中央
-    _player.position = mapSize / 2;
+  // 重置玩家位置到指定位置
+  void resetPlayerPosition([Vector2? position]) {
+    // 將玩家移至指定位置或地圖中央
+    _player.position = position ?? mapSize / 2;
 
     // 停止所有可能的移動
     _player.stopAllMovement();
 
     // 重新設置相機跟隨
     _cameraComponent.follow(_player);
+  }
+
+  // 獲取地圖組件
+  MapComponent getMapComponent() {
+    return _mapComponent;
+  }
+
+  // 初始化地下城
+  void initializeDungeon() {
+    // 如果已經初始化，則不再重複初始化
+    if (dungeonManager != null) return;
+
+    // 創建地下城管理器，設置入口位置在地圖中央偏下
+    dungeonManager = DungeonManager(
+      this,
+      entrancePosition: Vector2(mapSize.x * 0.5, mapSize.y * 0.7),
+    );
+
+    // 初始化地下城（創建入口傳送門）
+    dungeonManager!.initialize();
+  }
+
+  // 處理傳送門傳送
+  void triggerPortalTransport(String destinationId, PortalType type) {
+    // 確保地下城管理器已初始化
+    if (dungeonManager == null) {
+      initializeDungeon();
+    }
+
+    // 處理傳送
+    dungeonManager!.handlePortalTransport(destinationId, type);
+  }
+
+  // 顯示交互提示
+  void showInteractionPrompt(String prompt) {
+    _interactionPrompt = prompt;
+
+    // 移除現有提示（如果有）
+    if (_interactionPromptComponent != null) {
+      _interactionPromptComponent!.removeFromParent();
+      _interactionPromptComponent = null;
+    }
+
+    // 創建新的提示文本
+    _interactionPromptComponent = TextComponent(
+      text: prompt,
+      textRenderer: TextPaint(
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          shadows: [
+            Shadow(color: Colors.black, offset: Offset(1, 1), blurRadius: 2),
+          ],
+        ),
+      ),
+      position: Vector2(
+        camera.viewport.size.x / 2,
+        camera.viewport.size.y * 0.8,
+      ),
+      anchor: Anchor.center,
+    );
+
+    // 添加到相機覆蓋層
+    camera.viewport.add(_interactionPromptComponent!);
+  }
+
+  // 隱藏交互提示
+  void hideInteractionPrompt() {
+    _interactionPrompt = null;
+
+    // 移除提示
+    if (_interactionPromptComponent != null) {
+      _interactionPromptComponent!.removeFromParent();
+      _interactionPromptComponent = null;
+    }
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+
+    // 如果地下城管理器尚未初始化，則初始化它
+    if (dungeonManager == null &&
+        overlays.activeOverlays.contains('HudOverlay')) {
+      initializeDungeon();
+    }
   }
 }
 
