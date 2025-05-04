@@ -34,9 +34,7 @@ class _ShopOverlayState extends ConsumerState<ShopOverlay> {
   // 背包中選中的物品
   Item? _selectedInventoryItem;
   // 懸停顯示的物品
-  Item? _hoveredItem;
   // 懸停位置
-  Offset? _hoverPosition;
 
   @override
   void initState() {
@@ -621,27 +619,19 @@ class _ShopOverlayState extends ConsumerState<ShopOverlay> {
                             onEnter:
                                 hasItem
                                     ? (event) {
-                                      setState(() {
-                                        _hoveredItem = item;
-                                        _hoverPosition = event.position;
-                                      });
+                                      setState(() {});
                                     }
                                     : null,
                             onHover:
                                 hasItem
                                     ? (event) {
-                                      setState(() {
-                                        _hoverPosition = event.position;
-                                      });
+                                      setState(() {});
                                     }
                                     : null,
                             onExit:
                                 hasItem
                                     ? (_) {
-                                      setState(() {
-                                        _hoveredItem = null;
-                                        _hoverPosition = null;
-                                      });
+                                      setState(() {});
                                     }
                                     : null,
                             child: GestureDetector(

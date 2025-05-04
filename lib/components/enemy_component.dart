@@ -19,6 +19,8 @@ enum EnemyType {
   hybrid,
   // 獵手型敵人，會持續追蹤玩家，即使看不到也能找到
   hunter,
+  // Boss型敵人，擁有特殊技能和多階段戰鬥機制
+  boss,
 }
 
 /// 基礎敵人元件
@@ -28,14 +30,22 @@ class EnemyComponent extends PositionComponent
   final EnemyType type;
   final double maxHealth;
   double health;
-  final double speed;
-  final double damage;
+  final double _baseDamage; // 重命名為基礎傷害
+  final double _baseSpeed; // 重命名為基礎速度
+  double _speedMultiplier = 1.0; // 添加速度倍增器
+  double _damageMultiplier = 1.0; // 添加傷害倍增器
 
   // 攻擊相關屬性
   final double attackRange; // 攻擊範圍
   final double detectionRange; // 偵測範圍
-  final double attackCooldown; // 攻擊冷卻時間
+  final double _baseAttackCooldown; // 重命名為基礎攻擊冷卻時間
+  double _attackCooldownMultiplier = 1.0; // 添加攻擊冷卻倍增器
   double _currentAttackCooldown = 0; // 當前攻擊冷卻計時器
+
+  // 計算後的屬性
+  double get speed => _baseSpeed * _speedMultiplier;
+  double get damage => _baseDamage * _damageMultiplier;
+  double get attackCooldown => _baseAttackCooldown * _attackCooldownMultiplier;
 
   // 視覺樣式
   final Color color;
@@ -66,14 +76,17 @@ class EnemyComponent extends PositionComponent
     required this.type,
     required this.mapComponent,
     this.maxHealth = 100,
-    this.speed = 60,
-    this.damage = 10,
+    double speed = 60,
+    double damage = 10,
     this.attackRange = 30,
     this.detectionRange = 200,
-    this.attackCooldown = 1.0,
+    double attackCooldown = 1.0,
     this.color = Colors.red,
     this.enemySize = 20,
   }) : health = maxHealth,
+       _baseSpeed = speed,
+       _baseDamage = damage,
+       _baseAttackCooldown = attackCooldown,
        super(
          position: position,
          size: Vector2.all(enemySize),
@@ -293,6 +306,9 @@ class EnemyComponent extends PositionComponent
           color: Colors.red.shade700, // 紅色攻擊效果
         );
         parent?.add(secondaryEffect);
+        break;
+      case EnemyType.boss:
+        // Boss型敵人：使用特殊攻擊
         break;
     }
 
@@ -616,6 +632,79 @@ class EnemyVisual extends Component {
         canvas.drawPath(leftSpike, spikePaint);
 
         // 畫紅色眼睛，讓獵手看起來更加危險
+        final eyePaint = Paint()..color = Colors.red.shade700;
+        canvas.drawCircle(Offset(-size / 5, -size / 6), size / 10, eyePaint);
+        canvas.drawCircle(Offset(size / 5, -size / 6), size / 10, eyePaint);
+
+        // 紅色眼睛的高光
+        final highlightPaint = Paint()..color = Colors.red.shade300;
+        canvas.drawCircle(
+          Offset(-size / 5, -size / 6),
+          size / 25,
+          highlightPaint,
+        );
+        canvas.drawCircle(
+          Offset(size / 5, -size / 6),
+          size / 25,
+          highlightPaint,
+        );
+
+        break;
+      case EnemyType.boss:
+        // Boss型敵人：更複雜的外觀
+        final path = Path();
+        path.moveTo(0, -size / 2); // 頂部
+        path.lineTo(size / 2, 0); // 右側
+        path.lineTo(0, size / 2); // 底部
+        path.lineTo(-size / 2, 0); // 左側
+        path.close();
+
+        // 填充主體
+        canvas.drawPath(path, paint);
+
+        // 畫尖角（使其看起來更具攻擊性）
+        final spikePaint =
+            Paint()
+              ..color = color.withRed((color.red + 50).clamp(0, 255))
+              ..style = PaintingStyle.fill;
+
+        // 頂部尖角
+        final topSpike =
+            Path()
+              ..moveTo(-size / 6, -size / 2)
+              ..lineTo(0, -size * 0.8)
+              ..lineTo(size / 6, -size / 2)
+              ..close();
+        canvas.drawPath(topSpike, spikePaint);
+
+        // 右側尖角
+        final rightSpike =
+            Path()
+              ..moveTo(size / 2, -size / 6)
+              ..lineTo(size * 0.8, 0)
+              ..lineTo(size / 2, size / 6)
+              ..close();
+        canvas.drawPath(rightSpike, spikePaint);
+
+        // 底部尖角
+        final bottomSpike =
+            Path()
+              ..moveTo(-size / 6, size / 2)
+              ..lineTo(0, size * 0.8)
+              ..lineTo(size / 6, size / 2)
+              ..close();
+        canvas.drawPath(bottomSpike, spikePaint);
+
+        // 左側尖角
+        final leftSpike =
+            Path()
+              ..moveTo(-size / 2, -size / 6)
+              ..lineTo(-size * 0.8, 0)
+              ..lineTo(-size / 2, size / 6)
+              ..close();
+        canvas.drawPath(leftSpike, spikePaint);
+
+        // 畫紅色眼睛，讓Boss看起來更加危險
         final eyePaint = Paint()..color = Colors.red.shade700;
         canvas.drawCircle(Offset(-size / 5, -size / 6), size / 10, eyePaint);
         canvas.drawCircle(Offset(size / 5, -size / 6), size / 10, eyePaint);

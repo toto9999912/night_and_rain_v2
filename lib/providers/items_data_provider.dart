@@ -16,8 +16,8 @@ final itemsDataProvider = Provider<Map<String, Item>>((ref) {
     // 米蟲級手槍
     'pistol_ricebug': RangedWeapon(
       id: 'pistol_ricebug',
-      name: '破舊手槍',
-      description: '有些老舊的手槍，勉強能夠使用',
+      name: '米蟲手槍',
+      description: '專為最懶的你打造，扣動扳機的動作連夢境都懶得掙脫',
       rarity: ItemRarity.riceBug,
       icon: Icons.sports_handball,
       weaponType: WeaponType.pistol,
@@ -30,8 +30,8 @@ final itemsDataProvider = Provider<Map<String, Item>>((ref) {
     // 銅牛級手槍
     'pistol_copper': RangedWeapon(
       id: 'pistol_copper',
-      name: '標準手槍',
-      description: '標準配發的手槍，性能可靠',
+      name: '銅牛哞槍',
+      description: '每次開槍都伴隨低沉「哞──」聲響，可靠又威武，是進階懶蟲的標配',
       rarity: ItemRarity.copperBull,
       icon: Icons.sports_handball,
       weaponType: WeaponType.pistol,
@@ -195,8 +195,8 @@ final itemsDataProvider = Provider<Map<String, Item>>((ref) {
     // 米蟲級狙擊槍
     'sniper_ricebug': RangedWeapon(
       id: 'sniper_ricebug',
-      name: '基礎狙擊槍',
-      description: '簡易的狙擊槍，精準度一般',
+      name: '米蟲狙擊槍',
+      description: '給米蟲新人使用的狙擊槍，在實戰的蠻坑爹的',
       rarity: ItemRarity.riceBug,
       icon: FontAwesomeIcons.crosshairs,
       weaponType: WeaponType.sniper,
@@ -238,11 +238,12 @@ final itemsDataProvider = Provider<Map<String, Item>>((ref) {
     'sniper_gold': RangedWeapon(
       id: 'sniper_gold',
       name: '喂～金牛座之眼',
-      description: '傳說中的狙擊槍，是米蟲教的金牛星座使者專用的武器。任何被鎖定的',
+      description:
+          '傳說中的狙擊槍，是米蟲教的金牛星座使者專用的武器。據說是因為金牛使者的眼光非常好(?，能夠一眼看穿敵人的弱點，所以這把狙擊槍也被稱為「金牛座之眼」。',
       rarity: ItemRarity.goldBull,
       icon: FontAwesomeIcons.crosshairs,
       weaponType: WeaponType.sniper,
-      damage: 90,
+      damage: 180,
       attackSpeed: 0.8,
       price: 5000,
       range: 1000,

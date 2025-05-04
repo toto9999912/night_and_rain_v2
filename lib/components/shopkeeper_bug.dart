@@ -6,9 +6,9 @@ import 'shopkeeper_npc.dart';
 /// 米蟲商店員 - 販賣多種物品的商店NPC
 class ShopkeeperBug extends ShopkeeperNpc {
   static const List<String> _bugConversations = [
-    '我的商店有最新鮮的商品！',
-    '這把武器是我從龍窟帶回來的，絕對值這個價！',
-    '別看我這樣，我可是很有眼光的收藏家。',
+    '你要是買不起，就快滾',
+    '我只招待有錢人哦',
+    '笑你買不起我店裡最高級的武器',
     '這些藥水都是用最純淨的材料釀造的，效果保證！',
     '如果你能找到更好的商品，我雙倍退款！',
     '不要猶豫了，這可是限量版！',

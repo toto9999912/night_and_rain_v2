@@ -1,8 +1,17 @@
 import 'package:flame/components.dart';
+import 'package:flame/effects.dart';
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
+import 'dart:developer' as developer;
 
-class ExplosionEffect extends PositionComponent {
+/// 確保透明度值在有效範圍內 (0.0-1.0)
+double safeOpacity(double value) {
+  if (value.isNaN) return 1.0; // 處理 NaN 情況
+  if (value.isInfinite) return value.isNegative ? 0.0 : 1.0; // 處理無限值情況
+  return value.clamp(0.0, 1.0);
+}
+
+class ExplosionEffect extends PositionComponent implements OpacityProvider {
   final Color color;
   final double explosionSize; // 改名為 explosionSize 避免與 PositionComponent.size 衝突
   final double duration;
@@ -23,7 +32,7 @@ class ExplosionEffect extends PositionComponent {
       particleCount,
       (i) =>
           Paint()
-            ..color = color.withValues(alpha: 1.0 - (i / particleCount))
+            ..color = color.withOpacity(safeOpacity(1.0 - (i / particleCount)))
             ..style = PaintingStyle.fill,
     );
 
@@ -47,8 +56,10 @@ class ExplosionEffect extends PositionComponent {
     // 更新顏色透明度
     final progress = _timer / duration;
     for (int i = 0; i < _paints.length; i++) {
-      final opacity = (1.0 - progress) * (1.0 - (i / _paints.length));
-      _paints[i].color = color.withValues(alpha: opacity);
+      final alphaValue = safeOpacity(
+        (1.0 - progress) * (1.0 - (i / _paints.length)),
+      );
+      _paints[i].color = color.withOpacity(alphaValue);
     }
   }
 
@@ -62,14 +73,30 @@ class ExplosionEffect extends PositionComponent {
     // 繪製爆炸粒子
     for (int i = 0; i < _paints.length; i++) {
       final radius = _radiuses[i] * expansion;
-      canvas.drawCircle(Offset.zero, radius, _paints[i]);
+
+      // 確保組合後的透明度仍在有效範圍內
+      final combinedOpacity = safeOpacity(_paints[i].color.opacity * _opacity);
+
+      // 套用整體透明度效果
+      Paint effectivePaint =
+          Paint()
+            ..color = _paints[i].color.withOpacity(combinedOpacity)
+            ..style = _paints[i].style
+            ..strokeWidth = _paints[i].strokeWidth
+            ..maskFilter = _paints[i].maskFilter;
+
+      canvas.drawCircle(Offset.zero, radius, effectivePaint);
 
       // 添加一些隨機飛濺效果
       final sparkCount = 5;
       final sparkLength = radius * 0.6;
+
+      // 同樣確保透明度值有效
+      final sparkOpacity = safeOpacity(_paints[i].color.opacity * _opacity);
+
       final sparkPaint =
           Paint()
-            ..color = _paints[i].color
+            ..color = _paints[i].color.withOpacity(sparkOpacity)
             ..strokeWidth = 2
             ..style = PaintingStyle.stroke;
 
@@ -84,6 +111,22 @@ class ExplosionEffect extends PositionComponent {
           sparkPaint,
         );
       }
+    }
+  }
+
+  // OpacityProvider 介面實現
+  @override
+  double get opacity => _opacity;
+  double _opacity = 1.0;
+  @override
+  set opacity(double value) {
+    // 使用全局函數確保透明度值有效
+    final oldValue = value;
+    _opacity = safeOpacity(value);
+
+    // 只在值被修正時記錄
+    if (oldValue != _opacity) {
+      developer.log('修正爆炸效果透明度從 $oldValue 到 $_opacity', name: 'OpacityDebug');
     }
   }
 }

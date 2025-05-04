@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'components/boss_component.dart';
 import 'components/map_component.dart';
 import 'components/astrologer_mumu.dart';
 import 'components/enemy_component.dart';
@@ -421,6 +422,63 @@ class NightAndRainGame extends FlameGame
       detectionRange: 1000,
       attackCooldown: 1.2,
     );
+
+    // 7. 添加一個超強大的Boss在地圖中心
+    _addBoss(
+      position: Vector2(mapSize.x * 0.5, mapSize.y * 0.3),
+      bossName: '深淵之王',
+      color: Colors.deepPurple,
+      maxHealth: 2000,
+      damage: 30,
+      speed: 50,
+      enemySize: 45,
+    );
+  }
+
+  // 添加Boss到地圖上
+  void _addBoss({
+    required Vector2 position,
+    required String bossName,
+    Color color = Colors.deepPurple,
+    double maxHealth = 1500,
+    double damage = 25,
+    double speed = 40,
+    double enemySize = 40,
+    double attackRange = 150,
+    double detectionRange = 600,
+    double attackCooldown = 1.5,
+    double specialAttackInterval = 8.0,
+    double summonInterval = 15.0,
+  }) {
+    // 創建Boss實例
+    final boss = BossComponent(
+      position: position,
+      mapComponent: _mapComponent,
+      bossName: bossName,
+      maxHealth: maxHealth,
+      damage: damage,
+      speed: speed,
+      attackRange: attackRange,
+      detectionRange: detectionRange,
+      attackCooldown: attackCooldown,
+      color: color,
+      enemySize: enemySize,
+      specialAttackInterval: specialAttackInterval,
+      summonInterval: summonInterval,
+      attackPatterns: [
+        BossAttackPattern.circularAttack,
+        BossAttackPattern.beamAttack,
+        BossAttackPattern.aoeAttack,
+        BossAttackPattern.rapidFire,
+        BossAttackPattern.teleport,
+      ],
+      totalPhases: 3,
+    );
+
+    // 添加到遊戲世界
+    gameWorld.add(boss);
+
+    debugPrint('已生成Boss: $bossName');
   }
 
   // 在指定位置添加單個敵人

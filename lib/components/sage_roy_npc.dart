@@ -13,10 +13,9 @@ class SageRoyNpc extends NpcComponent {
   // 是否已經給過智慧加成
   bool _hasGivenWisdomBuff = false;
 
-  SageRoyNpc({required Vector2 position, Vector2? size})
+  SageRoyNpc({required super.position, Vector2? size})
     : super(
         name: '智者羅伊',
-        position: position,
         size: size ?? Vector2(48, 48), // 稍微大一點的NPC
         color: Colors.purple.shade800, // 紫色代表智慧
         supportConversation: true, // 支持對話

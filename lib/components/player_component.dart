@@ -308,7 +308,17 @@ class PlayerComponent extends PositionComponent
   ) {
     super.onCollisionStart(intersectionPoints, other);
 
-    if (other is Obstacle || other is BoundaryWall) {
+    // 處理與敵人或敵人子彈的碰撞
+    if (other is BulletComponent) {
+      // 只處理敵人的子彈（玩家子彈沒有isEnemyBullet標記）
+      if (other.isEnemyBullet == true) {
+        debugPrint('玩家被敵人子彈擊中，受到 ${other.damage.toInt()} 點傷害');
+        takeDamage(other.damage.toInt());
+        other.removeFromParent(); // 子彈命中後消失
+      }
+    }
+    // 處理與障礙物的碰撞
+    else if (other is Obstacle || other is BoundaryWall) {
       // 計算反彈方向（從碰撞點到玩家中心）
       final playerCenter = position + size / 2;
       final collisionCenter = Vector2.zero();

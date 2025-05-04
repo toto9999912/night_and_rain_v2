@@ -1,14 +1,27 @@
+import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flame/collisions.dart';
 import 'package:flame/effects.dart';
 import 'package:flame/particles.dart';
 import 'package:flutter/material.dart';
+import 'dart:developer' as developer;
 import '../enum/item_rarity.dart';
+import 'boss_component.dart';
+import 'enemy_component.dart';
 import 'map_component.dart';
 import '../effects/explosion_effect.dart';
 
+// 添加全局輔助函數
+/// 確保透明度值在有效範圍內 (0.0-1.0)
+double safeOpacity(double value) {
+  if (value.isNaN) return 1.0; // 處理 NaN 情況
+  if (value.isInfinite) return value.isNegative ? 0.0 : 1.0; // 處理無限值情況
+  return value.clamp(0.0, 1.0);
+}
+
 class BulletComponent extends PositionComponent
-    with HasGameReference, CollisionCallbacks {
+    with HasGameReference, CollisionCallbacks
+    implements OpacityProvider {
   final Vector2 direction;
   final double speed;
   final double damage;
@@ -16,6 +29,7 @@ class BulletComponent extends PositionComponent
   final Color color;
   final ItemRarity? rarity; // 新增：子彈稀有度屬性
   final String trailEffect; // 新增：尾隨效果類型
+  final bool isEnemyBullet; // 新增：標記是否為敵人子彈
 
   double _distanceTraveled = 0;
   final Paint _paint;
@@ -35,6 +49,7 @@ class BulletComponent extends PositionComponent
     this.rarity, // 稀有度參數
     double size = 6.0, // 可自定義大小
     this.trailEffect = 'none', // 尾隨效果類型
+    this.isEnemyBullet = false, // 預設為玩家子彈
   }) : _paint = Paint()..color = color,
        super(
          position: position,
@@ -267,6 +282,11 @@ class BulletComponent extends PositionComponent
     // 避免重複處理碰撞
     if (_hasCollided) return;
 
+    // 如果是敵人子彈，不應該對Boss或其他敵人造成傷害
+    if (isEnemyBullet && (other is BossComponent || other is EnemyComponent)) {
+      return;
+    }
+
     // 處理與障礙物和邊界的碰撞
     if (other is Obstacle || other is BoundaryWall) {
       _hasCollided = true;
@@ -287,16 +307,41 @@ class BulletComponent extends PositionComponent
     //   removeFromParent();
     // }
   }
+
+  // OpacityProvider 介面實現
+  @override
+  double get opacity => _opacity;
+  double _opacity = 1.0;
+  @override
+  set opacity(double value) {
+    // 確保透明度值在有效範圍內
+    _opacity = safeOpacity(value);
+    if (value != _opacity) {
+      developer.log('修正子彈透明度從 $value 到 $_opacity', name: 'OpacityDebug');
+    }
+  }
 }
 
 /// 子彈視覺化組件，專門用於顯示和應用特效
-class BulletVisual extends CircleComponent {
+class BulletVisual extends CircleComponent implements OpacityProvider {
   BulletVisual({required double radius, required Color color})
     : super(
         radius: radius,
         paint: Paint()..color = color,
         anchor: Anchor.center,
       );
+
+  // OpacityProvider 介面實現
+  @override
+  double get opacity => _opacity;
+  double _opacity = 1.0;
+  @override
+  set opacity(double value) {
+    _opacity = safeOpacity(value);
+    if (value != _opacity) {
+      developer.log('修正子彈視覺透明度從 $value 到 $_opacity', name: 'OpacityDebug');
+    }
+  }
 
   /// 添加發光效果
   void addGlowEffect() {
