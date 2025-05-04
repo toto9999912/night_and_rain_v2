@@ -11,14 +11,7 @@ import '../../components/npc_component.dart';
 import '../../components/shopkeeper_npc.dart';
 import '../../components/astrologer_mumu.dart';
 import '../../providers/player_buffs_provider.dart';
-
-/// 對話選項模型
-class DialogOption {
-  final String text;
-  final VoidCallback onSelect;
-
-  DialogOption({required this.text, required this.onSelect});
-}
+import '../../providers/player_provider.dart'; // 添加player provider引用
 
 /// 與NPC對話的覆蓋層
 class DialogOverlay extends ConsumerStatefulWidget {
@@ -36,11 +29,17 @@ class _DialogOverlayState extends ConsumerState<DialogOverlay> {
   // 當前對話文本
   String _currentDialogue = '';
 
+  // 當前顯示的玩家回應（如果有）
+  String? _playerResponse;
+
   // 對話選項
-  List<DialogOption> _dialogOptions = [];
+  List<PlayerResponse> _dialogResponses = [];
 
   // 是否顯示選項
   bool _showOptions = false;
+
+  // 對話歷史記錄
+  List<Map<String, String>> _dialogueHistory = [];
 
   // 是否是商店NPC
   bool get _isShopkeeper => widget.npc is ShopkeeperNpc;
@@ -59,30 +58,104 @@ class _DialogOverlayState extends ConsumerState<DialogOverlay> {
     if (_isAstrologer) {
       // 占星員特殊對話
       _initializeAstrologerDialogue();
+    } else if (widget.npc.dialogueTree.isNotEmpty) {
+      // 如果有對話樹，使用交互式對話模式
+      _loadDialogueFromTree();
     } else {
       // 標準對話
       _selectRandomDialogue();
     }
   }
 
+  // 從對話樹加載對話
+  void _loadDialogueFromTree() {
+    final dialogue = widget.npc.getCurrentDialogue();
+    if (dialogue == null) {
+      // 如果沒有當前對話，默認使用隨機對話
+      _selectRandomDialogue();
+      return;
+    }
+
+    setState(() {
+      _currentDialogue = dialogue.npcText;
+      _dialogResponses = dialogue.responses;
+      _showOptions = dialogue.responses.isNotEmpty;
+      _playerResponse = null; // 清除玩家回應顯示
+
+      // 將NPC對話添加到歷史記錄
+      _addToDialogueHistory(speaker: widget.npc.name, text: _currentDialogue);
+    });
+
+    // 如果沒有玩家回應選項但有下一個對話ID，延遲後自動加載下一個對話
+    if (dialogue.responses.isEmpty && dialogue.nextDialogueId != null) {
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        if (mounted) {
+          widget.npc.setAndGetDialogue(dialogue.nextDialogueId!);
+          _loadDialogueFromTree();
+        }
+      });
+    }
+  }
+
+  // 選擇玩家回應後處理
+  void _handlePlayerResponse(PlayerResponse response) {
+    final playerName = ref.read(playerProvider).name;
+
+    setState(() {
+      _playerResponse = response.text;
+      _showOptions = false;
+
+      // 將玩家回應添加到歷史記錄
+      _addToDialogueHistory(speaker: playerName, text: response.text);
+    });
+
+    // 如果有動作，執行動作
+    if (response.action != null) {
+      response.action!();
+    }
+
+    // 延遲後加載下一個對話
+    Future.delayed(const Duration(milliseconds: 800), () {
+      if (mounted && response.nextDialogueId != null) {
+        widget.npc.setAndGetDialogue(response.nextDialogueId!);
+        _loadDialogueFromTree();
+      }
+    });
+  }
+
+  // 添加對話到歷史記錄
+  void _addToDialogueHistory({required String speaker, required String text}) {
+    setState(() {
+      _dialogueHistory.add({'speaker': speaker, 'text': text});
+
+      // 限制歷史記錄長度，保留最近的5條
+      if (_dialogueHistory.length > 5) {
+        _dialogueHistory.removeAt(0);
+      }
+    });
+  }
+
   void _initializeAstrologerDialogue() {
     setState(() {
       _currentDialogue = '我能在星象中看到你的未來... 你想選擇哪種星盤指引？';
       _showOptions = true;
-      _dialogOptions = [
-        DialogOption(
+      _dialogResponses = [
+        PlayerResponse(
           text: '速度星盤：移動速度+30',
-          onSelect: () {
+          action: () {
             _applySpeedBuff();
           },
         ),
-        DialogOption(
+        PlayerResponse(
           text: '生命星盤：最大生命值+20',
-          onSelect: () {
+          action: () {
             _applyHealthBuff();
           },
         ),
       ];
+
+      // 將NPC對話添加到歷史記錄
+      _addToDialogueHistory(speaker: widget.npc.name, text: _currentDialogue);
     });
   }
 
@@ -96,6 +169,9 @@ class _DialogOverlayState extends ConsumerState<DialogOverlay> {
     setState(() {
       _currentDialogue = '速度星盤已啟用！感受星辰的速度在你體內流動吧。這個加成將持續5分鐘。';
       _showOptions = false;
+
+      // 將NPC回應添加到歷史記錄
+      _addToDialogueHistory(speaker: widget.npc.name, text: _currentDialogue);
     });
   }
 
@@ -109,6 +185,9 @@ class _DialogOverlayState extends ConsumerState<DialogOverlay> {
     setState(() {
       _currentDialogue = '生命星盤已啟用！你的生命力得到了星辰的祝福。這個加成將持續5分鐘。';
       _showOptions = false;
+
+      // 將NPC回應添加到歷史記錄
+      _addToDialogueHistory(speaker: widget.npc.name, text: _currentDialogue);
     });
   }
 
@@ -121,6 +200,9 @@ class _DialogOverlayState extends ConsumerState<DialogOverlay> {
       setState(() {
         _currentDialogue = widget.npc.conversations[randomIndex];
         _showOptions = false;
+
+        // 將NPC對話添加到歷史記錄
+        _addToDialogueHistory(speaker: widget.npc.name, text: _currentDialogue);
       });
     } else if (widget.npc.greetings.isNotEmpty) {
       // 如果沒有對話，則使用問候語
@@ -129,18 +211,27 @@ class _DialogOverlayState extends ConsumerState<DialogOverlay> {
       setState(() {
         _currentDialogue = widget.npc.greetings[randomIndex];
         _showOptions = false;
+
+        // 將NPC對話添加到歷史記錄
+        _addToDialogueHistory(speaker: widget.npc.name, text: _currentDialogue);
       });
     } else {
       // 如果都沒有，使用默認文本
       setState(() {
         _currentDialogue = '你好，冒險者！';
         _showOptions = false;
+
+        // 將NPC對話添加到歷史記錄
+        _addToDialogueHistory(speaker: widget.npc.name, text: _currentDialogue);
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // 獲取玩家名稱
+    final playerName = ref.watch(playerProvider).name;
+
     return Material(
       color: Colors.transparent,
       child: Stack(
@@ -153,7 +244,7 @@ class _DialogOverlayState extends ConsumerState<DialogOverlay> {
 
           // 對話框
           Positioned(
-            bottom: 100,
+            bottom: 80,
             left: 50,
             right: 50,
             child: Container(
@@ -167,38 +258,116 @@ class _DialogOverlayState extends ConsumerState<DialogOverlay> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // NPC名稱
-                  Text(
-                    widget.npc.name,
-                    style: const TextStyle(
-                      color: Colors.yellow,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                  // 對話歷史記錄
+                  if (_dialogueHistory.isNotEmpty) ...[
+                    Container(
+                      constraints: const BoxConstraints(maxHeight: 180),
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            for (final entry in _dialogueHistory)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: RichText(
+                                  text: TextSpan(
+                                    children: [
+                                      TextSpan(
+                                        text: "${entry['speaker']}: ",
+                                        style: TextStyle(
+                                          color:
+                                              entry['speaker'] == playerName
+                                                  ? Colors.cyan
+                                                  : Colors.yellow,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                      TextSpan(
+                                        text: entry['text'],
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
+                    const Divider(color: Colors.white30, height: 16),
+                  ],
 
-                  // 對話內容
-                  Text(
-                    _currentDialogue,
-                    style: const TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                  const SizedBox(height: 16),
+                  // 當前對話
+                  if (_currentDialogue.isNotEmpty) ...[
+                    RichText(
+                      text: TextSpan(
+                        children: [
+                          TextSpan(
+                            text: "${widget.npc.name}: ",
+                            style: const TextStyle(
+                              color: Colors.yellow,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          TextSpan(
+                            text: _currentDialogue,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
 
-                  // 選項按鈕（如果有）
+                  // 當前玩家回應（如果有）
+                  if (_playerResponse != null) ...[
+                    RichText(
+                      text: TextSpan(
+                        children: [
+                          TextSpan(
+                            text: "$playerName: ",
+                            style: const TextStyle(
+                              color: Colors.cyan,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          TextSpan(
+                            text: _playerResponse!,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+
+                  // 玩家選項按鈕（如果有）
                   if (_showOptions) ...[
-                    for (final option in _dialogOptions)
+                    const SizedBox(height: 8),
+                    for (final response in _dialogResponses)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 8),
                         child: ElevatedButton(
-                          onPressed: option.onSelect,
+                          onPressed: () => _handlePlayerResponse(response),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.indigo.shade700,
                             minimumSize: const Size(double.infinity, 0),
                             padding: const EdgeInsets.symmetric(vertical: 12),
                           ),
                           child: Text(
-                            option.text,
+                            response.text,
                             style: const TextStyle(fontSize: 15),
                           ),
                         ),
@@ -227,10 +396,10 @@ class _DialogOverlayState extends ConsumerState<DialogOverlay> {
                           child: const Text('查看商店'),
                         ),
 
-                      if (!_showOptions) ...[
+                      if (!_showOptions && widget.npc.dialogueTree.isEmpty) ...[
                         const SizedBox(width: 12),
 
-                        // "換個話題"按鈕 - 僅在非選項模式下顯示
+                        // "換個話題"按鈕 - 僅在非選項模式下顯示，且僅適用於非對話樹模式
                         OutlinedButton(
                           onPressed: _selectRandomDialogue,
                           style: OutlinedButton.styleFrom(
@@ -252,6 +421,8 @@ class _DialogOverlayState extends ConsumerState<DialogOverlay> {
                       // "離開"按鈕
                       ElevatedButton(
                         onPressed: () {
+                          // 重置對話狀態
+                          widget.npc.resetDialogue();
                           widget.game.overlays.remove('DialogOverlay');
                         },
                         style: ElevatedButton.styleFrom(

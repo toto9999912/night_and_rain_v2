@@ -4,6 +4,28 @@ import 'package:flame/collisions.dart';
 import 'package:flutter/material.dart';
 import 'player_component.dart';
 
+/// 對話結構體 - 用於構建對話樹
+class Dialogue {
+  final String npcText; // NPC的對話內容
+  final List<PlayerResponse> responses; // 玩家可選擇的回應
+  final String? nextDialogueId; // 如果沒有回應選項，直接跳轉到下一個對話的ID
+
+  Dialogue({
+    required this.npcText,
+    this.responses = const [],
+    this.nextDialogueId,
+  });
+}
+
+/// 玩家回應選項
+class PlayerResponse {
+  final String text; // 回應的文本內容
+  final String? nextDialogueId; // 選擇此回應後跳轉到的對話ID
+  final Function()? action; // 選擇此回應時可能觸發的額外動作
+
+  PlayerResponse({required this.text, this.nextDialogueId, this.action});
+}
+
 /// 基本NPC組件，所有NPC類型都繼承此類
 class NpcComponent extends PositionComponent
     with CollisionCallbacks, HasGameReference {
@@ -21,8 +43,13 @@ class NpcComponent extends PositionComponent
   final double interactionRadius;
   // 是否支持正式對話（按E鍵對話）
   final bool supportConversation;
-  // 完整對話內容 - 可以是多句對話組成的對話樹
+  // 簡單對話內容 - 舊版的對話模式
   final List<String> conversations;
+
+  // 新增：對話樹 - 用於構建複雜的交互式對話
+  final Map<String, Dialogue> dialogueTree;
+  // 新增：當前對話ID
+  String? currentDialogueId;
 
   // 當前玩家是否在互動範圍內
   bool _playerInRange = false;
@@ -48,9 +75,11 @@ class NpcComponent extends PositionComponent
     this.interactionRadius = 100,
     this.supportConversation = false, // 默認改為 false，只有明確指定的 NPC 才支持對話
     List<String>? conversations,
+    Map<String, Dialogue>? dialogueTree,
   }) : greetings = greetings ?? ['你好！', '嗨！', '有什麼我能幫你的嗎？'],
        conversations =
            conversations ?? ['歡迎來到夜雨世界，我是$name。', '今天天氣不錯，不是嗎？', '需要我幫忙嗎？'],
+       dialogueTree = dialogueTree ?? {},
        super(position: position, size: size, anchor: Anchor.center);
 
   @override
@@ -304,9 +333,32 @@ class NpcComponent extends PositionComponent
     }
   }
 
-  // 開始對話 - 由玩家調用
+  // 新增：獲取當前對話
+  Dialogue? getCurrentDialogue() {
+    if (currentDialogueId == null) return null;
+    return dialogueTree[currentDialogueId];
+  }
+
+  // 新增：設置對話ID並獲取對話
+  Dialogue? setAndGetDialogue(String dialogueId) {
+    currentDialogueId = dialogueId;
+    return getCurrentDialogue();
+  }
+
+  // 新增：重置對話狀態
+  void resetDialogue() {
+    currentDialogueId = null;
+  }
+
+  // 更新開始對話方法，支持交互式對話
   void startDialogue() {
-    if (!supportConversation || conversations.isEmpty) return;
+    if (!supportConversation) return;
+
+    // 如果有對話樹，使用對話樹，否則使用簡單對話列表
+    if (dialogueTree.isNotEmpty) {
+      // 設置初始對話ID為"start"
+      currentDialogueId = "start";
+    }
 
     // 使用對話覆蓋層顯示對話
     game.overlays.add('DialogOverlay');

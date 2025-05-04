@@ -446,6 +446,7 @@ class PlayerComponent extends PositionComponent
         color: bulletColor, // 使用統一的顏色
         rarity: rarity,
         size: size, // 使用適當的彈丸尺寸
+        trailEffect: trailEffect, // 傳遞尾隨效果
       );
 
       // 添加到遊戲世界
@@ -465,12 +466,14 @@ class PlayerComponent extends PositionComponent
     ItemRarity? rarity;
     double size = 6.0;
     Color bulletColor = Colors.lightBlue; // 默認統一顏色
+    String trailEffect = 'none'; // 默認無尾隨效果
 
     if (weapon is RangedWeapon) {
       bulletParams = weapon.getBulletParameters();
       rarity = bulletParams['rarity'] as ItemRarity?;
       size = bulletParams['size'] as double? ?? 6.0;
       bulletColor = bulletParams['color'] as Color? ?? Colors.lightBlue;
+      trailEffect = bulletParams['trailEffect'] as String? ?? 'none';
     }
 
     final bullet = BulletComponent(
@@ -482,6 +485,7 @@ class PlayerComponent extends PositionComponent
       color: bulletColor, // 使用統一的顏色
       rarity: rarity, // 傳遞稀有度
       size: size, // 傳遞子彈大小
+      trailEffect: trailEffect, // 傳遞尾隨效果
     );
 
     game.gameWorld.add(bullet);

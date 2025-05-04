@@ -15,6 +15,7 @@ import 'components/enemy_component.dart';
 import 'components/npc_component.dart';
 import 'components/shopkeeper_bug.dart';
 import 'components/wandering_npc.dart';
+import 'components/sage_roy_npc.dart'; // 引入新的智者羅伊NPC
 import 'models/consumable.dart';
 import 'models/weapon.dart';
 import 'providers/inventory_provider.dart';
@@ -164,6 +165,12 @@ class NightAndRainGame extends FlameGame
     );
     gameWorld.add(shopkeeperBug);
 
+    // 添加智者羅伊 - 放在地圖中央位置
+    final sageRoy = SageRoyNpc(
+      position: Vector2(mapSize.x * 0.5, mapSize.y * 0.4),
+    );
+    gameWorld.add(sageRoy);
+
     // 添加3個會隨機走動的NPC
 
     // 放在地圖中央偏左的位置
@@ -230,7 +237,7 @@ class NightAndRainGame extends FlameGame
 
     // // 為測試目的，添加高等級機關槍和狙擊槍
     // inventoryNotifier.addItem(itemsData['machinegun_gold'] as Weapon);
-    // inventoryNotifier.addItem(itemsData['sniper_gold'] as Weapon);
+    inventoryNotifier.addItem(itemsData['sniper_gold'] as Weapon);
 
     playerNotifier.equipWeapon(initialWeapon);
 

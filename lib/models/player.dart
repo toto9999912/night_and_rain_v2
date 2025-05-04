@@ -5,6 +5,7 @@ import 'weapon.dart';
 /// 所有狀態更新必須透過 copyWith 來產生新的實例
 class Player {
   // 基礎屬性 - 所有屬性都是 final
+  final String name; // 新增：玩家名稱
   final int health;
   final int maxHealth;
   final int mana;
@@ -21,6 +22,7 @@ class Player {
 
   // 構造函數
   const Player({
+    this.name = '非雨', // 默認玩家姓名設為"非雨"
     this.health = 100,
     this.maxHealth = 100,
     this.mana = 100,
@@ -114,6 +116,7 @@ class Player {
 
   // 複製對象（用於 Riverpod 狀態更新）
   Player copyWith({
+    String? name,
     int? health,
     int? maxHealth,
     int? mana,
@@ -124,6 +127,7 @@ class Player {
     Armor? equippedArmor,
   }) {
     return Player(
+      name: name ?? this.name,
       health: health ?? this.health,
       maxHealth: maxHealth ?? this.maxHealth,
       mana: mana ?? this.mana,

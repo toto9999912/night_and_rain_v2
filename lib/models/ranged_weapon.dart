@@ -47,6 +47,7 @@ class RangedWeapon extends Weapon {
       'rarity': rarity, // 傳遞武器稀有度
       'size': _getBulletSizeByRarity(), // 根據稀有度調整子彈大小
       'weaponType': weaponType, // 傳遞武器類型，以便特殊處理
+      'trailEffect': _getTrailEffectByRarity(), // 根據稀有度設置尾隨效果
     };
   }
 
@@ -63,6 +64,22 @@ class RangedWeapon extends Weapon {
         return 12.0;
       default:
         return 5.0; // 預設大小
+    }
+  }
+
+  // 根據稀有度獲取適當的尾隨效果
+  String _getTrailEffectByRarity() {
+    switch (rarity) {
+      case ItemRarity.riceBug:
+        return 'none';
+      case ItemRarity.copperBull:
+        return 'simple';
+      case ItemRarity.silverBull:
+        return 'shine';
+      case ItemRarity.goldBull:
+        return 'particles';
+      default:
+        return 'none';
     }
   }
 

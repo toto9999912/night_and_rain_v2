@@ -200,10 +200,10 @@ class BulletComponent extends PositionComponent
     // 計算已移動距離
     _distanceTraveled += movement.length;
 
-    // 超出射程移除子彈，並產生小型爆炸效果
+    // 超出射程移除子彈，並產生爆炸效果
     if (_distanceTraveled >= range) {
-      // 產生爆炸效果，但較小且淡色
-      _createExplosion(Colors.grey, 10);
+      // 產生爆炸效果 - 使用子彈原本的顏色而不是灰色
+      _createExplosion(color, 0); // 大小參數已不再使用，傳0即可
       removeFromParent();
     }
   }
@@ -215,29 +215,32 @@ class BulletComponent extends PositionComponent
   }
 
   void _createExplosion(Color explosionColor, double explosionSize) {
+    // 定義統一的基本爆炸大小
+    const double baseExplosionSize = 15.0;
+
     // 根據稀有度調整爆炸效果
     Color finalColor = explosionColor;
-    double finalSize = explosionSize;
+    double finalSize = baseExplosionSize; // 使用統一的基本大小
 
     if (rarity != null) {
       switch (rarity!) {
         case ItemRarity.riceBug:
-          // 普通爆炸
-          break;
+          // 米蟲級不顯示爆炸效果
+          return; // 直接返回，不創建爆炸
         case ItemRarity.copperBull:
-          // 稍大一些的爆炸，帶銅色調
+          // 銅牛級：基本大小 × 1.0
           finalColor = const Color(0xFFB87333).withOpacity(0.8);
-          finalSize *= 1.2;
+          finalSize = baseExplosionSize * 1.0;
           break;
         case ItemRarity.silverBull:
-          // 更大的爆炸，銀白色調
+          // 銀牛級：基本大小 × 1.5
           finalColor = const Color(0xFFCED4DA).withOpacity(0.8);
-          finalSize *= 1.5;
+          finalSize = baseExplosionSize * 1.5;
           break;
         case ItemRarity.goldBull:
-          // 最大的爆炸，金色調
+          // 金牛級：基本大小 × 2.0
           finalColor = const Color(0xFFFFB627).withOpacity(0.8);
-          finalSize *= 2.0;
+          finalSize = baseExplosionSize * 2.0;
           break;
       }
     }
@@ -268,8 +271,8 @@ class BulletComponent extends PositionComponent
     if (other is Obstacle || other is BoundaryWall) {
       _hasCollided = true;
 
-      // 產生爆炸效果
-      _createExplosion(color, 20);
+      // 產生爆炸效果 - 使用與到達最大射程相同的參數
+      _createExplosion(color, 0); // 大小參數已不再使用，傳0即可
 
       // 移除子彈
       removeFromParent();
@@ -297,8 +300,35 @@ class BulletVisual extends CircleComponent {
 
   /// 添加發光效果
   void addGlowEffect() {
+    // 強化的發光效果 - 增加模糊半徑和亮度
     paint
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.0)
-      ..color = paint.color.withOpacity(0.8);
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4.0) // 增加模糊半徑
+      ..color = paint.color.withAlpha(230) // 增加亮度
+      ..strokeWidth =
+          2.0 // 添加描邊
+      ..style = PaintingStyle.stroke; // 描邊樣式
+
+    // 添加內部填充，使發光效果更豐富
+    final innerPaint =
+        Paint()
+          ..color = paint.color.withAlpha(180)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.inner, 2.0);
+
+    // 保存內部填充畫筆以便在渲染時使用
+    _innerPaint = innerPaint;
+  }
+
+  // 添加內部填充畫筆
+  Paint? _innerPaint;
+
+  @override
+  void render(Canvas canvas) {
+    // 如果有內部填充畫筆，則先繪製內部填充
+    if (_innerPaint != null) {
+      canvas.drawCircle(Offset.zero, radius * 0.8, _innerPaint!);
+    }
+
+    // 繪製主體
+    super.render(canvas);
   }
 }
