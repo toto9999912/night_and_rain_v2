@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'bullet_component.dart';
 import 'player_component.dart';
 import 'map_component.dart';
+import '../main.dart'; // 添加對 main.dart 的引用，其中包含 NightAndRainGame 類
 
 /// 敵人類型列舉
 enum EnemyType {
@@ -16,11 +17,13 @@ enum EnemyType {
   ranged,
   // 混合型敵人，有多種攻擊方式
   hybrid,
+  // 獵手型敵人，會持續追蹤玩家，即使看不到也能找到
+  hunter,
 }
 
 /// 基礎敵人元件
 class EnemyComponent extends PositionComponent
-    with HasGameReference, CollisionCallbacks, HasPaint {
+    with HasGameReference<NightAndRainGame>, CollisionCallbacks, HasPaint {
   // 敵人基本屬性
   final EnemyType type;
   final double maxHealth;
@@ -119,6 +122,43 @@ class EnemyComponent extends PositionComponent
 
   /// 尋找並追蹤玩家
   void _findAndChasePlayer(double dt) {
+    // 針對獵手型敵人使用直接方法獲取玩家
+    if (type == EnemyType.hunter) {
+      // 直接從遊戲實例獲取玩家
+      final player = (game as NightAndRainGame).getPlayer();
+
+      _isChasing = true;
+      _target = player;
+
+      // 玩家的中心位置
+      final playerCenter = player.position + player.size / 2;
+      final enemyCenter = position + size / 2;
+
+      // 更新最後已知玩家位置
+      _lastKnownPlayerPosition = playerCenter.clone();
+
+      // 計算距離和方向
+      final distanceToPlayer = enemyCenter.distanceTo(playerCenter);
+      final directionToPlayer = (playerCenter - enemyCenter)..normalize();
+
+      // 獵手型敵人有更大的追蹤速度加成
+      double hunterSpeedMultiplier = 1.3; // 速度提高30%
+
+      // 只有在超出攻擊範圍時才移動，否則準備攻擊
+      if (distanceToPlayer > attackRange) {
+        _moveInDirection(
+          directionToPlayer,
+          dt,
+          speedMultiplier: hunterSpeedMultiplier,
+        );
+      } else {
+        // 在攻擊範圍內，準備攻擊
+        debugPrint('獵手敵人在攻擊範圍內，準備攻擊');
+      }
+      return; // 獵手型敵人處理完畢，直接返回
+    }
+
+    // 其他類型敵人的舊邏輯
     // 獲取世界中的所有玩家
     final players = game.children.whereType<PlayerComponent>();
     if (players.isEmpty) return;
@@ -126,10 +166,10 @@ class EnemyComponent extends PositionComponent
     // 簡單起見，只追蹤第一個玩家
     final player = players.first;
 
-    // 計算與玩家的距離
-    final distanceToPlayer = position.distanceTo(
-      player.position + player.size / 2,
-    );
+    // 計算與玩家的距離（使用中心點而不是角落）
+    final playerCenter = player.position + player.size / 2;
+    final enemyCenter = position + size / 2;
+    final distanceToPlayer = enemyCenter.distanceTo(playerCenter);
 
     // 玩家在檢測範圍內，開始追蹤
     if (distanceToPlayer <= detectionRange) {
@@ -137,11 +177,10 @@ class EnemyComponent extends PositionComponent
       _target = player;
 
       // 更新最後已知玩家位置
-      _lastKnownPlayerPosition = player.position + player.size / 2;
+      _lastKnownPlayerPosition = playerCenter.clone();
 
       // 計算朝向玩家的方向
-      final directionToPlayer =
-          (_lastKnownPlayerPosition - position)..normalize();
+      final directionToPlayer = (playerCenter - enemyCenter)..normalize();
 
       // 根據敵人類型決定行為
       if (type == EnemyType.ranged && distanceToPlayer < attackRange * 0.7) {
@@ -149,10 +188,36 @@ class EnemyComponent extends PositionComponent
         final retreatDirection = -directionToPlayer;
         _moveInDirection(retreatDirection, dt);
       } else if (distanceToPlayer > attackRange) {
-        // 追蹤玩家
-        _moveInDirection(directionToPlayer, dt);
+        // 追蹤玩家 - 對於混合型敵人，使其更積極地追蹤
+        double chaseSpeedMultiplier = 1.0;
+        if (type == EnemyType.hybrid) {
+          chaseSpeedMultiplier = 1.2; // 混合型敵人移動速度提高20%
+        }
+        _moveInDirection(
+          directionToPlayer,
+          dt,
+          speedMultiplier: chaseSpeedMultiplier,
+        );
+      } else {
+        // 在攻擊範圍內，保持位置
+        debugPrint('敵人在攻擊範圍內，停止移動並準備攻擊');
       }
     } else {
+      // 如果玩家不在檢測範圍內，但我們之前正在追蹤，保持較長時間的"記憶"
+      if (_isChasing && _target != null) {
+        // 漸進式降低追蹤意願，而不是立即停止
+        // 計算新方向 - 朝向最後已知的玩家位置
+        final directionToLastKnown =
+            (_lastKnownPlayerPosition - enemyCenter)..normalize();
+
+        // 檢查是否仍然需要移動
+        if (enemyCenter.distanceTo(_lastKnownPlayerPosition) > 10) {
+          _moveInDirection(directionToLastKnown, dt);
+          return; // 保持追蹤狀態
+        }
+      }
+
+      // 如果到達最後已知位置或從未追蹤過，則進入隨機移動狀態
       _isChasing = false;
       _target = null;
     }
@@ -211,6 +276,24 @@ class EnemyComponent extends PositionComponent
           _fireProjectile(attackDirection);
         }
         break;
+
+      case EnemyType.hunter:
+        // 獵手型敵人：更強力的近戰攻擊
+        // 造成更高的傷害
+        _target!.takeDamage((damage * 1.2).toInt());
+
+        // 添加特殊的攻擊視覺效果 - 獵手攻擊更兇猛
+        _showMeleeAttackEffect(attackDirection);
+
+        // 添加額外的視覺效果，表示獵手的特殊攻擊
+        final secondaryEffect = MeleeAttackEffect(
+          position: position + attackDirection * enemySize * 1.2,
+          direction: attackDirection,
+          size: enemySize * 1.0, // 稍大的效果
+          color: Colors.red.shade700, // 紅色攻擊效果
+        );
+        parent?.add(secondaryEffect);
+        break;
     }
 
     debugPrint('敵人 ${identityHashCode(this)} 攻擊玩家');
@@ -268,11 +351,15 @@ class EnemyComponent extends PositionComponent
   }
 
   /// 朝指定方向移動
-  void _moveInDirection(Vector2 direction, double dt) {
+  void _moveInDirection(
+    Vector2 direction,
+    double dt, {
+    double speedMultiplier = 1.0,
+  }) {
     if (_isDead) return;
 
     // 計算移動向量
-    final movement = direction * speed * dt;
+    final movement = direction * speed * speedMultiplier * dt;
     final nextPosition = position + movement;
 
     // 檢查是否與障礙物碰撞
@@ -472,12 +559,87 @@ class EnemyVisual extends Component {
         canvas.drawCircle(Offset(size / 6, -size / 6), size / 12, eyePaint);
 
         break;
+
+      case EnemyType.hunter:
+        // 獵手型敵人：鑽石形狀 + 尖角
+        // 畫主體（鑽石形）
+        final path = Path();
+        path.moveTo(0, -size / 2); // 頂部
+        path.lineTo(size / 2, 0); // 右側
+        path.lineTo(0, size / 2); // 底部
+        path.lineTo(-size / 2, 0); // 左側
+        path.close();
+
+        // 填充主體
+        canvas.drawPath(path, paint);
+
+        // 畫尖角（使其看起來更具攻擊性）
+        final spikePaint =
+            Paint()
+              ..color = color.withRed((color.red + 50).clamp(0, 255))
+              ..style = PaintingStyle.fill;
+
+        // 頂部尖角
+        final topSpike =
+            Path()
+              ..moveTo(-size / 6, -size / 2)
+              ..lineTo(0, -size * 0.8)
+              ..lineTo(size / 6, -size / 2)
+              ..close();
+        canvas.drawPath(topSpike, spikePaint);
+
+        // 右側尖角
+        final rightSpike =
+            Path()
+              ..moveTo(size / 2, -size / 6)
+              ..lineTo(size * 0.8, 0)
+              ..lineTo(size / 2, size / 6)
+              ..close();
+        canvas.drawPath(rightSpike, spikePaint);
+
+        // 底部尖角
+        final bottomSpike =
+            Path()
+              ..moveTo(-size / 6, size / 2)
+              ..lineTo(0, size * 0.8)
+              ..lineTo(size / 6, size / 2)
+              ..close();
+        canvas.drawPath(bottomSpike, spikePaint);
+
+        // 左側尖角
+        final leftSpike =
+            Path()
+              ..moveTo(-size / 2, -size / 6)
+              ..lineTo(-size * 0.8, 0)
+              ..lineTo(-size / 2, size / 6)
+              ..close();
+        canvas.drawPath(leftSpike, spikePaint);
+
+        // 畫紅色眼睛，讓獵手看起來更加危險
+        final eyePaint = Paint()..color = Colors.red.shade700;
+        canvas.drawCircle(Offset(-size / 5, -size / 6), size / 10, eyePaint);
+        canvas.drawCircle(Offset(size / 5, -size / 6), size / 10, eyePaint);
+
+        // 紅色眼睛的高光
+        final highlightPaint = Paint()..color = Colors.red.shade300;
+        canvas.drawCircle(
+          Offset(-size / 5, -size / 6),
+          size / 25,
+          highlightPaint,
+        );
+        canvas.drawCircle(
+          Offset(size / 5, -size / 6),
+          size / 25,
+          highlightPaint,
+        );
+
+        break;
     }
   }
 }
 
 /// 近戰攻擊效果組件
-class MeleeAttackEffect extends PositionComponent {
+class MeleeAttackEffect extends PositionComponent with HasPaint {
   final Vector2 direction;
   final double effectSize; // 重命名為 effectSize 以避免與 PositionComponent 的 size 屬性衝突
   final Color color;
@@ -493,7 +655,10 @@ class MeleeAttackEffect extends PositionComponent {
          position: position,
          anchor: Anchor.center,
          size: Vector2.all(size), // 設置 PositionComponent 的 size 屬性
-       );
+       ) {
+    // 設置初始顏色和不透明度
+    paint.color = color.withOpacity(0.7);
+  }
 
   @override
   Future<void> onLoad() async {
@@ -538,11 +703,10 @@ class MeleeAttackEffect extends PositionComponent {
 }
 
 /// 爆炸效果組件
-class ExplosionComponent extends PositionComponent {
+class ExplosionComponent extends PositionComponent with HasPaint {
   final Color color;
   double _currentRadius = 0;
   final double _maxRadius;
-  final double _expansionSpeed = 100;
   final double _duration = 0.5;
   double _elapsedTime = 0;
 
@@ -551,7 +715,12 @@ class ExplosionComponent extends PositionComponent {
     required Vector2 size,
     required this.color,
   }) : _maxRadius = size.x / 2,
-       super(position: position, anchor: Anchor.center);
+       super(position: position, anchor: Anchor.center) {
+    // 初始化 paint
+    paint.color = color.withOpacity(0.7);
+    paint.style = PaintingStyle.stroke;
+    paint.strokeWidth = 3;
+  }
 
   @override
   void update(double dt) {
@@ -574,10 +743,7 @@ class ExplosionComponent extends PositionComponent {
     canvas.drawCircle(
       Offset.zero,
       _currentRadius,
-      Paint()
-        ..color = color.withOpacity(opacity * 0.7)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 3,
+      paint..color = color.withOpacity(opacity * 0.7),
     );
 
     // 內圈

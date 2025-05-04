@@ -145,6 +145,11 @@ class NightAndRainGame extends FlameGame
     await _initializePlayerWeapon();
   }
 
+  // 提供一個公共方法來獲取玩家組件
+  PlayerComponent getPlayer() {
+    return _player;
+  }
+
   // 添加各種NPC到遊戲世界
   Future<void> _addNpcs() async {
     // 添加姆姆占星員 - 放在地圖的左上區域
@@ -364,6 +369,50 @@ class NightAndRainGame extends FlameGame
       speed: 50,
       attackRange: 180,
       detectionRange: 250,
+    );
+
+    // 6. 添加幾個獵手型敵人，專門追蹤玩家
+    // 偏遠的左上角
+    _addEnemyAt(
+      position: Vector2(mapSize.x * 0.15, mapSize.y * 0.15),
+      type: EnemyType.hunter,
+      color: Colors.red.shade600, // 深紅色
+      enemySize: 28, // 較大尺寸
+      health: 150,
+      damage: 15,
+      speed: 80, // 較高的基礎速度
+      attackRange: 40,
+      detectionRange: 1000, // 非常大的偵測範圍，基本上能看到整個地圖
+      attackCooldown: 0.8, // 較短的攻擊冷卻
+    );
+
+    // 中間偏右區域
+    _addEnemyAt(
+      position: Vector2(mapSize.x * 0.6, mapSize.y * 0.5),
+      type: EnemyType.hunter,
+      color: Colors.pink.shade800, // 粉紅色變種
+      enemySize: 26,
+      health: 130,
+      damage: 12,
+      speed: 85,
+      attackRange: 35,
+      detectionRange: 1000,
+      attackCooldown: 1.0,
+    );
+
+    // 在左側中間
+    _addEnemyGroup(
+      center: Vector2(mapSize.x * 0.2, mapSize.y * 0.5),
+      count: 2,
+      radius: 80.0,
+      type: EnemyType.hunter,
+      color: Colors.redAccent,
+      health: 120,
+      damage: 10,
+      speed: 75,
+      attackRange: 35,
+      detectionRange: 1000,
+      attackCooldown: 1.2,
     );
   }
 
