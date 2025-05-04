@@ -13,6 +13,7 @@ import 'components/boss_component.dart';
 import 'components/map_component.dart';
 import 'components/astrologer_mumu.dart';
 import 'components/enemy_component.dart';
+import 'components/mediterranean_man_npc.dart';
 import 'components/npc_component.dart';
 import 'components/shopkeeper_bug.dart';
 import 'components/wandering_npc.dart';
@@ -166,6 +167,12 @@ class NightAndRainGame extends FlameGame
     );
     gameWorld.add(shopkeeperBug);
 
+    // 添加米蟲商店員 - 放在地圖的右上區域
+    final mediterraneanManNpc = MediterraneanManNpc(
+      position: Vector2(mapSize.x * 0.70, mapSize.y * 0.20),
+    );
+    gameWorld.add(mediterraneanManNpc);
+
     // 添加智者羅伊 - 放在地圖中央位置
     final sageRoy = SageRoyNpc(
       position: Vector2(mapSize.x * 0.5, mapSize.y * 0.4),
@@ -305,181 +312,180 @@ class NightAndRainGame extends FlameGame
   // 添加敵人到遊戲世界
   Future<void> _addEnemies() async {
     // 使用固定位置添加敵人，確保不會生成在玩家附近
-    final random = math.Random();
 
-    // 1. 在地圖左下角區域添加一組近戰敵人
-    _addEnemyGroup(
-      center: Vector2(mapSize.x * 0.2, mapSize.y * 0.8),
-      count: 3,
-      radius: 80.0,
-      type: EnemyType.melee,
-      color: Colors.red.shade800,
-      health: 80,
-      damage: 10,
-      speed: 70,
-    );
+    // // 1. 在地圖左下角區域添加一組近戰敵人
+    // _addEnemyGroup(
+    //   center: Vector2(mapSize.x * 0.2, mapSize.y * 0.8),
+    //   count: 3,
+    //   radius: 80.0,
+    //   type: EnemyType.melee,
+    //   color: Colors.red.shade800,
+    //   health: 80,
+    //   damage: 10,
+    //   speed: 70,
+    // );
 
-    // 2. 在地圖右下角區域添加一組遠程敵人
-    _addEnemyGroup(
-      center: Vector2(mapSize.x * 0.8, mapSize.y * 0.8),
-      count: 2,
-      radius: 120.0,
-      type: EnemyType.ranged,
-      color: Colors.purple.shade800,
-      health: 60,
-      damage: 15,
-      speed: 50,
-      attackRange: 200,
-    );
+    // // 2. 在地圖右下角區域添加一組遠程敵人
+    // _addEnemyGroup(
+    //   center: Vector2(mapSize.x * 0.8, mapSize.y * 0.8),
+    //   count: 2,
+    //   radius: 120.0,
+    //   type: EnemyType.ranged,
+    //   color: Colors.purple.shade800,
+    //   health: 60,
+    //   damage: 15,
+    //   speed: 50,
+    //   attackRange: 200,
+    // );
 
-    // 3. 在地圖右上角區域添加一組混合型敵人
-    _addEnemyGroup(
-      center: Vector2(mapSize.x * 0.8, mapSize.y * 0.2),
-      count: 2,
-      radius: 100.0,
-      type: EnemyType.hybrid,
-      color: Colors.amber.shade800,
-      health: 100,
-      damage: 12,
-      speed: 60,
-      attackRange: 150,
-    );
+    // // 3. 在地圖右上角區域添加一組混合型敵人
+    // _addEnemyGroup(
+    //   center: Vector2(mapSize.x * 0.8, mapSize.y * 0.2),
+    //   count: 2,
+    //   radius: 100.0,
+    //   type: EnemyType.hybrid,
+    //   color: Colors.amber.shade800,
+    //   health: 100,
+    //   damage: 12,
+    //   speed: 60,
+    //   attackRange: 150,
+    // );
 
-    // 4. 在障礙物附近添加零散敵人
-    // 障礙物位置在地圖的一些關鍵點，所以我們在它們附近添加敵人
-    _addEnemyAt(
-      position: Vector2(mapSize.x * 0.3, mapSize.y * 0.4),
-      type: EnemyType.melee,
-      color: Colors.red.shade700,
-    );
+    // // 4. 在障礙物附近添加零散敵人
+    // // 障礙物位置在地圖的一些關鍵點，所以我們在它們附近添加敵人
+    // _addEnemyAt(
+    //   position: Vector2(mapSize.x * 0.3, mapSize.y * 0.4),
+    //   type: EnemyType.melee,
+    //   color: Colors.red.shade700,
+    // );
 
-    _addEnemyAt(
-      position: Vector2(mapSize.x * 0.7, mapSize.y * 0.4),
-      type: EnemyType.ranged,
-      color: Colors.purple.shade700,
-      attackRange: 180,
-    );
+    // _addEnemyAt(
+    //   position: Vector2(mapSize.x * 0.7, mapSize.y * 0.4),
+    //   type: EnemyType.ranged,
+    //   color: Colors.purple.shade700,
+    //   attackRange: 180,
+    // );
 
-    _addEnemyAt(
-      position: Vector2(mapSize.x * 0.4, mapSize.y * 0.7),
-      type: EnemyType.hybrid,
-      color: Colors.amber.shade700,
-    );
+    // _addEnemyAt(
+    //   position: Vector2(mapSize.x * 0.4, mapSize.y * 0.7),
+    //   type: EnemyType.hybrid,
+    //   color: Colors.amber.shade700,
+    // );
 
-    // 5. 添加一個強大的「精英」敵人在地圖中心偏下的位置
-    _addEnemyAt(
-      position: Vector2(mapSize.x * 0.5, mapSize.y * 0.65),
-      type: EnemyType.hybrid,
-      color: Colors.deepOrange,
-      enemySize: 35, // 這裡已經修改為 enemySize
-      health: 200,
-      damage: 20,
-      speed: 50,
-      attackRange: 180,
-      detectionRange: 250,
-    );
+    // // 5. 添加一個強大的「精英」敵人在地圖中心偏下的位置
+    // _addEnemyAt(
+    //   position: Vector2(mapSize.x * 0.5, mapSize.y * 0.65),
+    //   type: EnemyType.hybrid,
+    //   color: Colors.deepOrange,
+    //   enemySize: 35, // 這裡已經修改為 enemySize
+    //   health: 200,
+    //   damage: 20,
+    //   speed: 50,
+    //   attackRange: 180,
+    //   detectionRange: 250,
+    // );
 
-    // 6. 添加幾個獵手型敵人，專門追蹤玩家
-    // 偏遠的左上角
-    _addEnemyAt(
-      position: Vector2(mapSize.x * 0.15, mapSize.y * 0.15),
-      type: EnemyType.hunter,
-      color: Colors.red.shade600, // 深紅色
-      enemySize: 28, // 較大尺寸
-      health: 150,
-      damage: 15,
-      speed: 80, // 較高的基礎速度
-      attackRange: 40,
-      detectionRange: 1000, // 非常大的偵測範圍，基本上能看到整個地圖
-      attackCooldown: 0.8, // 較短的攻擊冷卻
-    );
+    // // 6. 添加幾個獵手型敵人，專門追蹤玩家
+    // // 偏遠的左上角
+    // _addEnemyAt(
+    //   position: Vector2(mapSize.x * 0.15, mapSize.y * 0.15),
+    //   type: EnemyType.hunter,
+    //   color: Colors.red.shade600, // 深紅色
+    //   enemySize: 28, // 較大尺寸
+    //   health: 150,
+    //   damage: 15,
+    //   speed: 80, // 較高的基礎速度
+    //   attackRange: 40,
+    //   detectionRange: 1000, // 非常大的偵測範圍，基本上能看到整個地圖
+    //   attackCooldown: 0.8, // 較短的攻擊冷卻
+    // );
 
-    // 中間偏右區域
-    _addEnemyAt(
-      position: Vector2(mapSize.x * 0.6, mapSize.y * 0.5),
-      type: EnemyType.hunter,
-      color: Colors.pink.shade800, // 粉紅色變種
-      enemySize: 26,
-      health: 130,
-      damage: 12,
-      speed: 85,
-      attackRange: 35,
-      detectionRange: 1000,
-      attackCooldown: 1.0,
-    );
+    // // 中間偏右區域
+    // _addEnemyAt(
+    //   position: Vector2(mapSize.x * 0.6, mapSize.y * 0.5),
+    //   type: EnemyType.hunter,
+    //   color: Colors.pink.shade800, // 粉紅色變種
+    //   enemySize: 26,
+    //   health: 130,
+    //   damage: 12,
+    //   speed: 85,
+    //   attackRange: 35,
+    //   detectionRange: 1000,
+    //   attackCooldown: 1.0,
+    // );
 
-    // 在左側中間
-    _addEnemyGroup(
-      center: Vector2(mapSize.x * 0.2, mapSize.y * 0.5),
-      count: 2,
-      radius: 80.0,
-      type: EnemyType.hunter,
-      color: Colors.redAccent,
-      health: 120,
-      damage: 10,
-      speed: 75,
-      attackRange: 35,
-      detectionRange: 1000,
-      attackCooldown: 1.2,
-    );
+    // // 在左側中間
+    // _addEnemyGroup(
+    //   center: Vector2(mapSize.x * 0.2, mapSize.y * 0.5),
+    //   count: 2,
+    //   radius: 80.0,
+    //   type: EnemyType.hunter,
+    //   color: Colors.redAccent,
+    //   health: 120,
+    //   damage: 10,
+    //   speed: 75,
+    //   attackRange: 35,
+    //   detectionRange: 1000,
+    //   attackCooldown: 1.2,
+    // );
 
-    // 7. 添加一個超強大的Boss在地圖中心
-    _addBoss(
-      position: Vector2(mapSize.x * 0.5, mapSize.y * 0.3),
-      bossName: '深淵之王',
-      color: Colors.deepPurple,
-      maxHealth: 2000,
-      damage: 30,
-      speed: 50,
-      enemySize: 45,
-    );
+    // // 7. 添加一個超強大的Boss在地圖中心
+    // _addBoss(
+    //   position: Vector2(mapSize.x * 0.5, mapSize.y * 0.3),
+    //   bossName: '深淵之王',
+    //   color: Colors.deepPurple,
+    //   maxHealth: 2000,
+    //   damage: 30,
+    //   speed: 50,
+    //   enemySize: 45,
+    // );
   }
 
-  // 添加Boss到地圖上
-  void _addBoss({
-    required Vector2 position,
-    required String bossName,
-    Color color = Colors.deepPurple,
-    double maxHealth = 1500,
-    double damage = 25,
-    double speed = 40,
-    double enemySize = 40,
-    double attackRange = 150,
-    double detectionRange = 600,
-    double attackCooldown = 1.5,
-    double specialAttackInterval = 8.0,
-    double summonInterval = 15.0,
-  }) {
-    // 創建Boss實例
-    final boss = BossComponent(
-      position: position,
-      mapComponent: _mapComponent,
-      bossName: bossName,
-      maxHealth: maxHealth,
-      damage: damage,
-      speed: speed,
-      attackRange: attackRange,
-      detectionRange: detectionRange,
-      attackCooldown: attackCooldown,
-      color: color,
-      enemySize: enemySize,
-      specialAttackInterval: specialAttackInterval,
-      summonInterval: summonInterval,
-      attackPatterns: [
-        BossAttackPattern.circularAttack,
-        BossAttackPattern.beamAttack,
-        BossAttackPattern.aoeAttack,
-        BossAttackPattern.rapidFire,
-        BossAttackPattern.teleport,
-      ],
-      totalPhases: 3,
-    );
+  // // 添加Boss到地圖上
+  // void _addBoss({
+  //   required Vector2 position,
+  //   required String bossName,
+  //   Color color = Colors.deepPurple,
+  //   double maxHealth = 1500,
+  //   double damage = 25,
+  //   double speed = 40,
+  //   double enemySize = 40,
+  //   double attackRange = 150,
+  //   double detectionRange = 600,
+  //   double attackCooldown = 1.5,
+  //   double specialAttackInterval = 8.0,
+  //   double summonInterval = 15.0,
+  // }) {
+  //   // 創建Boss實例
+  //   final boss = BossComponent(
+  //     position: position,
+  //     mapComponent: _mapComponent,
+  //     bossName: bossName,
+  //     maxHealth: maxHealth,
+  //     damage: damage,
+  //     speed: speed,
+  //     attackRange: attackRange,
+  //     detectionRange: detectionRange,
+  //     attackCooldown: attackCooldown,
+  //     color: color,
+  //     enemySize: enemySize,
+  //     specialAttackInterval: specialAttackInterval,
+  //     summonInterval: summonInterval,
+  //     attackPatterns: [
+  //       BossAttackPattern.circularAttack,
+  //       BossAttackPattern.beamAttack,
+  //       BossAttackPattern.aoeAttack,
+  //       BossAttackPattern.rapidFire,
+  //       BossAttackPattern.teleport,
+  //     ],
+  //     totalPhases: 3,
+  //   );
 
-    // 添加到遊戲世界
-    gameWorld.add(boss);
+  //   // 添加到遊戲世界
+  //   gameWorld.add(boss);
 
-    debugPrint('已生成Boss: $bossName');
-  }
+  //   debugPrint('已生成Boss: $bossName');
+  // }
 
   // 在指定位置添加單個敵人
   void _addEnemyAt({
