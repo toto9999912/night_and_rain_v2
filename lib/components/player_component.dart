@@ -107,6 +107,15 @@ class PlayerComponent extends PositionComponent
     // 這里不再處理空格鍵射擊，因為已經在 NightAndRainGame 中處理
     // 空格鍵射擊已移至 NightAndRainGame.onKeyEvent 方法中處理
 
+    // Enter鍵打開密碼輸入界面
+    if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.enter) {
+      // 檢查密碼輸入覆蓋層是否已打開
+      if (!game.overlays.isActive('PasswordInputOverlay')) {
+        game.overlays.add('PasswordInputOverlay');
+      }
+      return true;
+    }
+
     // E鍵與NPC對話
     if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.keyE) {
       // 如果有可交互的NPC，優先與NPC交互
@@ -568,6 +577,27 @@ class PlayerComponent extends PositionComponent
 
     // 確保冷卻計時器重置
     _shootCooldown = 0;
+  }
+
+  // 重置鍵盤狀態
+  void resetKeyboardState() {
+    // 清空按鍵狀態集合
+    _keysPressed.clear();
+
+    // 停止所有可能的移動
+    stopAllMovement();
+
+    // 確保射擊狀態重置
+    _isShooting = false;
+
+    // 重置碰撞冷卻
+    _collisionCooldown = 0;
+    _lastCollisionDirection = Vector2.zero();
+
+    // 在需要時重新綑定焦點
+    WidgetsBinding.instance.focusManager.primaryFocus?.unfocus();
+
+    debugPrint('已重置玩家按鍵狀態');
   }
 
   // 設置當前可互動的NPC

@@ -27,6 +27,7 @@ import 'providers/items_data_provider.dart';
 import 'providers/player_provider.dart';
 import 'ui/overlays/hud_overlay.dart';
 import 'components/player_component.dart';
+import 'ui/overlays/password_input_overlay.dart';
 import 'ui/overlays/player_dashboard_overlay.dart';
 import 'ui/overlays/dialog_overlay.dart';
 import 'ui/overlays/shop_overlay.dart';
@@ -35,6 +36,8 @@ import 'ui/overlays/game_over_overlay.dart';
 final GlobalKey<RiverpodAwareGameWidgetState<NightAndRainGame>> gameWidgetKey =
     GlobalKey<RiverpodAwareGameWidgetState<NightAndRainGame>>();
 final gameInstance = NightAndRainGame();
+// 新增遊戲全域焦點節點
+final gameFocusNode = FocusNode(debugLabel: 'GameFocusNode');
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -62,6 +65,8 @@ class NightAndRainApp extends StatelessWidget {
       home: RiverpodAwareGameWidget<NightAndRainGame>(
         game: gameInstance,
         key: gameWidgetKey,
+        focusNode: gameFocusNode,
+        autofocus: false,
         overlayBuilderMap: {
           'HudOverlay': (context, game) => HudOverlay(game: game),
           'InventoryOverlay':
@@ -73,6 +78,8 @@ class NightAndRainApp extends StatelessWidget {
               (context, game) =>
                   ShopOverlay(game: game, shopkeeper: game.dialogNpc!),
           'GameOverOverlay': (context, game) => GameOverOverlay(game: game),
+          'PasswordInputOverlay':
+              (context, game) => PasswordInputOverlay(game: game),
         },
         initialActiveOverlays: const ['HudOverlay'],
       ),
@@ -111,6 +118,11 @@ class NightAndRainGame extends FlameGame
   @override
   Future<void> onLoad() async {
     await super.onLoad();
+
+    // 確保遊戲在啟動時獲取焦點
+    Future.delayed(const Duration(milliseconds: 100), () {
+      gameFocusNode.requestFocus();
+    });
 
     // world + camera
     gameWorld = World();
@@ -661,6 +673,14 @@ class NightAndRainGame extends FlameGame
     if (_interactionPromptComponent != null) {
       _interactionPromptComponent!.removeFromParent();
       _interactionPromptComponent = null;
+    }
+  }
+
+  // 重置鍵盤處理
+  void resetKeyboardHandling() {
+    // 確保玩家組件正確重置按鍵狀態
+    if (_player != null) {
+      _player.resetKeyboardState();
     }
   }
 
