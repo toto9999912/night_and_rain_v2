@@ -43,8 +43,6 @@ class NpcComponent extends PositionComponent
   final double interactionRadius;
   // 是否支持正式對話（按E鍵對話）
   final bool supportConversation;
-  // 簡單對話內容 - 舊版的對話模式
-  final List<String> conversations;
 
   // 新增：對話樹 - 用於構建複雜的交互式對話
   final Map<String, Dialogue> dialogueTree;
@@ -77,8 +75,7 @@ class NpcComponent extends PositionComponent
     List<String>? conversations,
     Map<String, Dialogue>? dialogueTree,
   }) : greetings = greetings ?? ['你好！', '嗨！', '有什麼我能幫你的嗎？'],
-       conversations =
-           conversations ?? ['歡迎來到夜雨世界，我是$name。', '今天天氣不錯，不是嗎？', '需要我幫忙嗎？'],
+
        dialogueTree = dialogueTree ?? {},
        super(position: position, size: size, anchor: Anchor.center);
 

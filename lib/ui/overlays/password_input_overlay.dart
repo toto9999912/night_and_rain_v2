@@ -152,11 +152,9 @@ class _PasswordInputOverlayState extends ConsumerState<PasswordInputOverlay> {
   }
 
   // 處理按鍵事件，特別是Escape鍵
-  void _handleKeyEvent(RawKeyEvent event) {
-    if (event is RawKeyDownEvent) {
-      if (event.logicalKey == LogicalKeyboardKey.escape) {
-        _closeOverlay();
-      }
+  void _handleKeyEvent(KeyEvent event) {
+    if (event.logicalKey == LogicalKeyboardKey.escape) {
+      _closeOverlay();
     }
   }
 
@@ -166,9 +164,9 @@ class _PasswordInputOverlayState extends ConsumerState<PasswordInputOverlay> {
 
     return ScaffoldMessenger(
       key: _scaffoldMessengerKey,
-      child: RawKeyboardListener(
+      child: KeyboardListener(
         focusNode: FocusNode(), // 使用單獨的焦點節點來處理原始鍵盤事件
-        onKey: _handleKeyEvent,
+        onKeyEvent: _handleKeyEvent,
         child: Material(
           color: Colors.black.withOpacity(0.7),
           child: Center(

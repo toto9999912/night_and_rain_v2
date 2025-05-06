@@ -20,7 +20,6 @@ class RangedWeapon extends Weapon {
     required super.price,
     required super.weaponType,
     required super.damage,
-    required super.attackSpeed,
     required super.range,
     super.cooldown,
     required super.manaCost,
@@ -78,8 +77,6 @@ class RangedWeapon extends Weapon {
         return 'shine';
       case ItemRarity.goldBull:
         return 'particles';
-      default:
-        return 'none';
     }
   }
 
@@ -111,7 +108,7 @@ class RangedWeapon extends Weapon {
       price: price ?? this.price,
       weaponType: weaponType ?? this.weaponType,
       damage: damage ?? this.damage,
-      attackSpeed: attackSpeed ?? this.attackSpeed,
+
       range: range ?? this.range,
       cooldown: cooldown ?? this.cooldown,
       manaCost: manaCost ?? this.manaCost,

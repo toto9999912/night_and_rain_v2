@@ -22,7 +22,7 @@ final itemsDataProvider = Provider<Map<String, Item>>((ref) {
       icon: Icons.sports_handball,
       weaponType: WeaponType.pistol,
       damage: 8,
-      attackSpeed: 1.3,
+
       price: 100,
       range: 250,
       manaCost: 5,
@@ -36,7 +36,7 @@ final itemsDataProvider = Provider<Map<String, Item>>((ref) {
       icon: Icons.sports_handball,
       weaponType: WeaponType.pistol,
       damage: 12,
-      attackSpeed: 1.5,
+
       price: 300,
       range: 300,
       manaCost: 5,
@@ -50,7 +50,7 @@ final itemsDataProvider = Provider<Map<String, Item>>((ref) {
       icon: Icons.sports_handball,
       weaponType: WeaponType.pistol,
       damage: 18,
-      attackSpeed: 1.8,
+
       price: 800,
       range: 350,
       manaCost: 4,
@@ -64,7 +64,7 @@ final itemsDataProvider = Provider<Map<String, Item>>((ref) {
       icon: Icons.sports_handball,
       weaponType: WeaponType.pistol,
       damage: 25,
-      attackSpeed: 2.0,
+
       price: 2000,
       range: 400,
       manaCost: 3,
@@ -81,7 +81,7 @@ final itemsDataProvider = Provider<Map<String, Item>>((ref) {
       icon: FontAwesomeIcons.gun,
       weaponType: WeaponType.shotgun,
       damage: 20,
-      attackSpeed: 0.8,
+
       price: 150,
       range: 150,
       manaCost: 12,
@@ -95,7 +95,7 @@ final itemsDataProvider = Provider<Map<String, Item>>((ref) {
       icon: FontAwesomeIcons.gun,
       weaponType: WeaponType.shotgun,
       damage: 28,
-      attackSpeed: 0.9,
+
       price: 450,
       range: 180,
       manaCost: 15,
@@ -109,7 +109,7 @@ final itemsDataProvider = Provider<Map<String, Item>>((ref) {
       icon: FontAwesomeIcons.gun,
       weaponType: WeaponType.shotgun,
       damage: 35,
-      attackSpeed: 1.0,
+
       price: 1200,
       range: 220,
       manaCost: 18,
@@ -123,7 +123,7 @@ final itemsDataProvider = Provider<Map<String, Item>>((ref) {
       icon: FontAwesomeIcons.gun,
       weaponType: WeaponType.shotgun,
       damage: 45,
-      attackSpeed: 1.2,
+
       price: 3000,
       range: 250,
       manaCost: 20,
@@ -139,7 +139,7 @@ final itemsDataProvider = Provider<Map<String, Item>>((ref) {
       icon: FontAwesomeIcons.bullseye,
       weaponType: WeaponType.machineGun,
       damage: 6,
-      attackSpeed: 3.0,
+
       price: 200,
       range: 280,
       manaCost: 2,
@@ -154,7 +154,7 @@ final itemsDataProvider = Provider<Map<String, Item>>((ref) {
       icon: FontAwesomeIcons.bullseye,
       weaponType: WeaponType.machineGun,
       damage: 8,
-      attackSpeed: 4.0,
+
       price: 600,
       range: 320,
       manaCost: 2,
@@ -169,7 +169,7 @@ final itemsDataProvider = Provider<Map<String, Item>>((ref) {
       icon: FontAwesomeIcons.bullseye,
       weaponType: WeaponType.machineGun,
       damage: 10,
-      attackSpeed: 5.0,
+
       price: 1500,
       range: 380,
       manaCost: 1,
@@ -184,7 +184,7 @@ final itemsDataProvider = Provider<Map<String, Item>>((ref) {
       icon: FontAwesomeIcons.bullseye,
       weaponType: WeaponType.machineGun,
       damage: 12,
-      attackSpeed: 6.0,
+
       price: 4000,
       range: 450,
       manaCost: 1,
@@ -201,7 +201,7 @@ final itemsDataProvider = Provider<Map<String, Item>>((ref) {
       icon: FontAwesomeIcons.crosshairs,
       weaponType: WeaponType.sniper,
       damage: 30,
-      attackSpeed: 0.5,
+
       price: 300,
       range: 500,
       manaCost: 15,
@@ -215,7 +215,7 @@ final itemsDataProvider = Provider<Map<String, Item>>((ref) {
       icon: FontAwesomeIcons.crosshairs,
       weaponType: WeaponType.sniper,
       damage: 45,
-      attackSpeed: 0.6,
+
       price: 900,
       range: 650,
       manaCost: 18,
@@ -229,7 +229,7 @@ final itemsDataProvider = Provider<Map<String, Item>>((ref) {
       icon: FontAwesomeIcons.crosshairs,
       weaponType: WeaponType.sniper,
       damage: 65,
-      attackSpeed: 0.7,
+
       price: 2200,
       range: 800,
       manaCost: 20,
@@ -244,7 +244,7 @@ final itemsDataProvider = Provider<Map<String, Item>>((ref) {
       icon: FontAwesomeIcons.crosshairs,
       weaponType: WeaponType.sniper,
       damage: 180,
-      attackSpeed: 0.8,
+
       price: 5000,
       range: 1000,
       manaCost: 25,

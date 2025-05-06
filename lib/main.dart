@@ -8,8 +8,6 @@ import 'package:flame_riverpod/flame_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import 'components/boss_component.dart';
 import 'components/map_component.dart';
 import 'components/astrologer_mumu.dart';
 import 'components/enemy_component.dart';

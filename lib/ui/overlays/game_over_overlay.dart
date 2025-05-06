@@ -4,13 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/game.dart';
 import 'package:night_and_rain_v2/main.dart';
 import 'package:night_and_rain_v2/providers/player_provider.dart';
-import 'package:night_and_rain_v2/providers/inventory_provider.dart';
 
 /// 遊戲結束覆蓋層
 class GameOverOverlay extends ConsumerWidget {
   final FlameGame game;
 
-  const GameOverOverlay({Key? key, required this.game}) : super(key: key);
+  const GameOverOverlay({super.key, required this.game});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

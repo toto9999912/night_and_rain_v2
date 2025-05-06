@@ -45,9 +45,6 @@ class PortalComponent extends PositionComponent
   /// 玩家是否在傳送門範圍內
   bool _playerInRange = false;
 
-  /// 動畫計時器
-  double _animationTime = 0;
-
   /// 特效發生器
   Timer? _particleTimer;
 
@@ -148,7 +145,6 @@ class PortalComponent extends PositionComponent
     super.update(dt);
 
     // 更新動畫時間
-    _animationTime += dt;
 
     // 更新粒子效果定時器
     _particleTimer?.update(dt);

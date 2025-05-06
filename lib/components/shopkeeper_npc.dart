@@ -1,7 +1,5 @@
 import 'package:flame/components.dart';
-import 'package:flutter/material.dart';
 import 'package:flame_riverpod/flame_riverpod.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../main.dart';
 import '../managers/shop_manager.dart';
@@ -20,18 +18,15 @@ class ShopkeeperNpc extends NpcComponent with RiverpodComponentMixin {
     required List<String> shopItems,
     String shopName = "",
     double discountRate = 1.0,
-    List<String> greetings = const ['歡迎光臨！', '需要什麼東西嗎？', '我的貨品都是最好的！'],
-    List<String> conversations = const [],
+    List<String> super.greetings = const ['歡迎光臨！', '需要什麼東西嗎？', '我的貨品都是最好的！'],
+    List<String> super.conversations = const [],
     Vector2? size,
-    double interactionRadius = 40,
+    super.interactionRadius = 40,
   }) : _shopItems = shopItems,
        _discountRate = discountRate,
        _shopName = shopName,
        super(
-         greetings: greetings,
-         conversations: conversations,
-         size: size ?? Vector2(32, 32), // 提供默認大小而不是null
-         interactionRadius: interactionRadius,
+         size: size ?? Vector2(32, 32),
          supportConversation: true, // 商店NPC支持對話
        );
 

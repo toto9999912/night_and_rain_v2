@@ -19,7 +19,6 @@ class MeleeWeapon extends Weapon {
     required super.icon,
     required super.price,
     required super.damage,
-    required super.attackSpeed,
     this.swingAngle = 1.5, // 預設揮舞角度約85度
     this.canBlock = false,
     super.range,
@@ -80,7 +79,6 @@ class MeleeWeapon extends Weapon {
       icon: icon ?? this.icon,
       price: price ?? this.price,
       damage: damage ?? this.damage,
-      attackSpeed: attackSpeed ?? this.attackSpeed,
       range: range ?? this.range,
       cooldown: cooldown ?? this.cooldown,
       manaCost: manaCost ?? this.manaCost,

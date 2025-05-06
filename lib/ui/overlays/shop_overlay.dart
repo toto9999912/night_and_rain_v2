@@ -13,6 +13,7 @@ import '../../models/armor.dart';
 import '../../models/weapon.dart';
 import '../../providers/inventory_provider.dart';
 import '../../providers/player_provider.dart';
+import '../widgets/stat_row.dart';
 
 class ShopOverlay extends ConsumerStatefulWidget {
   final FlameGame game;
@@ -437,41 +438,6 @@ class _ShopOverlayState extends ConsumerState<ShopOverlay> {
     );
   }
 
-  // // 物品屬性展示
-  // Widget _buildItemStats(Item item) {
-  //   // 取得物品的各種屬性並顯示
-  //   String statsText = "";
-
-  //   // 使用 item.getDescription() 中的格式來展示屬性
-  //   // 但不包括名稱、描述等已在其他地方顯示的內容
-  //   if (item.weaponItem != null) {
-  //     statsText = item.weaponItem!.getStats();
-  //   } else {
-  //     // 根據物品類型顯示不同的屬性
-  //     switch (item.type) {
-  //       case ItemType.consumable:
-  //         if (item is Consumable) {
-  //           if (item.healthRestore > 0) {
-  //             statsText += "生命恢復: +${item.healthRestore}\n";
-  //           }
-  //           if (item.manaRestore > 0) {
-  //             statsText += "魔力恢復: +${item.manaRestore}\n";
-  //           }
-  //         }
-  //         break;
-  //       // case ItemType.armor:
-  //       //   if (item is Armor) {
-  //       //     statsText += "防禦力: +${item.defense}\n";
-  //       //   }
-  //       //   break;
-  //       default:
-  //         statsText = "暫無詳細屬性";
-  //     }
-  //   }
-
-  //   return Text(statsText, style: const TextStyle(color: Colors.white70));
-  // }
-
   // 購買物品的方法
   void _purchaseItem(Item item) {
     final playerNotifier = ref.read(playerProvider.notifier);
@@ -808,82 +774,59 @@ class _ShopOverlayState extends ConsumerState<ShopOverlay> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildStatRow('武器類型', item.weaponType.name),
-          _buildStatRow('傷害', item.damage.toString(), color: Colors.redAccent),
-          _buildStatRow('攻擊速度', item.attackSpeed.toString()),
-          _buildStatRow('攻擊範圍', item.range.toString()),
-          _buildStatRow('冷卻時間', '${item.cooldown}秒'),
+          StatRow(label: '武器類型', value: item.weaponType.name),
+          StatRow(
+            label: '傷害',
+            value: item.damage.toString(),
+            color: Colors.redAccent,
+          ),
+          StatRow(label: '射擊速度', value: (1 / item.cooldown).toStringAsFixed(1)),
+          StatRow(label: '攻擊範圍', value: item.range.toString()),
+          StatRow(label: '冷卻時間', value: '${item.cooldown}秒'),
           if (item.manaCost > 0)
-            _buildStatRow(
-              '魔力消耗',
-              item.manaCost.toString(),
+            StatRow(
+              label: '魔力消耗',
+              value: item.manaCost.toString(),
               color: Colors.blueAccent,
             ),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
         ],
       );
     } else if (item is Consumable) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildStatRow('類型', '消耗品'),
+          StatRow(label: '類型', value: '消耗品'),
           if (item.healthRestore > 0)
-            _buildStatRow(
-              '生命恢復',
-              '+${item.healthRestore}',
+            StatRow(
+              label: '生命恢復',
+              value: '+${item.healthRestore}',
               color: Colors.redAccent,
             ),
           if (item.manaRestore > 0)
-            _buildStatRow(
-              '魔力恢復',
-              '+${item.manaRestore}',
+            StatRow(
+              label: '魔力恢復',
+              value: '+${item.manaRestore}',
               color: Colors.blueAccent,
             ),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
         ],
       );
     } else if (item is Armor) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildStatRow('類型', '防具'),
-          _buildStatRow(
-            '防禦力',
-            item.defense.toString(),
+          StatRow(label: '類型', value: '防具'),
+          StatRow(
+            label: '防禦力',
+            value: item.defense.toString(),
             color: Colors.blueAccent,
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
         ],
       );
     }
 
-    return SizedBox.shrink(); // 默認為空
-  }
-
-  // 構建屬性行顯示
-  Widget _buildStatRow(String label, String value, {Color? color}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        children: [
-          Text(
-            '$label: ',
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              color: color ?? Colors.white,
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
+    return const SizedBox.shrink(); // 默認為空
   }
 }

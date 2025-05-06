@@ -6,11 +6,11 @@ import 'npc_component.dart';
 class AstrologerMumu extends NpcComponent {
   AstrologerMumu({required super.position})
     : super(
-        name: '姆姆占星員',
+        name: '姆姆占星員-蕾翠絲',
         size: Vector2(40, 40),
         color: Colors.purple,
         greetings: [
-          '歡迎來到星座屋！',
+          '我的蕾翠絲~~',
           '今天的星象對你非常有利！',
           '你的命運線顯示有趣的冒險即將開始...',
           '星辰透露，今天適合嘗試新事物。',

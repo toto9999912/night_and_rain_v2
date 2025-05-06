@@ -3,6 +3,7 @@ import 'package:night_and_rain_v2/models/armor.dart';
 import 'package:night_and_rain_v2/models/consumable.dart';
 import 'package:night_and_rain_v2/models/item.dart';
 import 'package:night_and_rain_v2/models/weapon.dart';
+import 'package:night_and_rain_v2/ui/widgets/stat_row.dart';
 
 /// 物品詳情卡片 - 顯示物品詳細資訊
 class ItemDetailCard extends StatelessWidget {
@@ -59,7 +60,7 @@ class ItemDetailCard extends StatelessWidget {
               margin: const EdgeInsets.symmetric(vertical: 8),
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: item.rarity.color.withOpacity(0.2),
+                color: item.rarity.color.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
@@ -123,19 +124,19 @@ class ItemDetailCard extends StatelessWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildStatRow('武器類型', weapon.weaponType.name),
-          _buildStatRow(
-            '傷害',
-            weapon.damage.toString(),
+          StatRow(label: '武器類型', value: weapon.weaponType.name),
+          StatRow(
+            label: '傷害',
+            value: weapon.damage.toString(),
             color: Colors.redAccent,
           ),
-          _buildStatRow('攻擊速度', weapon.attackSpeed.toString()),
-          _buildStatRow('攻擊範圍', weapon.range.toString()),
-          _buildStatRow('冷卻時間', '${weapon.cooldown}秒'),
+          StatRow(label: '攻擊速度', value: weapon.cooldown.toString()),
+          StatRow(label: '攻擊範圍', value: weapon.range.toString()),
+          StatRow(label: '冷卻時間', value: '${weapon.cooldown}秒'),
           if (weapon.manaCost > 0)
-            _buildStatRow(
-              '魔力消耗',
-              weapon.manaCost.toString(),
+            StatRow(
+              label: '魔力消耗',
+              value: weapon.manaCost.toString(),
               color: Colors.blueAccent,
             ),
           const SizedBox(height: 4),
@@ -145,8 +146,8 @@ class ItemDetailCard extends StatelessWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildStatRow('類型', '消耗品'),
-          _buildStatRow('效果', '使用後回復能量'),
+          StatRow(label: '類型', value: '消耗品'),
+          StatRow(label: '效果', value: '使用後回復能量'),
           const SizedBox(height: 4),
         ],
       );
@@ -155,10 +156,10 @@ class ItemDetailCard extends StatelessWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildStatRow('類型', '防具'),
-          _buildStatRow(
-            '防禦力',
-            armor.defense.toString(),
+          StatRow(label: '類型', value: '防具'),
+          StatRow(
+            label: '防禦力',
+            value: armor.defense.toString(),
             color: Colors.blueAccent,
           ),
           const SizedBox(height: 4),
@@ -167,32 +168,5 @@ class ItemDetailCard extends StatelessWidget {
     }
 
     return const SizedBox.shrink(); // 默認為空
-  }
-
-  // 構建屬性行顯示
-  Widget _buildStatRow(String label, String value, {Color? color}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        children: [
-          Text(
-            '$label: ',
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              color: color ?? Colors.white,
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }

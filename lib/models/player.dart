@@ -28,7 +28,7 @@ class Player {
     this.mana = 100,
     this.maxMana = 100,
     this.speed = 150.0,
-    this.money = 1000, // 初始金幣設為1000
+    this.money = 100, // 初始金幣設為1000
     Weapon? weapon,
     Armor? armor,
     String? id,
@@ -41,7 +41,7 @@ class Player {
 
   // 計算屬性：是否為遠程武器
   bool get hasRangedWeapon =>
-      _equippedWeapon != null && _equippedWeapon!.weaponType.isRanged;
+      _equippedWeapon != null && _equippedWeapon.weaponType.isRanged;
 
   // 計算屬性：當前武器的魔力消耗
   int get weaponManaCost => _equippedWeapon?.manaCost ?? 0;

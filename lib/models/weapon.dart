@@ -11,7 +11,6 @@ import 'player.dart';
 class Weapon extends Item {
   final WeaponType weaponType;
   final double damage;
-  final double attackSpeed;
   final double range;
   final double cooldown;
   final int manaCost; // 使用武器所需魔力值
@@ -25,7 +24,6 @@ class Weapon extends Item {
     required super.price,
     required this.weaponType,
     required this.damage,
-    required this.attackSpeed,
     this.manaCost = 0,
     double? range,
     double? cooldown,
@@ -78,7 +76,7 @@ class Weapon extends Item {
   String getStats() {
     String stats =
         '傷害: ${damage.toStringAsFixed(1)}\n'
-        '攻速: ${attackSpeed.toStringAsFixed(1)}\n'
+        '射速: ${(1 / cooldown).toStringAsFixed(1)} 發/秒\n'
         '範圍: ${range.toStringAsFixed(1)}\n'
         '冷卻: ${cooldown.toStringAsFixed(1)}秒';
 
@@ -116,7 +114,6 @@ class Weapon extends Item {
       price: price ?? this.price,
       weaponType: weaponType ?? this.weaponType,
       damage: damage ?? this.damage,
-      attackSpeed: attackSpeed ?? this.attackSpeed,
       range: range ?? this.range,
       cooldown: cooldown ?? this.cooldown,
       manaCost: manaCost ?? this.manaCost,

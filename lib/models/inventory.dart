@@ -211,14 +211,7 @@ class Inventory {
                   : b.damage.compareTo(a.damage),
         );
         break;
-      case 'attackSpeed':
-        weapons.sort(
-          (a, b) =>
-              ascending
-                  ? a.attackSpeed.compareTo(b.attackSpeed)
-                  : b.attackSpeed.compareTo(a.attackSpeed),
-        );
-        break;
+
       case 'rarity':
         weapons.sort(
           (a, b) =>

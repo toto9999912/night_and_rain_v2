@@ -1,17 +1,10 @@
-// filepath: d:\game\night_and_rain_v2\lib\ui\overlays\dialog_overlay.dart
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:night_and_rain_v2/main.dart';
 import 'package:night_and_rain_v2/components/npc_component.dart';
 import 'package:flame/game.dart';
-
-import '../../components/npc_component.dart';
 import '../../components/shopkeeper_npc.dart';
 import '../../components/astrologer_mumu.dart';
-import '../../components/mediterranean_man_npc.dart';
-import '../../components/sage_roy_npc.dart'; // 新增智者羅伊NPC引用
 import '../../providers/player_buffs_provider.dart';
 import '../../providers/player_provider.dart';
 
@@ -20,8 +13,7 @@ class DialogOverlay extends ConsumerStatefulWidget {
   final FlameGame game;
   final NpcComponent npc;
 
-  const DialogOverlay({Key? key, required this.game, required this.npc})
-    : super(key: key);
+  const DialogOverlay({super.key, required this.game, required this.npc});
 
   @override
   ConsumerState<DialogOverlay> createState() => _DialogOverlayState();
@@ -43,17 +35,11 @@ class _DialogOverlayState extends ConsumerState<DialogOverlay> {
   // 下一個對話的ID
   String? _nextDialogueId;
 
-  // 對話歷史記錄 (舊模式)
-  List<Map<String, String>> _dialogueHistory = [];
-
   // 是否是商店NPC
   bool get _isShopkeeper => widget.npc is ShopkeeperNpc;
 
   // 是否是占星員
   bool get _isAstrologer => widget.npc is AstrologerMumu;
-
-  // 是否使用現代對話介面 (無歷史記錄模式)
-  bool get _useModernInterface => true; // 全部NPC使用現代介面，無歷史記錄
 
   // 當前說話者名稱
   String _currentSpeaker = '';
@@ -117,15 +103,6 @@ class _DialogOverlayState extends ConsumerState<DialogOverlay> {
       _nextDialogueId = dialogue.nextDialogueId;
       _hasNextDialogue =
           dialogue.responses.isEmpty && dialogue.nextDialogueId != null;
-
-      // 將NPC對話添加到歷史記錄 (僅限舊介面使用)
-      if (!_useModernInterface) {
-        _addToDialogueHistory(
-          speaker:
-              _currentSpeaker.isNotEmpty ? _currentSpeaker : widget.npc.name,
-          text: _currentDialogue,
-        );
-      }
     });
   }
 
@@ -153,12 +130,7 @@ class _DialogOverlayState extends ConsumerState<DialogOverlay> {
 
   // 選擇玩家回應後處理
   void _handlePlayerResponse(PlayerResponse response) {
-    final playerName = ref.read(playerProvider).name;
-
-    // 將玩家回應直接添加到歷史記錄 (僅限舊介面使用)
-    if (!_useModernInterface) {
-      _addToDialogueHistory(speaker: playerName, text: response.text);
-    }
+    // final playerName = ref.read(playerProvider).name;
 
     setState(() {
       _showOptions = false;
@@ -175,18 +147,6 @@ class _DialogOverlayState extends ConsumerState<DialogOverlay> {
       widget.npc.setAndGetDialogue(response.nextDialogueId!);
       _loadDialogueFromTree();
     }
-  }
-
-  // 添加對話到歷史記錄
-  void _addToDialogueHistory({required String speaker, required String text}) {
-    setState(() {
-      _dialogueHistory.add({'speaker': speaker, 'text': text});
-
-      // 限制歷史記錄長度，保留最近的5條
-      if (_dialogueHistory.length > 5) {
-        _dialogueHistory.removeAt(0);
-      }
-    });
   }
 
   void _initializeAstrologerDialogue() {
@@ -208,11 +168,6 @@ class _DialogOverlayState extends ConsumerState<DialogOverlay> {
           },
         ),
       ];
-
-      // 將NPC對話添加到歷史記錄 (僅限舊介面使用)
-      if (!_useModernInterface) {
-        _addToDialogueHistory(speaker: widget.npc.name, text: _currentDialogue);
-      }
     });
   }
 
@@ -227,11 +182,6 @@ class _DialogOverlayState extends ConsumerState<DialogOverlay> {
       _currentDialogue = '速度星盤已啟用！感受星辰的速度在你體內流動吧。這個加成將持續5分鐘。';
       _currentSpeaker = widget.npc.name;
       _showOptions = false;
-
-      // 將NPC回應添加到歷史記錄 (僅限舊介面使用)
-      if (!_useModernInterface) {
-        _addToDialogueHistory(speaker: widget.npc.name, text: _currentDialogue);
-      }
     });
   }
 
@@ -246,34 +196,11 @@ class _DialogOverlayState extends ConsumerState<DialogOverlay> {
       _currentDialogue = '生命星盤已啟用！你的生命力得到了星辰的祝福。這個加成將持續5分鐘。';
       _currentSpeaker = widget.npc.name;
       _showOptions = false;
-
-      // 將NPC回應添加到歷史記錄 (僅限舊介面使用)
-      if (!_useModernInterface) {
-        _addToDialogueHistory(speaker: widget.npc.name, text: _currentDialogue);
-      }
     });
   }
 
   void _selectRandomDialogue() {
-    if (widget.npc.conversations.isNotEmpty) {
-      // 從NPC的對話列表中隨機選擇一個
-      final randomIndex =
-          DateTime.now().millisecondsSinceEpoch %
-          widget.npc.conversations.length;
-      setState(() {
-        _currentDialogue = widget.npc.conversations[randomIndex];
-        _currentSpeaker = widget.npc.name;
-        _showOptions = false;
-
-        // 將NPC對話添加到歷史記錄 (僅限舊介面使用)
-        if (!_useModernInterface) {
-          _addToDialogueHistory(
-            speaker: widget.npc.name,
-            text: _currentDialogue,
-          );
-        }
-      });
-    } else if (widget.npc.greetings.isNotEmpty) {
+    if (widget.npc.greetings.isNotEmpty) {
       // 如果沒有對話，則使用問候語
       final randomIndex =
           DateTime.now().millisecondsSinceEpoch % widget.npc.greetings.length;
@@ -281,14 +208,6 @@ class _DialogOverlayState extends ConsumerState<DialogOverlay> {
         _currentDialogue = widget.npc.greetings[randomIndex];
         _currentSpeaker = widget.npc.name;
         _showOptions = false;
-
-        // 將NPC對話添加到歷史記錄 (僅限舊介面使用)
-        if (!_useModernInterface) {
-          _addToDialogueHistory(
-            speaker: widget.npc.name,
-            text: _currentDialogue,
-          );
-        }
       });
     } else {
       // 如果都沒有，使用默認文本
@@ -296,29 +215,18 @@ class _DialogOverlayState extends ConsumerState<DialogOverlay> {
         _currentDialogue = '你好，冒險者！';
         _currentSpeaker = widget.npc.name;
         _showOptions = false;
-
-        // 將NPC對話添加到歷史記錄 (僅限舊介面使用)
-        if (!_useModernInterface) {
-          _addToDialogueHistory(
-            speaker: widget.npc.name,
-            text: _currentDialogue,
-          );
-        }
       });
     }
   }
 
   // 處理鍵盤事件
-  void _handleKeyEvent(RawKeyEvent event) {
-    if (event is RawKeyDownEvent) {
+  void _handleKeyEvent(KeyEvent event) {
+    if (event is KeyDownEvent) {
       // 使用print輸出按下的鍵值以便於調試
-      print('按下鍵: ${event.logicalKey}');
 
       if (event.logicalKey == LogicalKeyboardKey.keyE) {
-        print('檢測到E鍵，_hasNextDialogue: $_hasNextDialogue');
         // 按下E鍵時進入下一個對話
         if (_hasNextDialogue) {
-          print('執行進入下一個對話');
           _proceedToNextDialogue();
         }
       }
@@ -330,9 +238,9 @@ class _DialogOverlayState extends ConsumerState<DialogOverlay> {
     // 獲取玩家名稱
     final playerName = ref.watch(playerProvider).name;
 
-    return RawKeyboardListener(
+    return KeyboardListener(
       focusNode: _focusNode,
-      onKey: _handleKeyEvent,
+      onKeyEvent: _handleKeyEvent,
       autofocus: true,
       child: Material(
         color: Colors.transparent,
@@ -360,52 +268,6 @@ class _DialogOverlayState extends ConsumerState<DialogOverlay> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 對話歷史記錄 - 僅在使用舊介面時顯示
-                    if (!_useModernInterface &&
-                        _dialogueHistory.isNotEmpty) ...[
-                      Container(
-                        constraints: const BoxConstraints(maxHeight: 180),
-                        child: SingleChildScrollView(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              for (final entry in _dialogueHistory)
-                                Padding(
-                                  padding: const EdgeInsets.only(bottom: 8),
-                                  child: RichText(
-                                    text: TextSpan(
-                                      children: [
-                                        TextSpan(
-                                          text: "${entry['speaker']}: ",
-                                          style: TextStyle(
-                                            color:
-                                                entry['speaker'] == playerName
-                                                    ? Colors.cyan
-                                                    : entry['speaker'] == '旁白'
-                                                    ? Colors.purple
-                                                    : Colors.yellow,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                        TextSpan(
-                                          text: entry['text'],
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const Divider(color: Colors.white30, height: 16),
-                    ],
-
                     // 當前對話
                     if (_currentDialogue.isNotEmpty) ...[
                       RichText(
