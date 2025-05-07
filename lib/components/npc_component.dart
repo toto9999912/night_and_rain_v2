@@ -70,9 +70,8 @@ class NpcComponent extends PositionComponent
     this.isInteractive = true,
     List<String>? greetings,
     this.bubbleDuration = 3.0,
-    this.interactionRadius = 100,
+    this.interactionRadius = 70, // 將默認互動半徑從 100 縮小到 70
     this.supportConversation = false, // 默認改為 false，只有明確指定的 NPC 才支持對話
-    List<String>? conversations,
     Map<String, Dialogue>? dialogueTree,
   }) : greetings = greetings ?? ['你好！', '嗨！', '有什麼我能幫你的嗎？'],
 
@@ -95,6 +94,7 @@ class NpcComponent extends PositionComponent
             fontSize: 14,
             color: Colors.white,
             fontWeight: FontWeight.bold,
+            fontFamily: 'Cubic11', // 指定使用 Cubic11 字體
           ),
         ),
         position: Vector2(0, -size.y / 2 - 0),
@@ -141,19 +141,24 @@ class NpcComponent extends PositionComponent
   void _renderSpeechBubble(Canvas canvas, String text) {
     const bubbleWidth = 180.0;
     const bubbleMinHeight = 60.0;
-    const fontSize = 14.0;
-    const padding = 10.0;
+    const fontSize = 15.0; // 稍微增加字體大小
+    const padding = 12.0; // 增加內邊距使氣泡更寬敞
 
     // 氣泡位置（在NPC頭頂）
-    final bubblePosition = Vector2(0, -size.y / 2 - 50);
+    final bubblePosition = Vector2(0, -size.y / 2 - 55); // 稍微調高位置
 
     // 計算文字佈局以確定實際需要的高度
-    final textStyle = TextStyle(color: Colors.black, fontSize: fontSize);
+    final textStyle = TextStyle(
+      color: Colors.black87, // 使用較深的黑色，不那麼刺眼
+      fontSize: fontSize,
+      fontFamily: 'Cubic11', // 使用 Cubic11 字體
+      height: 1.2, // 增加行高使文字更易讀
+    );
     final textSpan = TextSpan(text: text, style: textStyle);
     final textPainter = TextPainter(
       text: textSpan,
       textDirection: TextDirection.ltr,
-      textAlign: TextAlign.left,
+      textAlign: TextAlign.center, // 文字置中
     );
 
     // 計算文字所需的實際高度
@@ -173,36 +178,98 @@ class NpcComponent extends PositionComponent
 
     final rrect = RRect.fromRectAndRadius(
       bubbleRect,
-      const Radius.circular(10),
+      const Radius.circular(12), // 增加圓角半徑
+    );
+
+    // 使用漸變色彩增強視覺效果
+    final gradient = LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Colors.white, Colors.white.withOpacity(0.95)],
     );
 
     // 繪製陰影
     canvas.drawRRect(
-      rrect.shift(const Offset(2, 2)),
-      Paint()..color = Colors.black26,
+      rrect.shift(const Offset(3, 3)), // 稍微增大陰影偏移
+      Paint()
+        ..color =
+            Colors
+                .black38 // 柔和的陰影顏色
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3), // 增加模糊效果
     );
 
     // 繪製氣泡
-    canvas.drawRRect(rrect, Paint()..color = Colors.white.withOpacity(0.9));
+    final bubblePaint =
+        Paint()
+          ..shader = gradient.createShader(bubbleRect)
+          ..style = PaintingStyle.fill;
+
+    canvas.drawRRect(rrect, bubblePaint);
+
+    // 為氣泡增加細邊框，增強立體感
+    canvas.drawRRect(
+      rrect,
+      Paint()
+        ..color = Colors.grey.withOpacity(0.3)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.0,
+    );
 
     // 繪製氣泡小尖角
     final path =
         Path()
           ..moveTo(bubblePosition.x - 10, bubblePosition.y + bubbleHeight / 2)
-          ..lineTo(bubblePosition.x, bubblePosition.y + bubbleHeight / 2 + 10)
+          ..lineTo(
+            bubblePosition.x,
+            bubblePosition.y + bubbleHeight / 2 + 15,
+          ) // 墜大尖角
           ..lineTo(bubblePosition.x + 10, bubblePosition.y + bubbleHeight / 2)
           ..close();
 
-    canvas.drawPath(path, Paint()..color = Colors.white.withOpacity(0.9));
+    // 使用與氣泡相同的漸變色彩
+    canvas.drawPath(
+      path,
+      Paint()
+        ..shader = gradient.createShader(
+          bubbleRect.translate(0, bubbleHeight / 2),
+        )
+        ..style = PaintingStyle.fill,
+    );
 
-    // 繪製文字
+    // 為尖角增加細邊框
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = Colors.grey.withOpacity(0.3)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.0,
+    );
+
+    // 繪製文字 (置中對齊)
     textPainter.paint(
       canvas,
       Offset(
-        bubblePosition.x - bubbleWidth / 2 + padding,
+        bubblePosition.x - textPainter.width / 2,
         bubblePosition.y - bubbleHeight / 2 + padding,
       ),
     );
+
+    // 添加NPC名稱在氣泡頂部
+    final nameStyle = TextStyle(
+      color: Colors.deepPurple, // 使用較深的紫色突出名稱
+      fontSize: fontSize - 3, // 名稱字體稍小
+      fontFamily: 'Cubic11',
+      fontWeight: FontWeight.bold,
+    );
+
+    final nameSpan = TextSpan(text: name, style: nameStyle);
+    final namePainter = TextPainter(
+      text: nameSpan,
+      textDirection: TextDirection.ltr,
+      textAlign: TextAlign.center,
+    );
+
+    namePainter.layout(minWidth: 0, maxWidth: bubbleWidth - (padding * 2));
   }
 
   // 繪製互動提示

@@ -69,15 +69,16 @@ class _DialogOverlayState extends ConsumerState<DialogOverlay> {
   }
 
   void _initializeDialogue() {
-    if (_isAstrologer) {
-      // 占星員特殊對話
-      _initializeAstrologerDialogue();
-    } else if (widget.npc.dialogueTree.isNotEmpty) {
+    if (widget.npc.dialogueTree.isNotEmpty) {
       // 如果有對話樹，使用交互式對話模式
       _loadDialogueFromTree();
     } else {
-      // 標準對話
-      _selectRandomDialogue();
+      // 如果沒有任何對話內容，顯示默認訊息
+      setState(() {
+        _currentDialogue = '你好，冒險者！';
+        _currentSpeaker = widget.npc.name;
+        _showOptions = false;
+      });
     }
   }
 
@@ -130,7 +131,15 @@ class _DialogOverlayState extends ConsumerState<DialogOverlay> {
 
   // 選擇玩家回應後處理
   void _handlePlayerResponse(PlayerResponse response) {
-    // final playerName = ref.read(playerProvider).name;
+    // 根據對話ID直接處理特殊操作
+    if (widget.npc is AstrologerMumu) {
+      final dialogueId = response.nextDialogueId;
+      if (dialogueId == 'speed_buff') {
+        _applySpeedBuff();
+      } else if (dialogueId == 'health_buff') {
+        _applyHealthBuff();
+      }
+    }
 
     setState(() {
       _showOptions = false;

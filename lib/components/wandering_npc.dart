@@ -35,15 +35,6 @@ class WanderingNpc extends NpcComponent {
          position: position,
          size: Vector2(35, 35),
          supportConversation: enableConversation,
-         conversations:
-             conversationTexts ??
-             [
-               '$name：你好啊，旅行者！我在這片土地上漫遊了很久。',
-               '這片區域最近不太安全，到處都有奇怪的生物出沒。',
-               '如果你打算去森林深處，最好準備些治療藥水。',
-               '聽說有人在遺跡中發現了古老的武器，你可以去碰碰運氣。',
-               '祝你旅途順利，也許我們會再次相遇！',
-             ],
        ) {
     _initialPosition = position.clone();
   }

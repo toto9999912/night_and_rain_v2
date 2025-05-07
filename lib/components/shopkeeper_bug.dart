@@ -5,14 +5,14 @@ import 'shopkeeper_npc.dart';
 
 /// 米蟲商店員 - 販賣多種物品的商店NPC
 class ShopkeeperBug extends ShopkeeperNpc {
-  static const List<String> _bugConversations = [
-    '你要是買不起，就快滾',
-    '我只招待有錢人哦',
-    '笑你買不起我店裡最高級的武器',
-    '這些藥水都是用最純淨的材料釀造的，效果保證！',
-    '如果你能找到更好的商品，我雙倍退款！',
-    '不要猶豫了，這可是限量版！',
-  ];
+  // static const List<String> _bugConversations = [
+  //   '你要是買不起，就快滾',
+  //   '我只招待有錢人哦',
+  //   '笑你買不起我店裡最高級的武器',
+  //   '這些藥水都是用最純淨的材料釀造的，效果保證！',
+  //   '如果你能找到更好的商品，我雙倍退款！',
+  //   '不要猶豫了，這可是限量版！',
+  // ];
 
   // 米蟲商店的商品列表
   static const List<String> _bugShopItems = [
@@ -32,19 +32,17 @@ class ShopkeeperBug extends ShopkeeperNpc {
 
   ShopkeeperBug({
     required super.position,
-    double discountRate = 1.0, // 預設無折扣
+    super.discountRate, // 預設無折扣
   }) : super(
          name: '米蟲商人',
          color: Colors.orange,
          shopItems: _bugShopItems,
          shopName: '米蟲精品商店',
-         discountRate: discountRate,
          greetings: const [
            '嘿，冒險者！過來看看我的商品吧！',
            '今天有特價喔，只對你！',
            '需要補給品嗎？我這裡應有盡有！',
          ],
-         conversations: _bugConversations,
        );
 
   @override

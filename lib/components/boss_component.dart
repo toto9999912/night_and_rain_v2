@@ -41,18 +41,14 @@ class BossComponent extends PositionComponent
   final double enemySize;
 
   // 行為控制
-  bool _isChasing = false;
   bool _isDead = false;
   PlayerComponent? _target;
   final MapComponent mapComponent;
 
   // 玩家最後看到的位置，用於跟隨
-  Vector2 _lastKnownPlayerPosition = Vector2.zero();
 
   // 生命條顯示相關
   bool _showHealthBar = true; // Boss總是顯示生命條
-  double _healthBarDisplayTimer = 0;
-  static const double _healthBarDisplayDuration = 3.0;
 
   // Boss特有屬性
   int _currentPhase = 1; // 當前階段
@@ -208,7 +204,6 @@ class BossComponent extends PositionComponent
     final player = game.getPlayer();
 
     _target = player;
-    _isChasing = true;
 
     // 玩家的中心位置
     final playerCenter = player.position + player.size / 2;
@@ -219,7 +214,6 @@ class BossComponent extends PositionComponent
     final directionToPlayer = (playerCenter - bossCenter)..normalize();
 
     // 更新最後已知玩家位置
-    _lastKnownPlayerPosition = playerCenter.clone();
 
     // 根據Boss的攻擊階段和距離決定行為
     double idealDistance;
@@ -924,7 +918,6 @@ class BossComponent extends PositionComponent
 
     // 顯示生命條
     _showHealthBar = true;
-    _healthBarDisplayTimer = _healthBarDisplayDuration;
 
     debugPrint('Boss $bossName 受到 $amount 點傷害，剩餘生命: $health');
 

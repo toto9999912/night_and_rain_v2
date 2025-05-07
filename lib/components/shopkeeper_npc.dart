@@ -19,7 +19,6 @@ class ShopkeeperNpc extends NpcComponent with RiverpodComponentMixin {
     String shopName = "",
     double discountRate = 1.0,
     List<String> super.greetings = const ['歡迎光臨！', '需要什麼東西嗎？', '我的貨品都是最好的！'],
-    List<String> super.conversations = const [],
     Vector2? size,
     super.interactionRadius = 40,
   }) : _shopItems = shopItems,

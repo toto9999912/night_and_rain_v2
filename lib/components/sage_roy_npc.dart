@@ -19,7 +19,7 @@ class SageRoyNpc extends NpcComponent {
         size: size ?? Vector2(48, 48), // 稍微大一點的NPC
         color: Colors.purple.shade800, // 紫色代表智慧
         supportConversation: true, // 支持對話
-        interactionRadius: 120, // 稍大的互動範圍
+        interactionRadius: 80, // 將互動範圍從 120 縮小到 80
         greetings: [
           '年輕的冒險者，歡迎來到這片神秘的土地。',
           '願星辰指引你前進的道路...',
