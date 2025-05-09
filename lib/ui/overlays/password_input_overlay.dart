@@ -102,14 +102,14 @@ class _PasswordInputOverlayState extends ConsumerState<PasswordInputOverlay> {
         // 添加高級紅藥水 x5
         for (int i = 0; i < 5; i++) {
           final healthPotionPremium =
-              itemsData['health_potion_premium'] as Consumable;
+              itemsData['health_potion_legendary'] as Consumable;
           inventoryNotifier.addItem(healthPotionPremium);
         }
 
         // 添加高級藍藥水 x5
         for (int i = 0; i < 5; i++) {
           final manaPotionPremium =
-              itemsData['mana_potion_premium'] as Consumable;
+              itemsData['mana_potion_legendary'] as Consumable;
           inventoryNotifier.addItem(manaPotionPremium);
         }
 

@@ -456,7 +456,7 @@ class BossComponent extends PositionComponent
         ExplosionComponent(
           position: bulletPosition,
           size: Vector2.all(enemySize * 0.3),
-          color: color.withOpacity(0.7),
+          color: color.withValues(alpha: 0.7),
         ),
       );
     }
@@ -583,7 +583,7 @@ class BossComponent extends PositionComponent
         ExplosionComponent(
           position: bulletPosition,
           size: Vector2.all(enemySize * 0.3),
-          color: color.withOpacity(0.5),
+          color: color.withValues(alpha: 0.5),
         ),
       );
     }
@@ -641,7 +641,7 @@ class BossComponent extends PositionComponent
       position: position.clone(),
       direction: targetDirection,
       length: 600,
-      color: Colors.red.withOpacity(0.5),
+      color: Colors.red.withValues(alpha: 0.5),
       duration: 1.0,
     );
 
@@ -660,7 +660,7 @@ class BossComponent extends PositionComponent
       position: targetPos,
       radius: 120,
       duration: 1.5, // 警告持續1.5秒
-      color: Colors.red.withOpacity(0.3),
+      color: Colors.red.withValues(alpha: 0.3),
     );
 
     parent?.add(indicator);
@@ -677,7 +677,7 @@ class BossComponent extends PositionComponent
             damage: damage * 0.8,
             duration: 3.0,
             tickInterval: 0.5, // 每0.5秒造成一次傷害
-            color: color.withOpacity(0.6),
+            color: color.withValues(alpha: 0.6),
           );
 
           parent?.add(aoe);
@@ -756,7 +756,7 @@ class BossComponent extends PositionComponent
         ExplosionComponent(
           position: position.clone(),
           size: Vector2.all(enemySize * 0.8),
-          color: color.withOpacity(0.7),
+          color: color.withValues(alpha: 0.7),
         ),
       );
 
@@ -769,7 +769,7 @@ class BossComponent extends PositionComponent
         ExplosionComponent(
           position: position.clone(),
           size: Vector2.all(enemySize * 0.8),
-          color: color.withOpacity(0.7),
+          color: color.withValues(alpha: 0.7),
         ),
       );
     }
@@ -827,7 +827,7 @@ class BossComponent extends PositionComponent
             ExplosionComponent(
               position: summonPos,
               size: Vector2.all(48),
-              color: color.withOpacity(safeOpacity(0.8)),
+              color: color.withValues(alpha: safeOpacity(0.8)),
             ),
           );
         } catch (e) {
@@ -864,7 +864,7 @@ class BossComponent extends PositionComponent
       BossAuraComponent(
         position: position.clone(),
         radius: enemySize * 1.5,
-        color: color.withOpacity(0.3),
+        color: color.withValues(alpha: 0.3),
       ),
     );
   }
@@ -938,7 +938,7 @@ class BossComponent extends PositionComponent
     // 背景
     canvas.drawRect(
       Rect.fromLTWH(barX, barY, barWidth, barHeight),
-      Paint()..color = Colors.grey.withOpacity(0.7),
+      Paint()..color = Colors.grey.withValues(alpha: 0.7),
     );
 
     // 生命值
@@ -962,7 +962,7 @@ class BossComponent extends PositionComponent
 
     canvas.drawRect(
       Rect.fromLTWH(barX, barY, barWidth * healthRatio, barHeight),
-      Paint()..color = healthColor.withOpacity(0.8),
+      Paint()..color = healthColor.withValues(alpha: 0.8),
     );
 
     // 邊框
@@ -1214,7 +1214,7 @@ class BeamComponent extends PositionComponent
   void render(Canvas canvas) {
     final paint =
         Paint()
-          ..color = color.withOpacity(0.8)
+          ..color = color.withValues(alpha: 0.8)
           ..style = PaintingStyle.fill;
 
     // 繪製主體光束
@@ -1223,7 +1223,7 @@ class BeamComponent extends PositionComponent
     // 繪製光束邊緣（更亮的部分）
     final edgePaint =
         Paint()
-          ..color = Colors.white.withOpacity(0.5)
+          ..color = Colors.white.withValues(alpha: 0.5)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2;
 
@@ -1239,7 +1239,7 @@ class BeamComponent extends PositionComponent
       canvas.drawCircle(
         Offset(particleX, particleY),
         particleSize,
-        Paint()..color = Colors.white.withOpacity(0.7),
+        Paint()..color = Colors.white.withValues(alpha: 0.7),
       );
     }
   }
@@ -1329,9 +1329,9 @@ class BeamWarningComponent extends PositionComponent {
     // 閃爍效果
     final blink = (_lifespan * 10).toInt() % 2 == 0;
     if (blink) {
-      dashPaint.color = color.withOpacity(0.8);
+      dashPaint.color = color.withValues(alpha: 0.8);
     } else {
-      dashPaint.color = color.withOpacity(0.4);
+      dashPaint.color = color.withValues(alpha: 0.4);
     }
 
     // 繪製虛線
@@ -1388,7 +1388,7 @@ class AoeIndicatorComponent extends PositionComponent {
     // 繪製外圈
     final outlinePaint =
         Paint()
-          ..color = color.withOpacity(opacity)
+          ..color = color.withValues(alpha: opacity)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 3;
 
@@ -1397,7 +1397,7 @@ class AoeIndicatorComponent extends PositionComponent {
     // 繪製填充區域
     final fillPaint =
         Paint()
-          ..color = color.withOpacity(opacity * 0.3)
+          ..color = color.withValues(alpha: opacity * 0.3)
           ..style = PaintingStyle.fill;
 
     canvas.drawCircle(Offset.zero, radius, fillPaint);
@@ -1405,7 +1405,7 @@ class AoeIndicatorComponent extends PositionComponent {
     // 添加警告標記
     final warningPaint =
         Paint()
-          ..color = Colors.white.withOpacity(opacity)
+          ..color = Colors.white.withValues(alpha: opacity)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2;
 
@@ -1534,7 +1534,7 @@ class AoeComponent extends PositionComponent
     // 繪製外圈
     final outlinePaint =
         Paint()
-          ..color = color.withOpacity(effectiveOpacity)
+          ..color = color.withValues(alpha: effectiveOpacity)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2;
 
@@ -1543,7 +1543,7 @@ class AoeComponent extends PositionComponent
     // 繪製填充區域
     final fillPaint =
         Paint()
-          ..color = color.withOpacity(effectiveOpacity * 0.7)
+          ..color = color.withValues(alpha: effectiveOpacity * 0.7)
           ..style = PaintingStyle.fill;
 
     canvas.drawCircle(Offset.zero, radius, fillPaint);
@@ -1551,7 +1551,7 @@ class AoeComponent extends PositionComponent
     // 添加流動效果 - 小圓點
     final random = math.Random();
     final particlePaint =
-        Paint()..color = Colors.white.withOpacity(effectiveOpacity);
+        Paint()..color = Colors.white.withValues(alpha: effectiveOpacity);
 
     for (int i = 0; i < 20; i++) {
       final angle = random.nextDouble() * 2 * math.pi;
@@ -1608,7 +1608,7 @@ class BossAuraComponent extends PositionComponent implements OpacityProvider {
     // 繪製光環
     final paint =
         Paint()
-          ..color = color.withOpacity(0.6 * _lifespan * _opacity)
+          ..color = color.withValues(alpha: 0.6 * _lifespan * _opacity)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 5 * _lifespan;
 
@@ -1681,14 +1681,14 @@ class BossPhaseTransitionEffect extends PositionComponent
     // 外圈
     final outlinePaint =
         Paint()
-          ..color = color.withOpacity(outlineOpacity)
+          ..color = color.withValues(alpha: outlineOpacity)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 5;
 
     // 內圈
     final fillPaint =
         Paint()
-          ..color = color.withOpacity(fillOpacity)
+          ..color = color.withValues(alpha: fillOpacity)
           ..style = PaintingStyle.fill;
 
     // 繪製圓形
@@ -1699,7 +1699,7 @@ class BossPhaseTransitionEffect extends PositionComponent
     final rayCount = 8;
     final rayPaint =
         Paint()
-          ..color = color.withOpacity(rayOpacity)
+          ..color = color.withValues(alpha: rayOpacity)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 3;
 
@@ -1780,14 +1780,14 @@ class BossDeathExplosionComponent extends PositionComponent
     // 外圈
     final outlinePaint =
         Paint()
-          ..color = color.withOpacity(0.9 * effectiveOpacity)
+          ..color = color.withValues(alpha: 0.9 * effectiveOpacity)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 8;
 
     // 內圈
     final fillPaint =
         Paint()
-          ..color = color.withOpacity(0.4 * effectiveOpacity)
+          ..color = color.withValues(alpha: 0.4 * effectiveOpacity)
           ..style = PaintingStyle.fill;
 
     // 繪製主爆炸圓
@@ -1797,7 +1797,7 @@ class BossDeathExplosionComponent extends PositionComponent
     // 添加碎片效果
     final random = math.Random();
     final debrisPaint =
-        Paint()..color = Colors.white.withOpacity(0.7 * effectiveOpacity);
+        Paint()..color = Colors.white.withValues(alpha: 0.7 * effectiveOpacity);
 
     for (int i = 0; i < 50; i++) {
       final angle = random.nextDouble() * 2 * math.pi;
@@ -1815,7 +1815,7 @@ class BossDeathExplosionComponent extends PositionComponent
     final rayCount = 12;
     final rayPaint =
         Paint()
-          ..color = Colors.white.withOpacity(0.6 * effectiveOpacity)
+          ..color = Colors.white.withValues(alpha: 0.6 * effectiveOpacity)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 3;
 
@@ -1912,7 +1912,7 @@ class BossVisual extends Component {
     // 添加輪廓
     final outlinePaint =
         Paint()
-          ..color = color.withOpacity(0.7)
+          ..color = color.withValues(alpha: 0.7)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2;
     canvas.drawPath(path, outlinePaint);
@@ -1940,7 +1940,7 @@ class BossVisual extends Component {
     // 繪製眼睛外圈
     final eyeOutlinePaint =
         Paint()
-          ..color = Colors.white.withOpacity(0.5)
+          ..color = Colors.white.withValues(alpha: 0.5)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.5;
 
@@ -1975,7 +1975,7 @@ class BossVisual extends Component {
     // 添加核心光暈
     final glowPaint =
         Paint()
-          ..color = Colors.white.withOpacity(0.3)
+          ..color = Colors.white.withValues(alpha: 0.3)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2;
 
@@ -1993,7 +1993,7 @@ class BossVisual extends Component {
     // 護甲紋理 - 放射狀線條
     final linePaint =
         Paint()
-          ..color = Colors.black.withOpacity(0.3)
+          ..color = Colors.black.withValues(alpha: 0.3)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.5;
 
@@ -2033,7 +2033,7 @@ class BossVisual extends Component {
     }
 
     // 添加一些隨機裝飾點 - 小螺栓或能量點
-    final detailPaint = Paint()..color = Colors.white.withOpacity(0.6);
+    final detailPaint = Paint()..color = Colors.white.withValues(alpha: 0.6);
     for (int i = 0; i < 8; i++) {
       final angle = 2 * math.pi * i / 8 + math.pi / 8;
       final distance = size * 0.35;

@@ -293,11 +293,18 @@ class PlayerComponent extends PositionComponent
           }
         }
       }
+    } // 確保玩家不會走出地圖邊界
+    final dungeonManager = game.dungeonManager;
+    if (dungeonManager != null && dungeonManager.currentRoomId != null) {
+      // 如果在地下城中，限制在當前房間內
+      final dungeonRoomSize = dungeonManager.roomSize;
+      position.x = position.x.clamp(10, dungeonRoomSize.x - size.x - 10);
+      position.y = position.y.clamp(10, dungeonRoomSize.y - size.y - 10);
+    } else {
+      // 如果在主世界中，限制在地圖邊界內
+      position.x = position.x.clamp(0, game.mapSize.x - size.x);
+      position.y = position.y.clamp(0, game.mapSize.y - size.y);
     }
-
-    // 確保玩家不會走出地圖邊界
-    position.x = position.x.clamp(0, game.mapSize.x - size.x);
-    position.y = position.y.clamp(0, game.mapSize.y - size.y);
 
     // 在移動後更新瞄準方向（因為玩家位置變化）
     _updateAimDirection();

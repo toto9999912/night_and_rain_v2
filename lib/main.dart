@@ -2,7 +2,6 @@ import 'dart:math' as math;
 
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
-import 'package:flame/flame.dart';
 import 'package:flame/game.dart';
 import 'package:flame/input.dart';
 import 'package:flame_riverpod/flame_riverpod.dart';
@@ -18,7 +17,7 @@ import 'components/mediterranean_man_npc.dart';
 import 'components/npc_component.dart';
 import 'components/shopkeeper_bug.dart';
 import 'components/wandering_npc.dart';
-import 'components/sage_roy_npc.dart'; // 引入新的智者羅伊NPC
+import 'components/pig_friend_npc.dart'; // 引入新的智者羅伊NPC
 import 'components/portal_component.dart'; // 引入傳送門組件
 import 'managers/dungeon_manager.dart'; // 引入地下城管理器
 import 'models/consumable.dart';
@@ -183,7 +182,7 @@ class NightAndRainGame extends FlameGame
     gameWorld.add(mediterraneanManNpc);
 
     // 添加智者羅伊 - 放在地圖中央位置
-    final sageRoy = SageRoyNpc(
+    final sageRoy = PigFriendNpc(
       position: Vector2(mapSize.x * 0.5, mapSize.y * 0.4),
     );
     gameWorld.add(sageRoy);
@@ -228,11 +227,11 @@ class NightAndRainGame extends FlameGame
     // 從 itemsDataProvider 獲取初始武器 - 更新為新的物品 ID
     final itemsData = ref.read(itemsDataProvider);
     final initialWeapon = itemsData['pistol_copper'] as Weapon; // 銅牛級手槍
-    final giftWeapons = itemsData['shotgun_copper'] as Weapon; // 銅牛級霰彈槍
 
     // 獲取紅藥水和藍藥水的原型
-    final healthPotionPrototype = itemsData['health_potion'] as Consumable;
-    final manaPotionPrototype = itemsData['mana_potion'] as Consumable;
+    final healthPotionPrototype =
+        itemsData['health_potion_basic'] as Consumable;
+    final manaPotionPrototype = itemsData['mana_potion_basic'] as Consumable;
 
     // 獲取 inventoryNotifier 和 playerNotifier
     final inventoryNotifier = ref.read(inventoryProvider.notifier);
@@ -240,21 +239,6 @@ class NightAndRainGame extends FlameGame
 
     // 添加到玩家庫存並裝備武器
     inventoryNotifier.addItem(initialWeapon);
-    inventoryNotifier.addItem(giftWeapons);
-
-    // 為測試目的，添加所有等級的手槍
-    // inventoryNotifier.addItem(itemsData['pistol_ricebug'] as Weapon); // 米蟲級
-    // inventoryNotifier.addItem(itemsData['pistol_silver'] as Weapon); // 銀牛級
-    // inventoryNotifier.addItem(itemsData['pistol_gold'] as Weapon); // 金牛級
-
-    // // 為測試目的，添加所有等級的霰彈槍
-    // inventoryNotifier.addItem(itemsData['shotgun_ricebug'] as Weapon); // 米蟲級
-    inventoryNotifier.addItem(itemsData['shotgun_silver'] as Weapon); // 銀牛級
-    inventoryNotifier.addItem(itemsData['shotgun_gold'] as Weapon); // 金牛級
-
-    // // 為測試目的，添加高等級機關槍和狙擊槍
-    // inventoryNotifier.addItem(itemsData['machinegun_gold'] as Weapon);
-    inventoryNotifier.addItem(itemsData['sniper_gold'] as Weapon);
 
     playerNotifier.equipWeapon(initialWeapon);
 
@@ -273,8 +257,8 @@ class NightAndRainGame extends FlameGame
     }
 
     // 添加高級藥水
-    inventoryNotifier.addItem(itemsData['health_potion_premium'] as Consumable);
-    inventoryNotifier.addItem(itemsData['mana_potion_premium'] as Consumable);
+    // inventoryNotifier.addItem(itemsData['health_potion_premium'] as Consumable);
+    // inventoryNotifier.addItem(itemsData['mana_potion_premium'] as Consumable);
   }
 
   @override

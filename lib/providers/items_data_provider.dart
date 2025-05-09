@@ -200,11 +200,11 @@ final itemsDataProvider = Provider<Map<String, Item>>((ref) {
       rarity: ItemRarity.riceBug,
       icon: FontAwesomeIcons.crosshairs,
       weaponType: WeaponType.sniper,
-      damage: 30,
+      damage: 60,
 
-      price: 300,
+      price: 110,
       range: 500,
-      manaCost: 15,
+      manaCost: 20,
     ),
     // 銅牛級狙擊槍
     'sniper_copper': RangedWeapon(
@@ -214,11 +214,11 @@ final itemsDataProvider = Provider<Map<String, Item>>((ref) {
       rarity: ItemRarity.copperBull,
       icon: FontAwesomeIcons.crosshairs,
       weaponType: WeaponType.sniper,
-      damage: 45,
+      damage: 150,
 
-      price: 900,
+      price: 300,
       range: 650,
-      manaCost: 18,
+      manaCost: 28,
     ),
     // 銀牛級狙擊槍
     'sniper_silver': RangedWeapon(
@@ -228,11 +228,11 @@ final itemsDataProvider = Provider<Map<String, Item>>((ref) {
       rarity: ItemRarity.silverBull,
       icon: FontAwesomeIcons.crosshairs,
       weaponType: WeaponType.sniper,
-      damage: 65,
+      damage: 360,
 
-      price: 2200,
+      price: 900,
       range: 800,
-      manaCost: 20,
+      manaCost: 40,
     ),
     // 金牛級狙擊槍
     'sniper_gold': RangedWeapon(
@@ -243,54 +243,97 @@ final itemsDataProvider = Provider<Map<String, Item>>((ref) {
       rarity: ItemRarity.goldBull,
       icon: FontAwesomeIcons.crosshairs,
       weaponType: WeaponType.sniper,
-      damage: 180,
+      damage: 950,
 
-      price: 5000,
+      price: 2400,
       range: 1000,
-      manaCost: 25,
+      manaCost: 60,
     ),
 
     // ==================== 藥水系列 ====================
     // 添加紅藥水
-    'health_potion': Consumable(
-      id: 'health_potion',
+    // ==================== 藥水系列 ====================
+    // 添加基礎紅藥水
+    'health_potion_basic': Consumable(
+      id: 'health_potion_basic',
       name: '紅色藥水',
       description: '恢復少量生命值的藥水',
       rarity: ItemRarity.riceBug,
       icon: Icons.healing,
-      price: 50,
+      price: 10,
       healthRestore: 30,
     ),
-    // 添加藍藥水
-    'mana_potion': Consumable(
-      id: 'mana_potion',
+    // 添加基礎藍藥水
+    'mana_potion_basic': Consumable(
+      id: 'mana_potion_basic',
       name: '藍色藥水',
       description: '恢復少量魔力值的藥水',
       rarity: ItemRarity.riceBug,
       icon: Icons.water_drop,
-      price: 50,
+      price: 10,
       manaRestore: 30,
     ),
+    // 添加中級紅藥水
+    'health_potion_medium': Consumable(
+      id: 'health_potion_medium',
+      name: '中級紅色藥水',
+      description: '恢復生命值的藥水',
+      rarity: ItemRarity.copperBull,
+      icon: Icons.healing,
+      price: 30,
+      healthRestore: 50,
+    ),
+    // 添加中級藍藥水
+    'mana_potion_medium': Consumable(
+      id: 'mana_potion_medium',
+      name: '中級藍色藥水',
+      description: '恢復魔力值的藥水',
+      rarity: ItemRarity.copperBull,
+      icon: Icons.water_drop,
+      price: 30,
+      manaRestore: 50,
+    ),
     // 添加高級紅藥水
-    'health_potion_premium': Consumable(
-      id: 'health_potion_premium',
+    'health_potion_advanced': Consumable(
+      id: 'health_potion_advanced',
       name: '高級紅色藥水',
-      description: '恢復大量生命值的藥水',
+      description: '恢復極大量生命值的藥水',
       rarity: ItemRarity.silverBull,
       icon: Icons.healing,
-      price: 200,
-      healthRestore: 100,
+      price: 90,
+      healthRestore: 80,
     ),
     // 添加高級藍藥水
-    'mana_potion_premium': Consumable(
-      id: 'mana_potion_premium',
+    'mana_potion_advanced': Consumable(
+      id: 'mana_potion_advanced',
       name: '高級藍色藥水',
-      description: '恢復大量魔力值的藥水',
+      description: '恢復極大量魔力值的藥水',
       rarity: ItemRarity.silverBull,
       icon: Icons.water_drop,
-      price: 200,
-      manaRestore: 100,
+      price: 90,
+      manaRestore: 80,
     ),
+    // 添加神級紅藥水
+    'health_potion_legendary': Consumable(
+      id: 'health_potion_legendary',
+      name: '神級紅色藥水',
+      description: '傳說中的由米蟲教主親自提煉及蒸餾，可以恢復所有生命值的神奇藥水',
+      rarity: ItemRarity.goldBull,
+      icon: Icons.healing,
+      price: 250,
+      healthRestore: 120,
+    ),
+    // 添加神級藍藥水
+    'mana_potion_legendary': Consumable(
+      id: 'mana_potion_legendary',
+      name: '神級藍色藥水',
+      description: '傳說中的由米蟲教主親自提煉及蒸餾，可以恢復所有魔力值的神奇藥水',
+      rarity: ItemRarity.goldBull,
+      icon: Icons.water_drop,
+      price: 300,
+      manaRestore: 120,
+    ),
+
     // 其他物品...
   };
 });

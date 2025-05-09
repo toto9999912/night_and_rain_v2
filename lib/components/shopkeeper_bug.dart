@@ -45,21 +45,20 @@ class ShopkeeperBug extends ShopkeeperNpc {
   // 特別行銷活動 - 折扣
   bool _hasSpecialDiscount = false;
 
-  ShopkeeperBug({
-    required super.position,
-    super.discountRate, // 預設無折扣
-  }) : super(
-         name: '米蟲商人',
-         size: Vector2(64, 64),
-         color: Colors.transparent, // 改為透明色，因為我們會使用精靈圖
-         shopItems: _bugShopItems,
-         shopName: '米蟲精品商店',
-         greetings: const [
-           '嘿，現在是米蟲教主誕辰！五月特惠全館一折！過來看看我的商品吧！',
-           '聽說你要去地下城探險？趁著五月特價，把裝備都更新一下吧！',
-           '五月限定！所有武器和藥水只要一折，絕對讓你驚喜！',
-         ],
-       );
+  ShopkeeperBug({required super.position})
+    : super(
+        name: '米蟲商人',
+        discountRate: DateTime.now().month == 5 ? 0.1 : 1.0,
+        size: Vector2(64, 64),
+        color: Colors.transparent, // 改為透明色，因為我們會使用精靈圖
+        shopItems: _bugShopItems,
+        shopName: '米蟲精品商店',
+        greetings: const [
+          '嘿，現在是米蟲教主誕辰！五月特惠全館一折！過來看看我的商品吧！',
+          '聽說你要去地下城探險？趁著五月特價，把裝備都更新一下吧！',
+          '五月限定！所有武器和藥水只要一折，絕對讓你驚喜！',
+        ],
+      );
   @override
   Future<void> onLoad() async {
     await super.onLoad();

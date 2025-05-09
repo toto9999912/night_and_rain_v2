@@ -60,81 +60,79 @@ class AstrologerMumu extends NpcComponent {
             responses: [
               PlayerResponse(
                 text: '這麼好，趕緊來占卜一下',
-                nextDialogueId: 'astrology_options',
+                nextDialogueId: 'astrology_talk',
               ),
               PlayerResponse(text: '讓我再考慮一下', nextDialogueId: 'goodbye'),
             ],
           ),
 
           // 占卜選項
+          'astrology_talk': Dialogue(
+            npcText:
+                '【旁白】突然間，熟悉的感覺，你依然聽到有個聲音在你的耳邊呢喃，不過好像沒有其他人聽到，說不定這個聲音是來自你的心中？',
+            nextDialogueId: 'astrology_talk2',
+          ),
+          'astrology_talk2': Dialogue(
+            npcText: '【神祕的聲音】追尋命運的人啊！摸著自己的內心，誠實回答我的問題吧！',
+            nextDialogueId: 'astrology_ask',
+          ),
+          'astrology_ask': Dialogue(
+            npcText: '【神祕的聲音】想像你跟著最喜歡的人漫步在碧空海濱，突然地上長出一堆螺肉，這時候你會怎麼做？',
+            nextDialogueId: 'astrology_options',
+          ),
+
           'astrology_options': Dialogue(
-            npcText: '想像著，你現在跟你最喜歡的人一起漫步在碧空海濱！此時你的',
+            npcText: '【旁白】這些選擇，會有怎樣的結局呢？',
             responses: [
               PlayerResponse(
-                text: '速度星盤：移動速度+30',
+                text: '把螺肉苟到他眼睛上',
                 nextDialogueId: 'speed_buff',
+                action: () {
+                  // 此處的具體實現會在DialogOverlay中處理
+                },
               ),
               PlayerResponse(
-                text: '生命星盤：最大生命值+20',
+                text: '陪著他一起把它吃光光',
                 nextDialogueId: 'health_buff',
+                action: () {
+                  // 此處的具體實現會在DialogOverlay中處理
+                },
               ),
-              PlayerResponse(text: '讓我再考慮一下', nextDialogueId: 'start'),
             ],
           ),
 
           // 速度加成
           'speed_buff': Dialogue(
-            npcText: '速度星盤已啟用！感受星辰的速度在你體內流動吧。這個加成將持續5分鐘。',
-            responses: [
-              PlayerResponse(
-                text: '謝謝你，蕾翠絲',
-                nextDialogueId: 'after_buff',
-                action: () {
-                  // 此處的具體實現會在DialogOverlay中處理
-                  // 因為需要訪問Riverpod提供者
-                },
-              ),
-            ],
+            npcText: '【神祕的聲音】老實說，你會選這個選項我是完全不意外',
+            nextDialogueId: 'after_buff',
           ),
 
           // 生命加成
           'health_buff': Dialogue(
-            npcText: '生命星盤已啟用！你的生命力得到了星辰的祝福。這個加成將持續5分鐘。',
-            responses: [
-              PlayerResponse(
-                text: '感謝你的祝福',
-                nextDialogueId: 'after_buff',
-                action: () {
-                  // 此處的具體實現會在DialogOverlay中處理
-                },
-              ),
-            ],
+            npcText: '【神祕的聲音】恩～真的是這樣嗎？',
+            nextDialogueId: 'after_buff',
           ),
 
           // 加成後對話
           'after_buff': Dialogue(
-            npcText: '星辰之力會在暗中守護你。記得在加成消失前再回來找我。',
-            responses: [
-              PlayerResponse(text: '我還有其他問題', nextDialogueId: 'start'),
-              PlayerResponse(text: '謝謝，我該走了', nextDialogueId: 'goodbye'),
-            ],
+            npcText: '【旁白】奇妙的聲音再次在你耳邊響起，但因為你在空島聽過無數遍，所以並不會覺得哪裡奇怪',
+            nextDialogueId: 'end_talk',
           ),
 
           // 關於星象的知識
-          'about_stars': Dialogue(
+          'end_talk': Dialogue(
             npcText:
-                '星象是宇宙對我們低語的方式。每個星座都有自己的力量和特質，影響著我們的命運軌跡。通過解讀星象，我們可以窺見命運的一角，甚至引導它朝著有利的方向發展。',
+                '【神祕的聲音】追尋命運的人啊！準備了解自己的命運了嗎？要記住，你的命運並不是已經被注定的，相信自己的力量，你的命運要靠你自己來開創！',
             responses: [
-              PlayerResponse(
-                text: '這太神奇了，我想進行占卜',
-                nextDialogueId: 'astrology_options',
-              ),
-              PlayerResponse(text: '回到之前的話題', nextDialogueId: 'start'),
+              PlayerResponse(text: '我準備了解我的命運了！', nextDialogueId: 'end_talk2'),
             ],
           ),
-
-          // 告別
-          'goodbye': Dialogue(npcText: '沒問題！如果你想再次占卜，隨時來找我哦！', responses: []),
+          'end_talk2': Dialogue(
+            npcText:
+                '【神祕的聲音】根據你的選擇，我幫你預測今天的你的運勢極好，對你最有利的顏色是『藍色』，幸運數字是『01』跟『24』，跟你最有默契的星座是『水瓶座』。',
+            nextDialogueId: 'end_talk3',
+          ),
+          'end_talk3': Dialogue(npcText: '【神祕的聲音】呵～呵～你是不是在猶豫要不要相信呢？跟隨你自己的內心吧！'),
         },
       );
 
@@ -187,8 +185,8 @@ class AstrologerMumu extends NpcComponent {
         position: starPosition,
         paint:
             Paint()
-              ..color = Colors.yellow.withOpacity(
-                0.7 + random.nextDouble() * 0.3,
+              ..color = Colors.yellow.withValues(
+                alpha: 0.7 + random.nextDouble() * 0.3,
               ),
       );
 
@@ -201,13 +199,13 @@ class AstrologerMumu extends NpcComponent {
           period: blinkPeriod,
           repeat: true,
           onTick: () {
-            if (starComponent.paint.color.opacity! > 0.5) {
-              starComponent.paint.color = Colors.yellow.withOpacity(
-                0.3 + random.nextDouble() * 0.4,
+            if (starComponent.paint.color.opacity > 0.5) {
+              starComponent.paint.color = Colors.yellow.withValues(
+                alpha: 0.3 + random.nextDouble() * 0.4,
               );
             } else {
-              starComponent.paint.color = Colors.yellow.withOpacity(
-                0.7 + random.nextDouble() * 0.3,
+              starComponent.paint.color = Colors.yellow.withValues(
+                alpha: 0.7 + random.nextDouble() * 0.3,
               );
             }
           },

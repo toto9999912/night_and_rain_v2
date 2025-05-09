@@ -25,6 +25,7 @@ class GreedyShopkeeperBug extends ShopkeeperNpc {
     '我只賣給識貨的人，價格嘛...當然不便宜',
     '笑你買不起我店裡最高級的武器',
     '你付的不是價格，而是價值，懂嗎？',
+    '貴從來不是它的缺點，而是你的缺點',
     '想殺價？不存在的，要買就快點',
     '我這裡的東西，可是有錢也不一定買得到的',
   ];
@@ -44,7 +45,7 @@ class GreedyShopkeeperBug extends ShopkeeperNpc {
   ];
 
   // 價格倍數 - 比原價貴五倍
-  static const double _priceMultiplier = 5.0;
+  static const double _priceMultiplier = 3.0;
 
   GreedyShopkeeperBug({required super.position})
     : super(

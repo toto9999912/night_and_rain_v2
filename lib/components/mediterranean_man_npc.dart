@@ -1,15 +1,29 @@
 // mediterranean_man_npc.dart - 地中海50歲老人NPC
+import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import 'npc_component.dart';
 
 /// 地中海50歲老人NPC，展示無歷史訊息的對話系統和玩家互動選項
 class MediterraneanManNpc extends NpcComponent {
+  // 儲存精靈圖元件
+  SpriteComponent? _spriteComponent;
+
+  // 閒置動畫計時器
+  Timer? _idleAnimationTimer;
+
+  // 用於呼吸效果的振幅和頻率
+  final double _breathAmplitude = 0.04;
+  final double _breathFrequency = 1.2;
+
+  // 記錄動畫時間
+  double _animationTime = 0;
+
   MediterraneanManNpc({required super.position, Vector2? size})
     : super(
         name: '地中海50歲老人',
-        size: size ?? Vector2(48, 48),
-        color: Colors.brown.shade600,
+        size: size ?? Vector2(64, 64),
+        color: Colors.transparent, // 使用透明色，因為我們會使用精靈圖
         supportConversation: true, // 支持對話
         isInteractive: true,
         greetings: ['年輕人，過來聊聊天吧！', '看起來像是個有趣的冒險者！', '嘿！這邊！'],
@@ -94,69 +108,65 @@ class MediterraneanManNpc extends NpcComponent {
   Future<void> onLoad() async {
     await super.onLoad();
 
-    // 添加老人的視覺效果
-    add(MediterraneanManVisual(size: size.x));
+    // 載入精靈圖
+    final sprite = await Sprite.load('MediterraneanMan.png');
+
+    // 創建精靈圖元件
+    _spriteComponent = SpriteComponent(
+      sprite: sprite,
+      size: Vector2(72, 72), // 設定精靈圖大小
+      anchor: Anchor.center,
+    );
+
+    // 添加精靈圖
+    add(_spriteComponent!);
+
+    // 初始化閒置動畫計時器
+    _idleAnimationTimer = Timer(
+      0.1, // 每0.1秒更新一次
+      onTick: _updateIdleAnimation,
+      repeat: true,
+    );
+    _idleAnimationTimer!.start();
   }
-}
-
-/// 地中海老人的視覺效果
-class MediterraneanManVisual extends Component {
-  final double size;
-
-  MediterraneanManVisual({required this.size});
 
   @override
-  void render(Canvas canvas) {
-    // 繪製老人的圓形身體
-    final bodyPaint = Paint()..color = Colors.brown.shade700;
-    canvas.drawCircle(Offset.zero, size / 2, bodyPaint);
+  void update(double dt) {
+    super.update(dt);
 
-    // 繪製地中海禿頭 (只有周圍有頭髮)
-    final headRadius = size * 0.3;
-    final headPaint = Paint()..color = Colors.brown;
-    canvas.drawCircle(Offset(0, -size * 0.25), headRadius, headPaint);
+    // 更新閒置動畫計時器
+    _idleAnimationTimer?.update(dt);
 
-    // 繪製側邊頭髮
-    final hairPaint = Paint()..color = Colors.grey.shade400;
-    // 左側頭髮
-    canvas.drawArc(
-      Rect.fromCircle(center: Offset(0, -size * 0.25), radius: headRadius),
-      3.8, // 開始角度
-      2.0, // 掃過的角度
-      true, // 是否連接中心
-      hairPaint,
+    // 更新動畫時間
+    _animationTime += dt;
+  }
+
+  void _updateIdleAnimation() {
+    if (_spriteComponent == null) return;
+
+    // 使用正弦波來創造呼吸效果
+    final breathCycle = sin(_animationTime * _breathFrequency);
+
+    // 垂直方向的呼吸效果（較明顯）
+    final verticalBreath = breathCycle * _breathAmplitude;
+
+    // 水平方向的呼吸效果（較微弱）
+    final horizontalBreath = breathCycle * (_breathAmplitude * 0.3);
+
+    // 呼吸時的輕微上移效果（吸氣時身體微微上升）
+    final verticalOffset = verticalBreath * 3;
+
+    // 自然呼吸狀態
+    // 非均勻縮放：垂直方向縮放大於水平方向
+    _spriteComponent!.scale = Vector2(
+      1.0 + horizontalBreath, // 水平方向輕微縮放
+      1.0 + verticalBreath, // 垂直方向更明顯的縮放
     );
 
-    // 右側頭髮
-    canvas.drawArc(
-      Rect.fromCircle(center: Offset(0, -size * 0.25), radius: headRadius),
-      4.5, // 開始角度
-      2.0, // 掃過的角度
-      true, // 是否連接中心
-      hairPaint,
-    );
+    // 添加輕微的上下移動
+    _spriteComponent!.position = Vector2(0, -verticalOffset);
 
-    // 繪製鬍子
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(0, -size * 0.1),
-        width: headRadius * 1.2,
-        height: headRadius * 0.8,
-      ),
-      hairPaint,
-    );
-
-    // 繪製眼睛
-    final eyePaint = Paint()..color = Colors.black;
-    canvas.drawCircle(
-      Offset(-headRadius * 0.4, -size * 0.28),
-      size * 0.05,
-      eyePaint,
-    );
-    canvas.drawCircle(
-      Offset(headRadius * 0.4, -size * 0.28),
-      size * 0.05,
-      eyePaint,
-    );
+    // 呼吸時的輕微前傾/後仰（極其微小的角度）
+    _spriteComponent!.angle = breathCycle * 0.01;
   }
 }

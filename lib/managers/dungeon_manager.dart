@@ -6,6 +6,9 @@ import 'dart:math' as math;
 import '../components/enemy_component.dart';
 import '../components/boss_component.dart';
 import '../components/portal_component.dart';
+import '../components/npc_component.dart';
+import '../components/player_component.dart';
+import '../components/map_component.dart';
 import '../main.dart';
 
 /// 地下城管理器，負責地下城的創建和管理
@@ -27,6 +30,12 @@ class DungeonManager {
 
   /// 地下城是否已創建
   bool _isDungeonCreated = false;
+
+  /// 主世界的NPC和元素存儲
+  final List<Component> _mainWorldComponents = [];
+
+  /// 主世界可視
+  bool _isMainWorldVisible = true;
 
   DungeonManager(this.game, {required this.entrancePosition});
 
@@ -86,6 +95,25 @@ class DungeonManager {
           attackRange: 200,
         ),
       ],
+      obstacles: [
+        // 入口房間障礙物 - 石柱
+        ObstacleData(
+          position: Vector2(roomSize.x * 0.3, roomSize.y * 0.5),
+          size: Vector2(40, 40),
+          color: Colors.grey.shade800,
+        ),
+        ObstacleData(
+          position: Vector2(roomSize.x * 0.7, roomSize.y * 0.5),
+          size: Vector2(40, 40),
+          color: Colors.grey.shade800,
+        ),
+        // 中央區域障礙
+        ObstacleData(
+          position: Vector2(roomSize.x * 0.5 - 60, roomSize.y * 0.4),
+          size: Vector2(120, 20),
+          color: Colors.grey.shade700,
+        ),
+      ],
     );
 
     // 房間2 - 中間房間（混合類型敵人）
@@ -126,6 +154,40 @@ class DungeonManager {
           detectionRange: 400,
         ),
       ],
+      obstacles: [
+        // 走廊障礙物 - 黑暗走廊的柱子
+        ObstacleData(
+          position: Vector2(roomSize.x * 0.3, roomSize.y * 0.3),
+          size: Vector2(30, 30),
+          color: Colors.blueGrey.shade700,
+        ),
+        ObstacleData(
+          position: Vector2(roomSize.x * 0.7, roomSize.y * 0.3),
+          size: Vector2(30, 30),
+          color: Colors.blueGrey.shade700,
+        ),
+        ObstacleData(
+          position: Vector2(roomSize.x * 0.3, roomSize.y * 0.7),
+          size: Vector2(30, 30),
+          color: Colors.blueGrey.shade700,
+        ),
+        ObstacleData(
+          position: Vector2(roomSize.x * 0.7, roomSize.y * 0.7),
+          size: Vector2(30, 30),
+          color: Colors.blueGrey.shade700,
+        ),
+        // 中央十字障礙
+        ObstacleData(
+          position: Vector2(roomSize.x * 0.5 - 100, roomSize.y * 0.5 - 10),
+          size: Vector2(200, 20),
+          color: Colors.blueGrey.shade800,
+        ),
+        ObstacleData(
+          position: Vector2(roomSize.x * 0.5 - 10, roomSize.y * 0.5 - 100),
+          size: Vector2(20, 200),
+          color: Colors.blueGrey.shade800,
+        ),
+      ],
     );
 
     // 房間3 - Boss房間
@@ -148,6 +210,25 @@ class DungeonManager {
         enemySize: 50,
         attackRange: 180,
       ),
+      obstacles: [
+        // Boss房間障礙物 - 王座周圍的柱子
+        ObstacleData(
+          position: Vector2(roomSize.x * 0.3, roomSize.y * 0.3),
+          size: Vector2(35, 35),
+          color: Colors.red.shade800,
+        ),
+        ObstacleData(
+          position: Vector2(roomSize.x * 0.7, roomSize.y * 0.3),
+          size: Vector2(35, 35),
+          color: Colors.red.shade800,
+        ),
+        // 王座平台
+        ObstacleData(
+          position: Vector2(roomSize.x * 0.4, roomSize.y * 0.2),
+          size: Vector2(200, 15),
+          color: Colors.deepPurple.shade900,
+        ),
+      ],
     );
   }
 
@@ -156,6 +237,7 @@ class DungeonManager {
     switch (type) {
       case PortalType.dungeonEntrance:
         // 從主世界進入地下城
+        _hideMainWorld(); // 先隱藏主世界
         _activateRoom(destinationId);
         break;
       case PortalType.dungeonRoom:
@@ -206,6 +288,9 @@ class DungeonManager {
     );
 
     game.gameWorld.add(entrancePortal);
+
+    // 顯示主世界
+    _showMainWorld();
   }
 
   /// 清除遊戲世界
@@ -224,6 +309,63 @@ class DungeonManager {
     game.gameWorld.children.whereType<PortalComponent>().forEach((portal) {
       portal.removeFromParent();
     });
+  }
+
+  /// 隱藏主世界中的NPC和其他元素
+  void _hideMainWorld() {
+    if (!_isMainWorldVisible) return;
+
+    _mainWorldComponents.clear();
+
+    // 保存並隱藏所有NPC
+    game.gameWorld.children.whereType<NpcComponent>().toList().forEach((npc) {
+      _mainWorldComponents.add(npc);
+      npc.removeFromParent();
+    });
+
+    // 保存並隱藏主世界的背景和障礙物
+    final componentsToHide = <Component>[];
+
+    game.gameWorld.children.forEach((component) {
+      // 不處理玩家和敵人
+      if (component is! PlayerComponent &&
+          component is! EnemyComponent &&
+          component is! BossComponent &&
+          component is! PortalComponent) {
+        // 地圖元素需要保存起來
+        if (component is RectangleComponent ||
+            component is MapComponent ||
+            component is BoundaryWall ||
+            component is Obstacle) {
+          componentsToHide.add(component);
+        }
+      }
+    });
+
+    // 移除已保存的組件
+    for (final component in componentsToHide) {
+      if (component.parent != null) {
+        _mainWorldComponents.add(component);
+        component.removeFromParent();
+      }
+    }
+
+    _isMainWorldVisible = false;
+  }
+
+  /// 恢復主世界
+  void _showMainWorld() {
+    if (_isMainWorldVisible) return;
+
+    // 恢復所有主世界元素
+    for (final component in _mainWorldComponents) {
+      if (component.parent == null) {
+        game.gameWorld.add(component);
+      }
+    }
+
+    _mainWorldComponents.clear();
+    _isMainWorldVisible = true;
   }
 }
 
@@ -333,6 +475,19 @@ class DungeonRoom {
         size: Vector2(10, size.y),
         paint: Paint()..color = Colors.black,
       )..add(RectangleHitbox()..collisionType = CollisionType.passive),
+    );
+
+    // 添加可見的邊界線框 - 這有助於視覺上區分地下城與主世界
+    game.gameWorld.add(
+      RectangleComponent(
+        position: Vector2(0, 0),
+        size: size,
+        paint:
+            Paint()
+              ..color = Colors.white.withOpacity(0.1)
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 2,
+      ),
     );
   }
 
