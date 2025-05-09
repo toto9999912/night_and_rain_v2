@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
+import 'package:flame/flame.dart';
 import 'package:flame/game.dart';
 import 'package:flame/input.dart';
 import 'package:flame_riverpod/flame_riverpod.dart';
@@ -24,13 +25,8 @@ import 'models/weapon.dart';
 import 'providers/inventory_provider.dart';
 import 'providers/items_data_provider.dart';
 import 'providers/player_provider.dart';
-import 'ui/overlays/hud_overlay.dart';
 import 'components/player_component.dart';
-import 'ui/overlays/password_input_overlay.dart';
-import 'ui/overlays/player_dashboard_overlay.dart';
-import 'ui/overlays/dialog_overlay.dart';
-import 'ui/overlays/shop_overlay.dart';
-import 'ui/overlays/game_over_overlay.dart';
+import 'ui/screens/main_menu_screen.dart'; // 引入主選單畫面
 
 final GlobalKey<RiverpodAwareGameWidgetState<NightAndRainGame>> gameWidgetKey =
     GlobalKey<RiverpodAwareGameWidgetState<NightAndRainGame>>();
@@ -45,8 +41,8 @@ void main() async {
 }
 
 class NightAndRainApp extends StatelessWidget {
-  NightAndRainApp({super.key});
-  final game = NightAndRainGame();
+  const NightAndRainApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -61,27 +57,8 @@ class NightAndRainApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: RiverpodAwareGameWidget<NightAndRainGame>(
-        game: gameInstance,
-        key: gameWidgetKey,
-        focusNode: gameFocusNode,
-        autofocus: false,
-        overlayBuilderMap: {
-          'HudOverlay': (context, game) => HudOverlay(game: game),
-          'InventoryOverlay':
-              (context, game) => PlayerDashboardOverlay(game: game),
-          'DialogOverlay':
-              (context, game) =>
-                  DialogOverlay(game: game, npc: game.dialogNpc!),
-          'ShopOverlay':
-              (context, game) =>
-                  ShopOverlay(game: game, shopkeeper: game.dialogNpc!),
-          'GameOverOverlay': (context, game) => GameOverOverlay(game: game),
-          'PasswordInputOverlay':
-              (context, game) => PasswordInputOverlay(game: game),
-        },
-        initialActiveOverlays: const ['HudOverlay'],
-      ),
+      // 更改為從主選單開始
+      home: const MainMenuScreen(),
     );
   }
 }
@@ -506,9 +483,7 @@ class NightAndRainGame extends FlameGame
   // 重置鍵盤處理
   void resetKeyboardHandling() {
     // 確保玩家組件正確重置按鍵狀態
-    if (_player != null) {
-      _player.resetKeyboardState();
-    }
+    _player.resetKeyboardState();
   }
 
   @override
@@ -527,7 +502,7 @@ class NightAndRainGame extends FlameGame
       try {
         // 使用主線程調用
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          // 使用 MP3 格式，避免 OGG 格式的兼容性問題
+          // 使用 bgm.mp3 作為遊戲背景音樂
           FlameAudio.bgm.play('bgm.mp3', volume: 0.25);
           _isBgmPlaying = true;
         });
