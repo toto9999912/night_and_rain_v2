@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flame/collisions.dart';
 import 'package:flame/effects.dart';
@@ -32,7 +31,6 @@ class BulletComponent extends PositionComponent
   final bool isEnemyBullet; // 新增：標記是否為敵人子彈
 
   double _distanceTraveled = 0;
-  final Paint _paint;
   bool _hasCollided = false;
   Timer? _trailTimer; // 用於控制尾隨效果生成頻率
 
@@ -50,8 +48,7 @@ class BulletComponent extends PositionComponent
     double size = 6.0, // 可自定義大小
     this.trailEffect = 'none', // 尾隨效果類型
     this.isEnemyBullet = false, // 預設為玩家子彈
-  }) : _paint = Paint()..color = color,
-       super(
+  }) : super(
          position: position,
          size: Vector2.all(size),
          anchor: Anchor.center,
@@ -139,7 +136,7 @@ class BulletComponent extends PositionComponent
         // 簡單尾跡：小圓點
         final trailDot = CircleComponent(
           radius: 2,
-          paint: Paint()..color = color.withOpacity(0.5),
+          paint: Paint()..color = color.withValues(alpha: 0.5),
           position: position.clone(),
           anchor: Anchor.center,
         );
@@ -158,7 +155,7 @@ class BulletComponent extends PositionComponent
           radius: 3,
           paint:
               Paint()
-                ..color = color.withOpacity(0.7)
+                ..color = color.withValues(alpha: 0.7)
                 ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
           position: position.clone(),
           anchor: Anchor.center,
@@ -188,7 +185,7 @@ class BulletComponent extends PositionComponent
                   position: position.clone(),
                   child: CircleParticle(
                     radius: 1.5,
-                    paint: Paint()..color = color.withOpacity(0.6),
+                    paint: Paint()..color = color.withValues(alpha: 0.6),
                   ),
                 ),
           ),
@@ -244,17 +241,17 @@ class BulletComponent extends PositionComponent
           return; // 直接返回，不創建爆炸
         case ItemRarity.copperBull:
           // 銅牛級：基本大小 × 1.0
-          finalColor = const Color(0xFFB87333).withOpacity(0.8);
+          finalColor = const Color(0xFFB87333).withValues(alpha: 0.8);
           finalSize = baseExplosionSize * 1.0;
           break;
         case ItemRarity.silverBull:
           // 銀牛級：基本大小 × 1.5
-          finalColor = const Color(0xFFCED4DA).withOpacity(0.8);
+          finalColor = const Color(0xFFCED4DA).withValues(alpha: 0.8);
           finalSize = baseExplosionSize * 1.5;
           break;
         case ItemRarity.goldBull:
           // 金牛級：基本大小 × 2.0
-          finalColor = const Color(0xFFFFB627).withOpacity(0.8);
+          finalColor = const Color(0xFFFFB627).withValues(alpha: 0.8);
           finalSize = baseExplosionSize * 2.0;
           break;
       }

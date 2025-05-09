@@ -379,27 +379,6 @@ class _DialogOverlayState extends ConsumerState<DialogOverlay> {
                             child: const Text('查看商店'),
                           ),
 
-                        if (!_showOptions &&
-                            widget.npc.dialogueTree.isEmpty) ...[
-                          const SizedBox(width: 12),
-
-                          // "換個話題"按鈕 - 僅在非選項模式下顯示，且僅適用於非對話樹模式
-                          OutlinedButton(
-                            onPressed: _selectRandomDialogue,
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Colors.white30),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                            ),
-                            child: const Text(
-                              '換個話題',
-                              style: TextStyle(color: Colors.white70),
-                            ),
-                          ),
-                        ],
-
                         // "繼續"按鈕 - 當有下一個對話時顯示
                         if (_hasNextDialogue) ...[
                           const SizedBox(width: 12),

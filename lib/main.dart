@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame_audio/flame_audio.dart'; // 引入 flame_audio
+import 'components/greedy_shopkeeper_bug.dart';
 import 'components/map_component.dart';
 import 'components/astrologer_mumu.dart';
 import 'components/enemy_component.dart';
@@ -165,9 +166,15 @@ class NightAndRainGame extends FlameGame
 
     // 添加米蟲商店員 - 放在地圖的右上區域
     final shopkeeperBug = ShopkeeperBug(
-      position: Vector2(mapSize.x * 0.75, mapSize.y * 0.25),
+      position: Vector2(mapSize.x * 0.8, mapSize.y * 0.45),
     );
     gameWorld.add(shopkeeperBug);
+
+    // 添加米蟲商店員 - 放在地圖的右上區域
+    final greedyBug = GreedyShopkeeperBug(
+      position: Vector2(mapSize.x * 0.9, mapSize.y * 0.35),
+    );
+    gameWorld.add(greedyBug);
 
     // 添加米蟲商店員 - 放在地圖的右上區域
     final mediterraneanManNpc = MediterraneanManNpc(

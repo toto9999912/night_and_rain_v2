@@ -40,7 +40,30 @@ class AstrologerMumu extends NpcComponent {
           // 初始對話
           'start': Dialogue(
             npcText: '想知道運勢、幸運色嗎？快來找我吧！不準也可以當參考哦',
-            responses: [],
+            nextDialogueId: 'talk_1',
+          ),
+          'talk_1': Dialogue(
+            npcText: '哈囉～非雨小姐好久不見！生日快樂',
+            nextDialogueId: 'talk_2',
+          ),
+          'talk_2': Dialogue(
+            npcText: '【非雨】為什麼你會在這？你不會也能在這占卜吧？',
+            nextDialogueId: 'talk_3',
+          ),
+          'talk_3': Dialogue(
+            npcText: '當然～而且壽星可以免費占卜一次哦！',
+            nextDialogueId: 'talk_４',
+          ),
+          // 旁白1
+          'talk_４': Dialogue(
+            npcText: '【非雨】你的抉擇',
+            responses: [
+              PlayerResponse(
+                text: '這麼好，趕緊來占卜一下',
+                nextDialogueId: 'player_question',
+              ),
+              PlayerResponse(text: '我感覺你是假的，下次吧', nextDialogueId: 'leave'),
+            ],
           ),
 
           // 占卜選項

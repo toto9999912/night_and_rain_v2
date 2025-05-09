@@ -149,7 +149,7 @@ class NpcComponent extends PositionComponent
     const padding = 12.0; // 增加內邊距使氣泡更寬敞
 
     // 氣泡位置（在NPC頭頂）
-    final bubblePosition = Vector2(0, -size.y / 2 - 55); // 稍微調高位置
+    final bubblePosition = Vector2(0, -size.y / 2 - 65); // 稍微調高位置
 
     // 計算文字佈局以確定實際需要的高度
     final textStyle = TextStyle(
@@ -319,21 +319,6 @@ class NpcComponent extends PositionComponent
 
     canvas.drawRRect(rrect.inflate(2 + _hintPulseValue * 2), glowPaint);
 
-    // 繪製漸變背景
-    final gradient = LinearGradient(
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-      colors: [
-        Color(0xFF4A6CD4).withOpacity(opacity), // 藍紫色
-        Color(0xFF2A3C6E).withOpacity(opacity), // 深藍色
-      ],
-    );
-
-    final bgPaint =
-        Paint()
-          ..shader = gradient.createShader(hintRect)
-          ..style = PaintingStyle.fill;
-
     // 繪製陰影
     canvas.drawRRect(
       rrect.shift(Offset(2, 2)),
@@ -341,9 +326,6 @@ class NpcComponent extends PositionComponent
         ..color = Colors.black.withOpacity(0.5)
         ..maskFilter = MaskFilter.blur(BlurStyle.normal, 3),
     );
-
-    // 繪製漸變背景
-    canvas.drawRRect(rrect, bgPaint);
 
     // 繪製邊框
     canvas.drawRRect(

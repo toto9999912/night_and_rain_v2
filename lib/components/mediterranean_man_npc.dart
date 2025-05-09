@@ -17,69 +17,76 @@ class MediterraneanManNpc extends NpcComponent {
         dialogueTree: {
           // 初始對話
           'start': Dialogue(
-            npcText: '年輕的冒險者阿，你想聽故事嗎',
+            npcText: '年輕人，願意聽個老骨頭的故事嗎？也許能學點什麼。',
+            nextDialogueId: 'super',
+          ),
+          'super': Dialogue(
+            npcText: '【非雨】 ',
             responses: [
-              PlayerResponse(
-                text: '反正我也很閒，就聽你講講吧',
-                nextDialogueId: 'story_part1',
-              ),
-              PlayerResponse(text: '離開', nextDialogueId: 'leave'),
+              PlayerResponse(text: '反正我也閒著，說來聽聽。'),
+              PlayerResponse(text: '不了，我很忙。', nextDialogueId: 'leave'),
             ],
           ),
 
           // 故事第一部分
           'story_part1': Dialogue(
-            npcText: '我年輕的時候遇上一個女孩，我們一起冒險，發生很多快樂的事情，她總是很喜歡整我...，但後來...唉',
+            npcText:
+                '我年輕時遇到一個女孩...我們一起走過風雨，笑過、吵過，也差點被一頭熊吃掉——她總是愛惡作劇，搞得我哭笑不得。可惜啊，後來……',
             nextDialogueId: 'narrator1',
           ),
 
           // 旁白1
           'narrator1': Dialogue(
-            npcText: '【旁白】老人默默轉向身後，孤單的背影，貌似預示著不好的結局',
+            npcText: '【旁白】老人沉默片刻，轉身望向身後，一道孤單的背影在陽光下拉得老長……',
             responses: [
-              PlayerResponse(text: '繼續追問', nextDialogueId: 'player_question'),
-              PlayerResponse(text: '離開', nextDialogueId: 'leave'),
+              PlayerResponse(
+                text: '然後呢？你別吊我胃口啊。',
+                nextDialogueId: 'player_question',
+              ),
+              PlayerResponse(text: '這太私人了，我不方便聽……', nextDialogueId: 'leave'),
             ],
           ),
 
           // 玩家追問
           'player_question': Dialogue(
-            npcText: '【非雨】你們後來怎麼樣',
+            npcText: '【非雨】你們後來...發生了什麼？她還在你身邊嗎？',
             nextDialogueId: 'story_part2',
           ),
 
           // 故事第二部分
           'story_part2': Dialogue(
-            npcText: '後來阿...',
+            npcText: '後來啊……我以為她離開了，結果她只是去準備「整我」的道具……',
             nextDialogueId: 'narrator2',
           ),
 
           // 旁白2
           'narrator2': Dialogue(
-            npcText: '【旁白】此時背後的房門突然傳出聲音',
+            npcText: '【旁白】就在這時，背後的老屋突然傳來一陣嘎啦聲響，一道熟悉又魔性的聲音響起。',
             nextDialogueId: 'wife_speaks',
           ),
 
           // 妻子說話
           'wife_speaks': Dialogue(
-            npcText: '【欸欸】傻夜你看這個燈泡好像你的頭哦，阿你還杵在外面幹嘛',
+            npcText: '【謎之聲】欸欸！傻夜你快看，這顆燈泡是不是跟你禿頭一樣亮啊～',
             nextDialogueId: 'final_part',
           ),
 
           // 最終部分
           'final_part': Dialogue(
-            npcText: '我在整人阿，我之前被你整成這樣。我現在要加倍奉還！',
+            npcText: '欸欸欸！妳又來！我正講得動情呢，結果又被妳搗亂啦～',
             nextDialogueId: 'end',
           ),
 
           // 對話結束
           'end': Dialogue(
-            npcText: '哈哈哈，年輕人，別信了。生活總是充滿驚喜！',
-            responses: [PlayerResponse(text: '離開', nextDialogueId: 'leave')],
+            npcText: '哈哈哈，年輕人，我的故事雖鬧，但幸福從來不是偶然，只有珍惜當下，才能抓住屬於自己的好結局。',
+            responses: [
+              PlayerResponse(text: '謝啦老哥，我會記住的。', nextDialogueId: 'leave'),
+            ],
           ),
 
           // 離開對話
-          'leave': Dialogue(npcText: '再見了，冒險者！有空常來聊天！'),
+          'leave': Dialogue(npcText: '再見了，冒險者！別忘了，每段故事，都值得被好好聽完。'),
         },
       );
 

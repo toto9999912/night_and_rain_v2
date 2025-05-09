@@ -138,7 +138,7 @@ class EnemyComponent extends PositionComponent
     // 針對獵手型敵人使用直接方法獲取玩家
     if (type == EnemyType.hunter) {
       // 直接從遊戲實例獲取玩家
-      final player = (game as NightAndRainGame).getPlayer();
+      final player = game.getPlayer();
 
       _isChasing = true;
       _target = player;

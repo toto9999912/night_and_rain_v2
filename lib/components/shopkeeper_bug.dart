@@ -21,7 +21,7 @@ class ShopkeeperBug extends ShopkeeperNpc {
 
   // static const List<String> _bugConversations = [
   //   '你要是買不起，就快滾',
-  //   '我只招待有錢人哦',
+  //   '',
   //   '笑你買不起我店裡最高級的武器',
   //   '這些藥水都是用最純淨的材料釀造的，效果保證！',
   //   '如果你能找到更好的商品，我雙倍退款！',
@@ -49,13 +49,15 @@ class ShopkeeperBug extends ShopkeeperNpc {
     super.discountRate, // 預設無折扣
   }) : super(
          name: '米蟲商人',
+         size: Vector2(64, 64),
          color: Colors.transparent, // 改為透明色，因為我們會使用精靈圖
          shopItems: _bugShopItems,
          shopName: '米蟲精品商店',
+
          greetings: const [
            '嘿，冒險者！過來看看我的商品吧！',
-           '今天有特價喔，只對你！',
-           '需要補給品嗎？我這裡應有盡有！',
+           '聽說你要去地下城探險？我這裡有你需要的東西！',
+           '這裡有最新的武器和藥水，保證讓你驚喜！',
          ],
        );
 
@@ -86,22 +88,6 @@ class ShopkeeperBug extends ShopkeeperNpc {
       repeat: true,
     );
     _idleAnimationTimer!.start();
-
-    // 添加文字標籤
-    // final textComponent = TextComponent(
-    //   text: '商店',
-    //   textRenderer: TextPaint(
-    //     style: const TextStyle(
-    //       color: Colors.white,
-    //       fontSize: 10,
-    //       fontFamily: 'Cubic11', // 使用Cubic11字體
-    //       fontWeight: FontWeight.bold,
-    //     ),
-    //   ),
-    //   anchor: Anchor.center,
-    //   position: Vector2(0, -size.y / 2 - 10),
-    // );
-    // add(textComponent);
   }
 
   @override
