@@ -39,7 +39,6 @@ class _DialogOverlayState extends ConsumerState<DialogOverlay> {
   bool get _isShopkeeper => widget.npc is ShopkeeperNpc;
 
   // 是否是占星員
-  bool get _isAstrologer => widget.npc is AstrologerMumu;
 
   // 當前說話者名稱
   String _currentSpeaker = '';

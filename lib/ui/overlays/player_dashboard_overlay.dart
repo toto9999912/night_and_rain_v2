@@ -6,6 +6,7 @@ import 'package:night_and_rain_v2/models/item.dart';
 import 'package:night_and_rain_v2/providers/inventory_provider.dart';
 import 'package:night_and_rain_v2/providers/player_provider.dart';
 import 'package:night_and_rain_v2/ui/widgets/item_decorations.dart';
+import 'package:night_and_rain_v2/ui/widgets/status_group.dart'; // 引入統一的 StatusBar 元件
 import '../widgets/item_detail_card.dart';
 
 class PlayerDashboardOverlay extends ConsumerStatefulWidget {
@@ -117,7 +118,7 @@ class _PlayerDashboardOverlayState extends ConsumerState<PlayerDashboardOverlay>
             backgroundColor: Colors.transparent, // 保持透明背景
             body: Center(
               child: Container(
-                width: 800, // 增加寬度以適應左右兩欄布局
+                width: 800, // 增加寴度以適應左右兩欄布局
                 height: 600, // 保持高度
                 decoration: BoxDecoration(
                   color: Color(0xFF212121), // 深灰色背景
@@ -675,16 +676,24 @@ class PlayerStatusCard extends ConsumerWidget {
           const SizedBox(height: 8),
           StatusBar(
             label: 'HP',
-            value: currentHealth / maxHealth, // 使用統一的生命值數據
-            color: Colors.red.shade400,
-            label2: '$currentHealth/$maxHealth', // 顯示統一的生命值數據
+            icon: Icons.favorite,
+            value: (currentHealth / maxHealth).clamp(0.0, 1.0),
+            currentValue: currentHealth,
+            maxValue: maxHealth,
+            barColor: Colors.red.shade400,
+            backgroundColor: Colors.red.shade900.withOpacity(0.2),
+            valueText: '$currentHealth/$maxHealth',
           ),
           const SizedBox(height: 6),
           StatusBar(
             label: 'MP',
-            value: player.mana / player.maxMana,
-            color: Colors.blue.shade400,
-            label2: '${player.mana}/${player.maxMana}',
+            icon: Icons.auto_awesome,
+            value: (player.mana / player.maxMana).clamp(0.0, 1.0),
+            currentValue: player.mana,
+            maxValue: player.maxMana,
+            barColor: Colors.blue.shade400,
+            backgroundColor: Colors.blue.shade900.withOpacity(0.2),
+            valueText: '${player.mana}/${player.maxMana}',
           ),
           const SizedBox(height: 6),
           Row(
@@ -961,54 +970,6 @@ class OperationTips extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-// 狀態條
-class StatusBar extends StatelessWidget {
-  final String label;
-  final double value;
-  final Color color;
-  final String? label2;
-
-  const StatusBar({
-    super.key,
-    required this.label,
-    required this.value,
-    required this.color,
-    this.label2,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        SizedBox(
-          width: 30,
-          child: Text(label, style: TextStyle(color: Colors.white)),
-        ),
-        Expanded(
-          child: Container(
-            height: 16,
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.white),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: FractionallySizedBox(
-              alignment: Alignment.centerLeft,
-              widthFactor: value.clamp(0.0, 1.0),
-              child: Container(color: color),
-            ),
-          ),
-        ),
-        SizedBox(width: 8),
-        Text('${(value * 100).toInt()}', style: TextStyle(color: Colors.white)),
-        if (label2 != null) ...[
-          SizedBox(width: 8),
-          Text(label2!, style: TextStyle(color: Colors.white70)),
-        ],
-      ],
     );
   }
 }
