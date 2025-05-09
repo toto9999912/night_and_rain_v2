@@ -331,30 +331,30 @@ class _DialogOverlayState extends ConsumerState<DialogOverlay> {
                         ),
                     ],
 
-                    // 顯示「按E繼續」提示（當有下一個對話但沒有選項時）
-                    if (_hasNextDialogue && !_showOptions) ...[
-                      const SizedBox(height: 10),
-                      Center(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.shade800.withOpacity(0.7),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Text(
-                            '按 E 繼續',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                    // // 顯示「按E繼續」提示（當有下一個對話但沒有選項時）
+                    // if (_hasNextDialogue && !_showOptions) ...[
+                    //   const SizedBox(height: 10),
+                    //   Center(
+                    //     child: Container(
+                    //       padding: const EdgeInsets.symmetric(
+                    //         horizontal: 12,
+                    //         vertical: 4,
+                    //       ),
+                    //       decoration: BoxDecoration(
+                    //         color: Colors.blue.shade800.withOpacity(0.7),
+                    //         borderRadius: BorderRadius.circular(12),
+                    //       ),
+                    //       child: const Text(
+                    //         '按 E 繼續',
+                    //         style: TextStyle(
+                    //           color: Colors.white,
+                    //           fontSize: 14,
+                    //           fontWeight: FontWeight.bold,
+                    //         ),
+                    //       ),
+                    //     ),
+                    //   ),
+                    // ],
 
                     // 操作按鈕
                     const SizedBox(height: 16),
@@ -391,10 +391,9 @@ class _DialogOverlayState extends ConsumerState<DialogOverlay> {
                                 vertical: 8,
                               ),
                             ),
-                            child: const Text('繼續'),
+                            child: const Text('按 E 繼續'),
                           ),
                         ],
-
                         const SizedBox(width: 12),
 
                         // "離開"按鈕

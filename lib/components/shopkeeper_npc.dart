@@ -69,6 +69,11 @@ class ShopkeeperNpc extends NpcComponent with RiverpodComponentMixin {
     // 確保沒有重複添加對話覆蓋層
     if (game.overlays.isActive('DialogOverlay')) return;
 
+    // 設置初始對話ID（添加這一關鍵步驟）
+    if (dialogueTree.isNotEmpty) {
+      currentDialogueId = "start";
+    }
+
     // 設置當前對話NPC
     if (game is NightAndRainGame) {
       (game as NightAndRainGame).dialogNpc = this;

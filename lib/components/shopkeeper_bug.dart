@@ -55,7 +55,7 @@ class ShopkeeperBug extends ShopkeeperNpc {
          shopItems: _bugShopItems,
          shopName: '米蟲精品商店',
          greetings: const [
-           '嘿，冒險者！五月特惠全館一折！過來看看我的商品吧！',
+           '嘿，現在是米蟲教主誕辰！五月特惠全館一折！過來看看我的商品吧！',
            '聽說你要去地下城探險？趁著五月特價，把裝備都更新一下吧！',
            '五月限定！所有武器和藥水只要一折，絕對讓你驚喜！',
          ],
@@ -140,15 +140,11 @@ class ShopkeeperBug extends ShopkeeperNpc {
       ),
       'show_shop': Dialogue(
         npcText:
-            '這些都是我的精選商品，慢慢挑選，別客氣！' +
-            (_hasSpecialDiscount ? '記得現在是五月特價，所有商品只要一折，錯過就要等明年啦！' : ''),
+            '這些都是我的精選商品，慢慢挑選，別客氣！${_hasSpecialDiscount ? '記得現在是五月特價，所有商品只要一折，錯過就要等明年啦！' : ''}',
         responses: [
           PlayerResponse(
             text: '開始購物',
-            action: () {
-              // 打開商店
-              openShop();
-            },
+            action: openShop,
             nextDialogueId: null, // 結束對話
           ),
         ],

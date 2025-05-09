@@ -60,15 +60,15 @@ class AstrologerMumu extends NpcComponent {
             responses: [
               PlayerResponse(
                 text: '這麼好，趕緊來占卜一下',
-                nextDialogueId: 'player_question',
+                nextDialogueId: 'astrology_options',
               ),
-              PlayerResponse(text: '我感覺你是假的，下次吧', nextDialogueId: 'leave'),
+              PlayerResponse(text: '讓我再考慮一下', nextDialogueId: 'goodbye'),
             ],
           ),
 
           // 占卜選項
           'astrology_options': Dialogue(
-            npcText: '我能在星象中看到你的未來... 你想選擇哪種星盤指引？',
+            npcText: '想像著，你現在跟你最喜歡的人一起漫步在碧空海濱！此時你的',
             responses: [
               PlayerResponse(
                 text: '速度星盤：移動速度+30',
@@ -133,24 +133,8 @@ class AstrologerMumu extends NpcComponent {
             ],
           ),
 
-          // 關於占星師的背景
-          'about_astrologer': Dialogue(
-            npcText:
-                '我從小就能看到別人看不見的光芒。起初我以為那只是幻覺，直到一位老占星師告訴我，那是星辰在向我傳遞訊息。我花了十年時間學習解讀這些訊息，現在我可以將這種力量用來幫助像你這樣的冒險者。',
-            responses: [
-              PlayerResponse(
-                text: '我想體驗這種力量，進行占卜吧',
-                nextDialogueId: 'astrology_options',
-              ),
-              PlayerResponse(text: '回到之前的話題', nextDialogueId: 'start'),
-            ],
-          ),
-
           // 告別
-          'goodbye': Dialogue(
-            npcText: '願星辰指引你的道路。無論何時需要指引，都可以回來找我。',
-            responses: [],
-          ),
+          'goodbye': Dialogue(npcText: '沒問題！如果你想再次占卜，隨時來找我哦！', responses: []),
         },
       );
 

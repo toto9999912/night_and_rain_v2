@@ -51,9 +51,7 @@ class ShopManager {
 
   // 設置折扣率
   void setDiscountRate(double rate) {
-    if (rate >= 0.5 && rate <= 1.0) {
-      _discountRate = rate;
-    }
+    _discountRate = rate;
   }
 
   // 獲取當前折扣率
