@@ -39,7 +39,7 @@ class EnemyComponent extends PositionComponent
   final double attackRange; // 攻擊範圍
   final double detectionRange; // 偵測範圍
   final double _baseAttackCooldown; // 重命名為基礎攻擊冷卻時間
-  double _attackCooldownMultiplier = 1.0; // 添加攻擊冷卻倍增器
+  final double _attackCooldownMultiplier = 1.0; // 添加攻擊冷卻倍增器
   double _currentAttackCooldown = 0; // 當前攻擊冷卻計時器
 
   // 計算後的屬性

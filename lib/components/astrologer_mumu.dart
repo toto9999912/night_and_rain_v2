@@ -34,7 +34,7 @@ class AstrologerMumu extends NpcComponent {
         ],
         size: Vector2(64, 64), // 將大小從 40x40 增加到 64x64
         color: Colors.transparent, // 使用透明色，因為我們會使用精靈圖
-        interactionRadius: 80, // 將互動範圍從 120 縮小到 80
+        interactionRadius: 60, // 將互動範圍從 120 縮小到 80
         supportConversation: true,
         dialogueTree: {
           // 初始對話

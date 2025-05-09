@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 
@@ -5,6 +6,19 @@ import 'shopkeeper_npc.dart';
 
 /// 米蟲商店員 - 販賣多種物品的商店NPC
 class ShopkeeperBug extends ShopkeeperNpc {
+  // 儲存精靈圖元件
+  SpriteComponent? _spriteComponent;
+
+  // 閒置動畫計時器
+  Timer? _idleAnimationTimer;
+
+  // 用於呼吸效果的振幅和頻率
+  final double _breathAmplitude = 0.03;
+  final double _breathFrequency = 1.2;
+
+  // 記錄動畫時間
+  double _animationTime = 0;
+
   // static const List<String> _bugConversations = [
   //   '你要是買不起，就快滾',
   //   '我只招待有錢人哦',
@@ -35,7 +49,7 @@ class ShopkeeperBug extends ShopkeeperNpc {
     super.discountRate, // 預設無折扣
   }) : super(
          name: '米蟲商人',
-         color: Colors.orange,
+         color: Colors.transparent, // 改為透明色，因為我們會使用精靈圖
          shopItems: _bugShopItems,
          shopName: '米蟲精品商店',
          greetings: const [
@@ -52,19 +66,76 @@ class ShopkeeperBug extends ShopkeeperNpc {
     // 隨機決定是否有特別折扣
     _hasSpecialDiscount = (DateTime.now().day % 3 == 0);
 
-    // 添加商店員視覺效果
-    add(RectangleComponent(size: size, paint: Paint()..color = color));
+    // 載入精靈圖
+    final sprite = await Sprite.load('ShopkeeperBug.png');
+
+    // 創建精靈圖元件
+    _spriteComponent = SpriteComponent(
+      sprite: sprite,
+      size: Vector2(72, 72), // 設置精靈圖大小
+      anchor: Anchor.center,
+    );
+
+    // 添加精靈圖
+    add(_spriteComponent!);
+
+    // 初始化閒置動畫計時器
+    _idleAnimationTimer = Timer(
+      0.1, // 每0.1秒更新一次
+      onTick: _updateIdleAnimation,
+      repeat: true,
+    );
+    _idleAnimationTimer!.start();
 
     // 添加文字標籤
-    final textComponent = TextComponent(
-      text: '商店',
-      textRenderer: TextPaint(
-        style: const TextStyle(color: Colors.white, fontSize: 10),
-      ),
-      anchor: Anchor.center,
-      position: Vector2(size.x / 2, -10),
+    // final textComponent = TextComponent(
+    //   text: '商店',
+    //   textRenderer: TextPaint(
+    //     style: const TextStyle(
+    //       color: Colors.white,
+    //       fontSize: 10,
+    //       fontFamily: 'Cubic11', // 使用Cubic11字體
+    //       fontWeight: FontWeight.bold,
+    //     ),
+    //   ),
+    //   anchor: Anchor.center,
+    //   position: Vector2(0, -size.y / 2 - 10),
+    // );
+    // add(textComponent);
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+
+    // 更新閒置動畫計時器
+    _idleAnimationTimer?.update(dt);
+
+    // 更新動畫時間
+    _animationTime += dt;
+  }
+
+  // 更新呼吸動畫
+  void _updateIdleAnimation() {
+    if (_spriteComponent == null) return;
+
+    // 使用正弦波創造簡單的呼吸效果
+    final breathCycle = sin(_animationTime * _breathFrequency);
+
+    // 垂直方向的呼吸效果
+    final verticalBreath = breathCycle * _breathAmplitude;
+
+    // 呼吸時的輕微上移效果
+    final verticalOffset = verticalBreath * 3;
+
+    // 應用簡單的上下移動和縮放效果
+    _spriteComponent!.scale = Vector2(
+      1.0, // 水平方向保持不變
+      1.0 + verticalBreath, // 垂直方向輕微縮放
     );
-    add(textComponent);
+
+    // 添加輕微的上下移動
+    _spriteComponent!.position = Vector2(0, -verticalOffset);
   }
 
   // 覆蓋父類的折扣率方法，實現特別折扣

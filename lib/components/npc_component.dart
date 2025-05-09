@@ -62,6 +62,10 @@ class NpcComponent extends PositionComponent
   // 對話氣泡顯示時間計數器
   double _bubbleTimeLeft = 0;
 
+  // 更新變數，用於按鈕呼吸效果
+  double _hintPulseValue = 0;
+  bool _hintPulseIncreasing = true;
+
   NpcComponent({
     required this.name,
     required Vector2 position,
@@ -85,7 +89,7 @@ class NpcComponent extends PositionComponent
     // 添加視覺效果
     add(RectangleComponent(size: size, paint: Paint()..color = color));
 
-    // 添加名稱標籤
+    // 添加名稱標籤 - 調整到NPC下方
     add(
       TextComponent(
         text: name,
@@ -97,8 +101,8 @@ class NpcComponent extends PositionComponent
             fontFamily: 'Cubic11', // 指定使用 Cubic11 字體
           ),
         ),
-        position: Vector2(0, -size.y / 2 - 0),
-        anchor: Anchor.bottomCenter,
+        position: Vector2(0, -size.y / 2 - 10), // 修改位置到NPC頭上方
+        anchor: Anchor.bottomCenter, // 修改錨點以正確顯示
       ),
     );
 
@@ -274,48 +278,140 @@ class NpcComponent extends PositionComponent
 
   // 繪製互動提示
   void _renderInteractionHint(Canvas canvas) {
-    const hintWidth = 80.0;
-    const hintHeight = 24.0;
-    const fontSize = 12.0;
+    const hintWidth = 90.0; // 增加寬度
+    const hintHeight = 28.0; // 增加高度
+    const fontSize = 14.0; // 增加字體大小
+    const iconSize = 16.0; // E 字符圖示大小
 
-    // 提示位置（修改為顯示在NPC名字的右側）
-    final nameWidth = 20.0 + name.length * 8.0; // 估算名字的寬度
+    // 提示位置（顯示在NPC下方）
     final hintPosition = Vector2(
-      nameWidth / 2 + hintWidth / 2 + 5,
-      -size.y / 2 - 0,
-    ); // 放在名字右側
-
-    // 繪製提示背景
-    final hintRect = Rect.fromCenter(
-      center: Offset(hintPosition.x, hintPosition.y),
-      width: hintWidth,
-      height: hintHeight,
+      0, // 水平置中
+      size.y / 2 + 20, // 垂直位置在NPC下方
     );
 
-    final rrect = RRect.fromRectAndRadius(hintRect, const Radius.circular(5));
+    // 計算呼吸效果值 (用於大小和透明度調整)
+    final scale = 1.0 + (_hintPulseValue * 0.05);
+    final opacity = 0.8 + (_hintPulseValue * 0.2);
 
-    canvas.drawRRect(rrect, Paint()..color = Colors.black.withOpacity(0.7));
+    // 繪製提示背景 (帶有呼吸效果)
+    final scaledWidth = hintWidth * scale;
+    final scaledHeight = hintHeight * scale;
 
-    // 繪製文字
+    final hintRect = Rect.fromCenter(
+      center: Offset(hintPosition.x, hintPosition.y),
+      width: scaledWidth,
+      height: scaledHeight,
+    );
+
+    final rrect = RRect.fromRectAndRadius(
+      hintRect,
+      const Radius.circular(14), // 增大圓角
+    );
+
+    // 繪製外發光效果
+    final glowPaint =
+        Paint()
+          ..color = Colors.white.withOpacity(0.3 * _hintPulseValue)
+          ..maskFilter = MaskFilter.blur(
+            BlurStyle.normal,
+            4.0 * _hintPulseValue,
+          );
+
+    canvas.drawRRect(rrect.inflate(2 + _hintPulseValue * 2), glowPaint);
+
+    // 繪製漸變背景
+    final gradient = LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [
+        Color(0xFF4A6CD4).withOpacity(opacity), // 藍紫色
+        Color(0xFF2A3C6E).withOpacity(opacity), // 深藍色
+      ],
+    );
+
+    final bgPaint =
+        Paint()
+          ..shader = gradient.createShader(hintRect)
+          ..style = PaintingStyle.fill;
+
+    // 繪製陰影
+    canvas.drawRRect(
+      rrect.shift(Offset(2, 2)),
+      Paint()
+        ..color = Colors.black.withOpacity(0.5)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 3),
+    );
+
+    // 繪製漸變背景
+    canvas.drawRRect(rrect, bgPaint);
+
+    // 繪製邊框
+    canvas.drawRRect(
+      rrect,
+      Paint()
+        ..color = Colors.white.withOpacity(0.3 + 0.2 * _hintPulseValue)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.0,
+    );
+
+    // 繪製 E 鍵圓形背景
+    canvas.drawCircle(
+      Offset(hintPosition.x - 25, hintPosition.y),
+      iconSize / 2,
+      Paint()..color = Colors.white.withOpacity(0.9),
+    );
+
+    // 繪製 E 字符
+    final keyStyle = TextStyle(
+      color: Color(0xFF2A3C6E),
+      fontSize: fontSize - 2,
+      fontWeight: FontWeight.bold,
+      fontFamily: 'Cubic11',
+    );
+
+    final keySpan = TextSpan(text: 'E', style: keyStyle);
+    final keyPainter = TextPainter(
+      text: keySpan,
+      textDirection: TextDirection.ltr,
+      textAlign: TextAlign.center,
+    );
+
+    keyPainter.layout();
+    keyPainter.paint(
+      canvas,
+      Offset(
+        hintPosition.x - 25 - keyPainter.width / 2,
+        hintPosition.y - keyPainter.height / 2,
+      ),
+    );
+
+    // 繪製「對話」文字
     final textStyle = TextStyle(
       color: Colors.white,
       fontSize: fontSize,
       fontWeight: FontWeight.bold,
+      fontFamily: 'Cubic11',
+      shadows: [
+        Shadow(
+          color: Colors.black.withOpacity(0.5),
+          offset: Offset(1, 1),
+          blurRadius: 1,
+        ),
+      ],
     );
-    final textSpan = TextSpan(text: "按E對話", style: textStyle);
 
+    final textSpan = TextSpan(text: "對話", style: textStyle);
     final textPainter = TextPainter(
       text: textSpan,
       textDirection: TextDirection.ltr,
       textAlign: TextAlign.center,
     );
 
-    textPainter.layout(minWidth: 0, maxWidth: hintWidth - 10);
-
+    textPainter.layout(minWidth: 0, maxWidth: hintWidth - 40);
     textPainter.paint(
       canvas,
       Offset(
-        hintPosition.x - textPainter.width / 2,
+        hintPosition.x - textPainter.width / 2 + 10,
         hintPosition.y - textPainter.height / 2,
       ),
     );
@@ -359,6 +455,24 @@ class NpcComponent extends PositionComponent
 
     // 更新互動提示狀態
     updateInteractionHint();
+
+    // 更新互動提示呼吸效果
+    if (_showInteractionHint) {
+      // 呼吸效果動畫 (0.0 ~ 1.0 循環)
+      if (_hintPulseIncreasing) {
+        _hintPulseValue += dt * 1.5; // 控制呼吸速度
+        if (_hintPulseValue >= 1.0) {
+          _hintPulseValue = 1.0;
+          _hintPulseIncreasing = false;
+        }
+      } else {
+        _hintPulseValue -= dt * 1.5;
+        if (_hintPulseValue <= 0.0) {
+          _hintPulseValue = 0.0;
+          _hintPulseIncreasing = true;
+        }
+      }
+    }
   }
 
   @override

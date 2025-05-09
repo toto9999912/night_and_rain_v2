@@ -88,7 +88,6 @@ class NightAndRainGame extends FlameGame
   DungeonManager? dungeonManager;
 
   // 交互提示信息
-  String? _interactionPrompt;
   TextComponent? _interactionPromptComponent;
 
   // 音樂控制變數
@@ -437,8 +436,6 @@ class NightAndRainGame extends FlameGame
 
   // 顯示交互提示
   void showInteractionPrompt(String prompt) {
-    _interactionPrompt = prompt;
-
     // 移除現有提示（如果有）
     if (_interactionPromptComponent != null) {
       _interactionPromptComponent!.removeFromParent();
@@ -471,8 +468,6 @@ class NightAndRainGame extends FlameGame
 
   // 隱藏交互提示
   void hideInteractionPrompt() {
-    _interactionPrompt = null;
-
     // 移除提示
     if (_interactionPromptComponent != null) {
       _interactionPromptComponent!.removeFromParent();
