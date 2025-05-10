@@ -28,6 +28,13 @@ enum BossAttackPattern {
   teleport, // 瞬移
 }
 
+/// Boss狀態枚舉 - 添加明確的狀態管理
+enum BossState {
+  normal, // 普通狀態
+  phaseChange, // 階段轉換中
+  specialAttack, // 執行特殊攻擊中
+}
+
 /// Boss元件，直接繼承自PositionComponent，擁有獨立的戰鬥邏輯、技能和智能
 class BossComponent extends PositionComponent
     with HasGameReference<NightAndRainGame>, CollisionCallbacks, HasPaint
@@ -62,9 +69,7 @@ class BossComponent extends PositionComponent
   PlayerComponent? _target;
   final MapComponent mapComponent;
 
-  // 玩家最後看到的位置，用於跟隨
-
-  // New sprite-related properties
+  // Sprite相關屬性
   SpriteComponent? _spriteComponent;
   Sprite? _phase1Sprite;
   Sprite? _phase2Sprite;
@@ -94,11 +99,24 @@ class BossComponent extends PositionComponent
   // 追蹤上次血量，用於判斷階段轉換
   double _lastHealthPercentage = 1.0;
 
-  // 標記是否處於特殊行為狀態
-  bool _isPerformingSpecialMove = false;
-  double _specialMoveTimer = 0;
+  // ===== 無敵狀態管理相關變量 - 重新設計 =====
+  // 當前Boss狀態
+  BossState _currentState = BossState.normal;
 
-  // 範圍攻擊視覺指示器
+  // 各種狀態的計時器
+  double _stateTimer = 0.0;
+
+  // 最大無敵時間，防止永久無敵
+  static const double _maxInvincibilityTime = 5.0;
+
+  // 階段轉換計時器
+  double _phaseChangeTime = 0.0;
+
+  // 記錄無敵開始時間，用於檢測是否卡住
+  double _invincibilityStartTime = 0.0;
+
+  // 全局遊戲時間計數器
+  double _gameTimeCounter = 0.0;
 
   BossComponent({
     required Vector2 position,
@@ -134,33 +152,44 @@ class BossComponent extends PositionComponent
   Future<void> onLoad() async {
     await super.onLoad();
 
-    // Add collision hitbox
-    final hitboxRadius = size.x / 2 * 1.2; // 增加20%的半徑
+    // 增加碰撞檢測範圍，從原本的1.2倍提高到1.5倍
+    final hitboxRadius = size.x / 2 * 1.5; // 增加50%的半徑，使Boss更容易被擊中
     add(
       CircleHitbox(radius: hitboxRadius)..collisionType = CollisionType.active,
     );
 
-    // Load sprites for different phases
-    _phase1Sprite = await Sprite.load('BossPhase1.png');
-    _phase2Sprite = await Sprite.load('BossPhase2.png');
-    _phase3Sprite = await Sprite.load('BossPhase3.png');
+    // 載入精靈圖
+    try {
+      _phase1Sprite = await Sprite.load('BossPhase1.png');
+      _phase2Sprite = await Sprite.load('BossPhase2.png');
+      _phase3Sprite = await Sprite.load('BossPhase3.png');
 
-    // Create sprite component
-    _spriteComponent = SpriteComponent(
-      sprite: _phase1Sprite,
-      size: Vector2.all(enemySize * 1.5), // Adjust size as needed
-      anchor: Anchor.center,
-    );
+      // 創建精靈組件
+      _spriteComponent = SpriteComponent(
+        sprite: _phase1Sprite,
+        size: Vector2.all(enemySize * 1.5),
+        anchor: Anchor.center,
+      );
 
-    add(_spriteComponent!);
+      add(_spriteComponent!);
+    } catch (e) {
+      debugPrint('載入Boss精靈圖失敗: $e');
+      // 添加一個fallback顯示，防止沒有圖像時無法看到Boss
+      add(
+        RectangleComponent(
+          size: Vector2.all(enemySize),
+          paint: Paint()..color = color,
+        ),
+      );
+    }
 
-    // Store initial position
+    // 儲存初始位置
     _lastPosition = position.clone();
 
-    // Add pulse effect
+    // 添加脈衝效果
     add(TimerComponent(period: 2.0, repeat: true, onTick: _addPulseEffect));
 
-    // Add boss name label
+    // 添加Boss名稱標籤
     add(
       TextComponent(
         text: bossName,
@@ -178,79 +207,174 @@ class BossComponent extends PositionComponent
         anchor: Anchor.bottomCenter,
       ),
     );
+
+    // 添加定期檢查無敵狀態的計時器，確保不會永久卡在無敵狀態
+    add(
+      TimerComponent(
+        period: 1.0,
+        repeat: true,
+        onTick: _checkInvincibilityStuck,
+      ),
+    );
+  }
+
+  // 檢查是否卡在無敵狀態
+  void _checkInvincibilityStuck() {
+    if (_currentState == BossState.phaseChange) {
+      // 只檢查階段轉換的無敵狀態是否卡住
+      double invincibilityDuration = _gameTimeCounter - _invincibilityStartTime;
+
+      // 如果無敵時間超過最大限制，強制解除無敵
+      if (invincibilityDuration > _maxInvincibilityTime) {
+        debugPrint('⚠️ Boss可能卡在階段轉換無敵狀態($invincibilityDuration秒)，強制解除無敵！');
+        _resetToNormalState();
+      }
+    }
+  }
+
+  // 重置到正常狀態的方法
+  void _resetToNormalState() {
+    // 移除所有可能的閃爍效果
+    if (_spriteComponent != null) {
+      _spriteComponent!.children.whereType<ColorEffect>().forEach((effect) {
+        effect.removeFromParent();
+      });
+    }
+
+    _currentState = BossState.normal;
+    _stateTimer = 0.0;
+    _phaseChangeTime = 0.0;
+    debugPrint('Boss已重置為正常狀態');
   }
 
   @override
   void update(double dt) {
     super.update(dt);
 
+    // 更新全局時間計數器
+    _gameTimeCounter += dt;
+
     if (_isDead) return;
 
-    // Update attack cooldown
+    // 更新冷卻計時器
     if (_currentAttackCooldown > 0) {
       _currentAttackCooldown -= dt;
     }
-
-    // Update special attack cooldown
     if (_specialAttackCooldown > 0) {
       _specialAttackCooldown -= dt;
     }
-
-    // Update summon cooldown
     if (_summonCooldown > 0) {
       _summonCooldown -= dt;
     }
 
-    // Handle special move timer
-    if (_isPerformingSpecialMove) {
-      _specialMoveTimer -= dt;
-      if (_specialMoveTimer <= 0) {
-        _isPerformingSpecialMove = false;
-      }
-    }
+    // 更新狀態計時器
+    if (_currentState != BossState.normal) {
+      _stateTimer -= dt;
 
-    // Check phase transition
-    _checkPhaseTransition();
+      // 階段轉換有獨立的計時器
+      if (_currentState == BossState.phaseChange) {
+        _phaseChangeTime -= dt;
 
-    // Aggressive player tracking
-    _bossAggressiveTracking(dt);
-
-    // If not performing special move, handle attacks
-    if (!_isPerformingSpecialMove) {
-      _bossPrimaryAttack(dt);
-
-      if (_specialAttackCooldown <= 0) {
-        _performSpecialAttack();
-        _specialAttackCooldown = specialAttackInterval / _currentPhase;
-      }
-
-      if (_summonCooldown <= 0 && _currentPhase >= 2) {
-        _summonMinions();
-        _summonCooldown = summonInterval;
-      }
-    }
-
-    // Detect movement direction and update sprite orientation
-    if (_spriteComponent != null) {
-      final movement = position - _lastPosition;
-      if (movement.length > 0.1) {
-        // Add threshold to avoid flipping on small movements
-        if (movement.x < 0 && !_isFacingLeft) {
-          // Moving left, flip sprite
-          _spriteComponent!.flipHorizontally();
-          _isFacingLeft = true;
-        } else if (movement.x > 0 && _isFacingLeft) {
-          // Moving right, restore sprite
-          _spriteComponent!.flipHorizontally();
-          _isFacingLeft = false;
+        // 階段轉換計時結束，返回正常狀態
+        if (_phaseChangeTime <= 0) {
+          debugPrint('Boss階段轉換完成，恢復可被攻擊狀態');
+          _completePhaseChange();
         }
       }
 
-      // Update last position
-      _lastPosition = position.clone();
+      // 一般狀態計時結束，返回正常狀態
+      if (_stateTimer <= 0) {
+        if (_currentState == BossState.specialAttack) {
+          _currentState = BossState.normal;
+          debugPrint('Boss特殊攻擊結束，恢復可被攻擊狀態');
+        }
+      }
+    }
+
+    // 檢查階段轉換
+    _checkPhaseTransition();
+
+    // 根據當前狀態決定行為
+    switch (_currentState) {
+      case BossState.normal:
+        // 正常狀態下追蹤玩家並攻擊
+        _bossAggressiveTracking(dt);
+        _bossPrimaryAttack(dt);
+
+        // 檢查是否可以使用特殊攻擊
+        if (_specialAttackCooldown <= 0) {
+          _performSpecialAttack();
+          _specialAttackCooldown = specialAttackInterval / _currentPhase;
+        }
+
+        // 檢查是否可以召喚小怪
+        if (_summonCooldown <= 0 && _currentPhase >= 2) {
+          _summonMinions();
+          _summonCooldown = summonInterval;
+        }
+        break;
+
+      case BossState.phaseChange:
+        // 階段轉換中只進行簡單的移動，不攻擊
+        _simpleBossMovement(dt);
+        break;
+
+      case BossState.specialAttack:
+        // 特殊攻擊中也只進行簡單的移動
+        _simpleBossMovement(dt);
+        break;
+    }
+
+    // 更新精靈朝向
+    _updateSpriteOrientation();
+  }
+
+  // 簡化版的Boss移動，用於特殊狀態下
+  void _simpleBossMovement(double dt) {
+    if (_target == null) return;
+
+    final playerCenter = _target!.position + _target!.size / 2;
+    final bossCenter = position + size / 2;
+    final distanceToPlayer = bossCenter.distanceTo(playerCenter);
+
+    // 保持與玩家的適當距離
+    if (distanceToPlayer < attackRange * 0.5 ||
+        distanceToPlayer > attackRange * 1.5) {
+      final directionToPlayer = (playerCenter - bossCenter)..normalize();
+
+      // 如果太近就遠離，太遠就靠近
+      Vector2 moveDirection;
+      if (distanceToPlayer < attackRange * 0.5) {
+        moveDirection = -directionToPlayer;
+      } else {
+        moveDirection = directionToPlayer;
+      }
+
+      // 以較慢的速度移動
+      _moveInDirection(moveDirection, dt, speedMultiplier: 0.5);
     }
   }
 
+  // 更新精靈朝向 - 簡化方法
+  void _updateSpriteOrientation() {
+    if (_spriteComponent == null) return;
+
+    final movement = position - _lastPosition;
+    if (movement.length > 0.1) {
+      // 只在有顯著移動時才調整朝向
+      if (movement.x < 0 && !_isFacingLeft) {
+        _spriteComponent!.flipHorizontally();
+        _isFacingLeft = true;
+      } else if (movement.x > 0 && _isFacingLeft) {
+        _spriteComponent!.flipHorizontally();
+        _isFacingLeft = false;
+      }
+    }
+
+    _lastPosition = position.clone();
+  }
+
+  // 進入新階段
   void _enterPhase(int phase) {
     _currentPhase = phase;
     debugPrint('Boss進入第$_currentPhase階段！');
@@ -270,7 +394,19 @@ class BossComponent extends PositionComponent
       }
     }
 
-    // 階段轉換特效 - 會在內部設置短暫無敵
+    // 切換到階段轉換狀態
+    _currentState = BossState.phaseChange;
+
+    // 設置階段轉換持續時間
+    _stateTimer = 3.0;
+    _phaseChangeTime = 3.0;
+
+    // 記錄無敵開始時間
+    _invincibilityStartTime = _gameTimeCounter;
+
+    debugPrint('Boss進入階段轉換，短暫無敵狀態 (${_stateTimer}秒)');
+
+    // 執行階段轉換特效
     _performPhaseTransitionEffect();
 
     // 根據階段調整屬性
@@ -285,13 +421,28 @@ class BossComponent extends PositionComponent
         _damageMultiplier *= 1.3;
         break;
     }
-
-    // 不在此設置_isPerformingSpecialMove，統一由_performPhaseTransitionEffect管理
   }
 
-  // 階段轉換特效
+  // 階段轉換完成
+  void _completePhaseChange() {
+    // 移除閃爍效果
+    if (_spriteComponent != null) {
+      _spriteComponent!.children.whereType<ColorEffect>().forEach((effect) {
+        effect.removeFromParent();
+      });
+    }
+
+    // 重置為正常狀態
+    _currentState = BossState.normal;
+    _stateTimer = 0.0;
+    _phaseChangeTime = 0.0;
+
+    debugPrint('Boss階段轉換無敵狀態結束，可以被攻擊');
+  }
+
+  // 階段轉換特效 - 徹底解決方案
   void _performPhaseTransitionEffect() {
-    // 添加視覺特效
+    // 添加視覺特效到場景
     parent?.add(
       BossPhaseTransitionEffect(
         position: position.clone(),
@@ -300,141 +451,121 @@ class BossComponent extends PositionComponent
       ),
     );
 
-    // 設置無敵並閃爍
-    _isPerformingSpecialMove = true;
-    _specialMoveTimer = 3.0; // 確保與計時器同步
-
-    final flash = ColorEffect(
-      Colors.white,
-      EffectController(duration: 0.1, reverseDuration: 0.1, infinite: true),
-      opacityFrom: 0.0,
-      opacityTo: 0.8,
+    // 使用純縮放效果代替閃爍效果，避免使用ColorEffect
+    final scaleController = EffectController(
+      duration: 0.2,
+      reverseDuration: 0.2,
+      infinite: true,
+      alternate: true,
     );
 
-    if (_spriteComponent != null) {
-      _spriteComponent!.add(flash);
-    } else {
-      add(flash);
-    }
+    // 為Boss本體添加縮放效果
+    final scaleEffect = ScaleEffect.by(
+      Vector2.all(1.2), // 放大到1.2倍
+      scaleController,
+    );
 
-    // 嚴格監控無敵狀態解除
+    // 直接添加到Boss本體
+    add(scaleEffect);
+
+    // 2秒後移除效果
     add(
       TimerComponent(
-        period: 3.0,
+        period: 2.0,
         removeOnFinish: true,
         onTick: () {
-          debugPrint('階段轉換無敵狀態解除');
-          if (flash.parent != null) {
-            flash.removeFromParent();
-          }
-          // 確保無敵狀態被解除
-          _isPerformingSpecialMove = false;
-          _specialMoveTimer = 0;
+          // 找到並移除所有縮放效果
+          children.whereType<ScaleEffect>().forEach((effect) {
+            effect.removeFromParent();
+          });
+          // 確保恢復正常縮放
+          scale = Vector2.all(1.0);
+          debugPrint('階段轉換視覺效果已結束');
         },
       ),
     );
+
+    // 添加額外的爆炸效果來增強視覺體驗
+    for (int i = 0; i < 3; i++) {
+      add(
+        TimerComponent(
+          period: 0.3 * i,
+          removeOnFinish: true,
+          onTick: () {
+            // 在Boss周圍創建爆炸效果
+            final explosionOffset = Vector2(
+              (math.Random().nextDouble() - 0.5) * enemySize,
+              (math.Random().nextDouble() - 0.5) * enemySize,
+            );
+
+            parent?.add(
+              ExplosionComponent(
+                position: position + explosionOffset,
+                size: Vector2.all(enemySize * (0.8 + i * 0.2)),
+                color:
+                    _currentPhase == 2
+                        ? Colors.orange.withValues(alpha: 0.7)
+                        : Colors.red.withValues(alpha: 0.7),
+              ),
+            );
+          },
+        ),
+      );
+    }
   }
 
-  // Boss的積極追踪行為
+  // 追蹤玩家行為 - 簡化實現
   void _bossAggressiveTracking(double dt) {
-    // 直接從遊戲實例獲取玩家，Boss總是知道玩家在哪裡
     final player = game.getPlayer();
-
     _target = player;
 
-    // 玩家的中心位置
     final playerCenter = player.position + player.size / 2;
     final bossCenter = position + size / 2;
-
-    // 計算距離和方向
     final distanceToPlayer = bossCenter.distanceTo(playerCenter);
     final directionToPlayer = (playerCenter - bossCenter)..normalize();
 
-    // 更新最後已知玩家位置
+    // 簡化距離計算
+    double idealDistance = attackRange * (1.0 - _currentPhase * 0.2);
+    double moveSpeedMultiplier = 1.0 + (_currentPhase - 1) * 0.2;
 
-    // 根據Boss的攻擊階段和距離決定行為
-    double idealDistance;
-    double moveSpeedMultiplier = 1.0;
-
-    // 第一階段：保持中距離，適合射擊
-    // 第二階段：更靈活，靠近後又拉開距離
-    // 第三階段：積極貼近玩家
-
-    switch (_currentPhase) {
-      case 1:
-        idealDistance = attackRange * 0.8; // 保持在射程的80%位置
-        moveSpeedMultiplier = 0.9;
-        break;
-      case 2:
-        // 第二階段：更靈活的距離控制
-        if (_specialAttackCooldown < specialAttackInterval / 2) {
-          // 準備放技能時靠近玩家
-          idealDistance = attackRange * 0.5;
-          moveSpeedMultiplier = 1.2;
-        } else {
-          // 剛放完技能就拉開距離
-          idealDistance = attackRange * 1.0;
-          moveSpeedMultiplier = 1.1;
-        }
-        break;
-      case 3:
-        // 第三階段：更激進的追踪
-        idealDistance = attackRange * 0.3; // 更靠近玩家
-        moveSpeedMultiplier = 1.5;
-        break;
-      default:
-        idealDistance = attackRange * 0.8;
-    }
-
-    // 根據當前與理想距離的差異決定移動方向
+    // 簡化移動邏輯
     if ((distanceToPlayer - idealDistance).abs() > 20) {
       Vector2 movementDirection;
-
       if (distanceToPlayer > idealDistance) {
-        // 太遠，靠近玩家
         movementDirection = directionToPlayer;
       } else {
-        // 太近，遠離玩家
         movementDirection = -directionToPlayer;
       }
 
-      // 添加一些隨機的左右移動，讓Boss看起來更不可預測
-      if (_currentPhase >= 2) {
-        // 第二階段開始才有橫向移動
-        final perpendicular = Vector2(
-          -directionToPlayer.y,
-          directionToPlayer.x,
-        );
-        final randomFactor =
-            math.sin(_specialAttackCooldown * 2) * 0.5; // -0.5到0.5之間擺動
-        movementDirection += perpendicular * randomFactor;
-        movementDirection.normalize();
-      }
-
-      // 執行移動
-      _moveInDirection(
-        movementDirection,
-        dt,
-        speedMultiplier: moveSpeedMultiplier,
-      );
-    } else {
-      // 如果已經在理想距離，並且在第二或第三階段，做一些隨機的橫向移動
+      // 添加隨機側向移動（第2階段以上）
       if (_currentPhase >= 2) {
         final perpendicular = Vector2(
           -directionToPlayer.y,
           directionToPlayer.x,
         );
         final randomFactor = math.sin(_specialAttackCooldown * 2) * 0.5;
-        _moveInDirection(
-          perpendicular * randomFactor,
-          dt,
-          speedMultiplier: moveSpeedMultiplier * 0.7,
-        );
+        movementDirection += perpendicular * randomFactor;
+        movementDirection.normalize();
       }
+
+      _moveInDirection(
+        movementDirection,
+        dt,
+        speedMultiplier: moveSpeedMultiplier,
+      );
+    } else if (_currentPhase >= 2) {
+      // 在理想距離時的側向移動
+      final perpendicular = Vector2(-directionToPlayer.y, directionToPlayer.x);
+      final randomFactor = math.sin(_specialAttackCooldown * 2) * 0.5;
+      _moveInDirection(
+        perpendicular * randomFactor,
+        dt,
+        speedMultiplier: moveSpeedMultiplier * 0.7,
+      );
     }
   }
 
-  // 朝指定方向移動
+  // 移動處理
   void _moveInDirection(
     Vector2 direction,
     double dt, {
@@ -442,18 +573,17 @@ class BossComponent extends PositionComponent
   }) {
     if (_isDead) return;
 
-    // 計算移動向量
     final movement = direction * speed * speedMultiplier * dt;
     final nextPosition = position + movement;
 
-    // 檢查是否與障礙物碰撞
+    // 嘗試移動並處理障礙物碰撞
     if (!mapComponent.checkObstacleCollision(
       nextPosition,
       Vector2.all(enemySize),
     )) {
       position = nextPosition;
     } else {
-      // 嘗試分別在 X 和 Y 方向上移動（在牆邊滑動）
+      // 嘗試X和Y方向的分離移動
       final nextPositionX = Vector2(nextPosition.x, position.y);
       final nextPositionY = Vector2(position.x, nextPosition.y);
 
@@ -473,7 +603,7 @@ class BossComponent extends PositionComponent
     }
   }
 
-  // Boss的主要攻擊行為
+  // 主要攻擊
   void _bossPrimaryAttack(double dt) {
     if (_target == null || _currentAttackCooldown > 0) return;
 
@@ -481,21 +611,16 @@ class BossComponent extends PositionComponent
       _target!.position + _target!.size / 2,
     );
 
-    // Boss在更遠的距離就可以攻擊
     if (distanceToTarget <= attackRange * 1.2) {
-      // 根據階段選擇不同的基本攻擊方式
       switch (_currentPhase) {
         case 1:
-          // 第一階段：簡單的子彈攻擊
           _fireBossProjectile();
           break;
         case 2:
-          // 第二階段：散射子彈攻擊
-          _fireBossMultiProjectiles(3); // 發射3個子彈
+          _fireBossMultiProjectiles(3);
           break;
         case 3:
-          // 第三階段：更強的散射攻擊
-          _fireBossMultiProjectiles(5); // 發射5個子彈
+          _fireBossMultiProjectiles(5);
           break;
       }
 
@@ -503,34 +628,27 @@ class BossComponent extends PositionComponent
     }
   }
 
-  // 發射單個強力子彈
+  // 發射單個子彈
   void _fireBossProjectile() {
     if (_target == null) return;
 
-    // 計算攻擊方向
     final attackDirection =
         (_target!.position + _target!.size / 2 - position)..normalize();
-
-    // 計算子彈生成位置
     final bulletPosition = position + attackDirection * enemySize / 2;
 
-    // 創建Boss子彈
     final bullet = BulletComponent(
       position: bulletPosition,
       direction: attackDirection,
-      speed: 280, // 高速子彈
-      damage: damage * 0.6, // 較高傷害
-      range: 500, // 長距離
+      speed: 280,
+      damage: damage * 0.6,
+      range: 500,
       color: color,
-      size: enemySize * 0.3, // 較大子彈
-      trailEffect: 'shine', // 使用發光尾跡效果
-      isEnemyBullet: true, // 標記為敵人子彈
+      size: enemySize * 0.3,
+      trailEffect: 'shine',
+      isEnemyBullet: true,
     );
 
-    // 添加到遊戲世界
     parent?.add(bullet);
-
-    // 添加發射特效
     parent?.add(
       ExplosionComponent(
         position: bulletPosition,
@@ -540,55 +658,36 @@ class BossComponent extends PositionComponent
     );
   }
 
-  // 發射多個子彈（散射攻擊）
+  // 發射多個子彈
   void _fireBossMultiProjectiles(int count) {
     if (_target == null) return;
 
-    // 計算基本攻擊方向
     final baseDirection =
         (_target!.position + _target!.size / 2 - position)..normalize();
-
-    // 散射角度範圍
-    final spreadAngle = 0.4; // 總共大約45度的散射範圍
+    final spreadAngle = 0.4;
 
     for (int i = 0; i < count; i++) {
-      // 計算當前子彈的角度偏移
       final angleOffset = spreadAngle * (2 * i / (count - 1) - 1);
       final angle = math.atan2(baseDirection.y, baseDirection.x) + angleOffset;
-
-      // 計算偏移後的方向
       final direction = Vector2(math.cos(angle), math.sin(angle));
-
-      // 計算子彈生成位置
       final bulletPosition = position + direction * enemySize / 2;
 
-      // 選擇尾跡效果類型
-      String trailEffectType = 'none';
-      if (i == count ~/ 2) {
-        // 中間的子彈使用粒子尾跡
-        trailEffectType = 'particles';
-      } else if (i % 2 == 0) {
-        // 偶數索引的子彈使用簡單尾跡
-        trailEffectType = 'simple';
-      }
+      String trailEffectType =
+          i == count ~/ 2 ? 'particles' : (i % 2 == 0 ? 'simple' : 'none');
 
-      // 創建子彈
       final bullet = BulletComponent(
         position: bulletPosition,
         direction: direction,
-        speed: 250 + 20 * i.toDouble(), // 子彈速度略有不同，確保使用double
-        damage: damage * 0.45, // 每顆子彈傷害稍低
+        speed: 250 + 20 * i.toDouble(),
+        damage: damage * 0.45,
         range: 450,
         color: color,
         size: enemySize * 0.25,
-        trailEffect: trailEffectType, // 使用適當的尾跡效果類型
-        isEnemyBullet: true, // 標記為敵人子彈
+        trailEffect: trailEffectType,
+        isEnemyBullet: true,
       );
 
-      // 添加到遊戲世界
       parent?.add(bullet);
-
-      // 添加小型發射特效
       parent?.add(
         ExplosionComponent(
           position: bulletPosition,
@@ -598,7 +697,6 @@ class BossComponent extends PositionComponent
       );
     }
 
-    // 添加中心發射特效
     parent?.add(
       ExplosionComponent(
         position: position.clone(),
@@ -610,9 +708,11 @@ class BossComponent extends PositionComponent
 
   // 檢查階段轉換
   void _checkPhaseTransition() {
+    // 只在正常狀態下檢查階段轉換
+    if (_currentState != BossState.normal) return;
+
     final healthPercentage = health / maxHealth;
 
-    // 當生命值降低到特定百分比時，切換到下一階段
     if (_currentPhase == 1 &&
         healthPercentage <= 0.7 &&
         _lastHealthPercentage > 0.7) {
@@ -630,11 +730,17 @@ class BossComponent extends PositionComponent
   void _performSpecialAttack() {
     if (_target == null) return;
 
-    // 循環使用攻擊模式
     final attackPattern = attackPatterns[_currentAttackPattern];
     _currentAttackPattern = (_currentAttackPattern + 1) % attackPatterns.length;
 
     debugPrint('Boss使用特殊攻擊: $attackPattern');
+
+    // 切換到特殊攻擊狀態
+    _currentState = BossState.specialAttack;
+    _stateTimer = 2.0;
+
+    // 記錄無敵開始時間
+    _invincibilityStartTime = _gameTimeCounter;
 
     switch (attackPattern) {
       case BossAttackPattern.circularAttack:
@@ -653,39 +759,30 @@ class BossComponent extends PositionComponent
         _performTeleport();
         break;
     }
-
-    // 設置為特殊行為狀態，短暫內不執行其他動作
-    _isPerformingSpecialMove = true;
-    _specialMoveTimer = 2.0;
   }
 
-  // 圓形彈幕攻擊 - 向四周發射多個子彈
+  // 圓形彈幕攻擊
   void _performCircularAttack() {
-    const int bulletCount = 16; // 子彈數量
-    const double radius = 20.0; // 發射半徑
+    const int bulletCount = 16;
+    const double radius = 20.0;
 
     for (int i = 0; i < bulletCount; i++) {
       final angle = 2 * math.pi * i / bulletCount;
       final direction = Vector2(math.cos(angle), math.sin(angle));
-
-      // 計算子彈起始位置（略微偏移）
       final bulletPosition = position + direction * radius;
 
-      // 創建子彈
       final bullet = BulletComponent(
         position: bulletPosition,
         direction: direction,
-        speed: 150, // 較慢的子彈，更易被躲避
-        damage: damage * 0.35, // 每顆子彈傷害較低
+        speed: 150,
+        damage: damage * 0.35,
         range: 300,
         color: color,
         size: enemySize * 0.2,
+        isEnemyBullet: true,
       );
 
-      // 添加到遊戲世界
       parent?.add(bullet);
-
-      // 添加發射特效
       parent?.add(
         ExplosionComponent(
           position: bulletPosition,
@@ -695,7 +792,6 @@ class BossComponent extends PositionComponent
       );
     }
 
-    // 添加中心爆發效果
     parent?.add(
       ExplosionComponent(
         position: position.clone(),
@@ -705,36 +801,31 @@ class BossComponent extends PositionComponent
     );
   }
 
-  // 光束攻擊 - 瞄準玩家發射強力光束
+  // 光束攻擊
   void _performBeamAttack() {
     if (_target == null) return;
 
-    // 警告效果，預示攻擊方向
     final targetDirection = (_target!.position - position)..normalize();
 
-    // 延遲執行實際攻擊
     add(
       TimerComponent(
-        period: 1.0, // 1秒警告時間
+        period: 1.0,
         removeOnFinish: true,
         onTick: () {
-          // 創建3個相鄰的光束，增加命中範圍
           for (double offset = -0.2; offset <= 0.2; offset += 0.2) {
-            // 計算偏移方向
             final angle =
                 math.atan2(targetDirection.y, targetDirection.x) + offset;
             final adjustedDirection = Vector2(math.cos(angle), math.sin(angle));
 
-            // 創建大型光束子彈
             final beam = BeamComponent(
               position: position.clone(),
               direction: adjustedDirection,
-              length: 600, // 非常長的光束
+              length: 600,
               width: 25,
-              damage: damage * 1.5, // 高傷害
-              duration: 0.8, // 光束持續時間
+              damage: damage * 1.5,
+              duration: 0.8,
               color: color,
-              isEnemyAttack: true, // 標記為敵人攻擊
+              isEnemyAttack: true,
             );
 
             parent?.add(beam);
@@ -743,7 +834,6 @@ class BossComponent extends PositionComponent
       ),
     );
 
-    // 添加警告線效果
     final warningLine = BeamWarningComponent(
       position: position.clone(),
       direction: targetDirection,
@@ -755,24 +845,21 @@ class BossComponent extends PositionComponent
     parent?.add(warningLine);
   }
 
-  // 範圍攻擊 - 在地面創建持續傷害區域
+  // 範圍攻擊
   void _performAoeAttack() {
     if (_target == null) return;
 
-    // 在玩家腳下創建AOE
     final targetPos = _target!.position.clone();
 
-    // 先顯示警告區域
     final indicator = AoeIndicatorComponent(
       position: targetPos,
       radius: 120,
-      duration: 1.5, // 警告持續1.5秒
+      duration: 1.5,
       color: Colors.red.withValues(alpha: 0.3),
     );
 
     parent?.add(indicator);
 
-    // 延遲後產生實際攻擊
     add(
       TimerComponent(
         period: 1.5,
@@ -783,13 +870,11 @@ class BossComponent extends PositionComponent
             radius: 120,
             damage: damage * 2,
             duration: 3.0,
-            tickInterval: 0.5, // 每0.5秒造成一次傷害
+            tickInterval: 0.5,
             color: color.withValues(alpha: 0.6),
           );
 
           parent?.add(aoe);
-
-          // 添加爆炸效果
           parent?.add(
             ExplosionComponent(
               position: targetPos,
@@ -802,36 +887,32 @@ class BossComponent extends PositionComponent
     );
   }
 
-  // 快速射擊 - 向玩家方向連續發射多個子彈
+  // 快速射擊
   void _performRapidFire() {
     if (_target == null) return;
 
-    // 計算方向
     final targetDirection = (_target!.position - position)..normalize();
 
-    // 設置連續射擊
     for (int i = 0; i < 5; i++) {
       add(
         TimerComponent(
-          period: 0.15 * i, // 每0.15秒射擊一次
+          period: 0.15 * i,
           removeOnFinish: true,
           onTick: () {
-            // 略微隨機化射擊方向
             final randomAngle = (math.Random().nextDouble() - 0.5) * 0.3;
             final angle =
                 math.atan2(targetDirection.y, targetDirection.x) + randomAngle;
             final adjustedDirection = Vector2(math.cos(angle), math.sin(angle));
 
-            // 創建子彈
             final bullet = BulletComponent(
               position: position + adjustedDirection * enemySize / 2,
               direction: adjustedDirection,
-              speed: 350, // 高速子彈
+              speed: 350,
               damage: damage * 0.4,
               range: 400,
               color: color,
               size: enemySize * 0.15,
-              isEnemyBullet: true, // 標記為敵人子彈
+              isEnemyBullet: true,
             );
 
             parent?.add(bullet);
@@ -841,24 +922,22 @@ class BossComponent extends PositionComponent
     }
   }
 
+  // 瞬移
   void _performTeleport() {
     if (_target == null) return;
 
-    // 在玩家周圍隨機選擇一個位置
     final random = math.Random();
     final angle = random.nextDouble() * 2 * math.pi;
-    final distance = 100 + random.nextDouble() * 100; // 距離玩家100-200單位
+    final distance = 100 + random.nextDouble() * 100;
 
     final teleportDestination =
         _target!.position +
         Vector2(math.cos(angle) * distance, math.sin(angle) * distance);
 
-    // 檢查目標位置是否有障礙物
     if (!mapComponent.checkObstacleCollision(
       teleportDestination,
       Vector2.all(enemySize),
     )) {
-      // 添加瞬移前的視覺效果
       parent?.add(
         ExplosionComponent(
           position: position.clone(),
@@ -867,11 +946,9 @@ class BossComponent extends PositionComponent
         ),
       );
 
-      // 安全地瞬移
       position = teleportDestination;
       debugPrint('Boss 瞬移到新位置');
 
-      // 添加瞬移後的視覺效果
       parent?.add(
         ExplosionComponent(
           position: position.clone(),
@@ -882,37 +959,29 @@ class BossComponent extends PositionComponent
     }
   }
 
+  // 召喚小怪
   void _summonMinions() {
-    // 決定召喚數量，基於當前階段
     final minionCount = _currentPhase;
     final random = math.Random();
 
     for (int i = 0; i < minionCount; i++) {
-      // 在Boss周圍隨機位置召喚
       final angle = random.nextDouble() * 2 * math.pi;
-      final distance = 100 + random.nextDouble() * 50; // 距離Boss 100-150單位
+      final distance = 100 + random.nextDouble() * 50;
 
       final summonPos =
           position +
           Vector2(math.cos(angle) * distance, math.sin(angle) * distance);
 
-      // 檢查位置是否有障礙物
-      if (!mapComponent.checkObstacleCollision(
-        summonPos,
-        Vector2.all(24), // 小怪體型
-      )) {
+      if (!mapComponent.checkObstacleCollision(summonPos, Vector2.all(24))) {
         try {
-          // 根據階段決定召喚的小怪類型
           EnemyType minionType;
           if (_currentPhase == 2) {
-            minionType = EnemyType.melee; // 第二階段召喚近戰小怪
+            minionType = EnemyType.melee;
           } else {
-            // 第三階段有機會召喚更強的小怪
             minionType =
                 random.nextBool() ? EnemyType.ranged : EnemyType.hybrid;
           }
 
-          // 創建小怪
           final minion = EnemyComponent(
             position: summonPos,
             type: minionType,
@@ -926,10 +995,7 @@ class BossComponent extends PositionComponent
             enemySize: 24,
           );
 
-          // 添加到遊戲世界
           parent?.add(minion);
-
-          // 添加召喚特效
           parent?.add(
             ExplosionComponent(
               position: summonPos,
@@ -948,7 +1014,7 @@ class BossComponent extends PositionComponent
 
   /// 確保透明度值在有效範圍內 (0.0-1.0)
   double safeOpacity(double value) {
-    if (value.isNaN) return 1.0; // 處理 NaN 情況
+    if (value.isNaN) return 1.0;
     return value.clamp(0.0, 1.0);
   }
 
@@ -966,7 +1032,6 @@ class BossComponent extends PositionComponent
       ),
     );
 
-    // 添加光環效果
     parent?.add(
       BossAuraComponent(
         position: position.clone(),
@@ -976,22 +1041,52 @@ class BossComponent extends PositionComponent
     );
   }
 
+  // 受傷處理方法 - 移除了30%最大傷害的限制
   void takeDamage(double amount) {
     if (_isDead) return;
 
-    // 如果處於階段轉換的特殊狀態，則完全無敵
-    if (_isPerformingSpecialMove) {
-      // 完全無敵，不受任何傷害
+    // 只在階段轉換時無敵，特殊攻擊時可以受到傷害
+    if (_currentState == BossState.phaseChange) {
+      // 顯示傷害抵抗視覺效果
+      final resistPos = position + Vector2(0, -enemySize / 2);
+      final resistText = TextComponent(
+        text: '無敵!',
+        textRenderer: TextPaint(
+          style: const TextStyle(
+            fontSize: 16,
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        position: resistPos,
+        anchor: Anchor.center,
+      );
+
+      // 添加向上移動效果
+      resistText.add(
+        MoveEffect.by(Vector2(0, -20), EffectController(duration: 0.6)),
+      );
+
+      // 使用TimerComponent替代OpacityEffect來移除組件
+      resistText.add(
+        TimerComponent(
+          period: 0.6,
+          removeOnFinish: true,
+          onTick: () {
+            resistText.removeFromParent();
+          },
+        ),
+      );
+
+      parent?.add(resistText);
+
+      debugPrint(
+        'Boss處於階段轉換狀態，無敵中 (剩餘${_phaseChangeTime.toStringAsFixed(1)}秒)',
+      );
       return;
     }
 
-    // 限制單次傷害最多為最大生命值的30%
-    double maxDamageAllowed = maxHealth * 0.3;
-    if (amount > maxDamageAllowed) {
-      amount = maxDamageAllowed;
-      debugPrint('傷害超過上限，已限制為最大生命值的30%: $maxDamageAllowed');
-    }
-
+    // 移除了30%最大生命值的傷害限制
     health -= amount;
 
     // 顯示生命條
@@ -1006,11 +1101,12 @@ class BossComponent extends PositionComponent
     }
   }
 
+  // 渲染生命條
   void _renderHealthBar(Canvas canvas) {
-    const barHeight = 6.0; // 增加生命條高度
-    final barWidth = enemySize * 1.5; // 增加生命條寬度
+    const barHeight = 12.0; // 放大兩倍
+    final barWidth = enemySize * 3.0; // 放大兩倍
     final barX = -barWidth / 2;
-    final barY = -enemySize / 2 - 15;
+    final barY = -enemySize / 2 - 20; // 稍微上移，避免與Boss重疊
 
     // 背景
     canvas.drawRect(
@@ -1051,7 +1147,7 @@ class BossComponent extends PositionComponent
         ..strokeWidth = 1.5,
     );
 
-    // 階段指示器 - 在生命條上顯示階段轉換點
+    // 階段指示器
     final phase2X = barX + barWidth * 0.7;
     final phase3X = barX + barWidth * 0.3;
 
@@ -1068,22 +1164,69 @@ class BossComponent extends PositionComponent
       Offset(phase3X, barY + barHeight + 2),
       Paint()..color = Colors.white,
     );
+
+    // 顯示當前狀態指示器 - 只在階段轉換時顯示無敵狀態
+    if (_currentState == BossState.phaseChange) {
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: "階段轉換中 (無敵)",
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            shadows: [
+              Shadow(color: Colors.black, offset: Offset(1, 1), blurRadius: 2),
+            ],
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+
+      textPainter.layout();
+      textPainter.paint(
+        canvas,
+        Offset(barX + (barWidth - textPainter.width) / 2, barY - 20),
+      );
+    } else if (_currentState == BossState.specialAttack) {
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: "特殊攻擊中",
+          style: TextStyle(
+            color: Colors.yellow,
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            shadows: [
+              Shadow(color: Colors.black, offset: Offset(1, 1), blurRadius: 2),
+            ],
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+
+      textPainter.layout();
+      textPainter.paint(
+        canvas,
+        Offset(barX + (barWidth - textPainter.width) / 2, barY - 20),
+      );
+    }
   }
 
+  // 死亡處理
   void _die() {
     _isDead = true;
 
-    // 獲取當前Boss位置的副本（因為Boss即將移除）
-    final bossPosition = position.clone();
+    // 確保清除所有無敵狀態
+    _currentState = BossState.normal;
+    _stateTimer = 0;
+    _phaseChangeTime = 0;
 
-    // 獲取game和dungeonManager引用
+    final bossPosition = position.clone();
     final gameRef = game;
     final dungeonManager = gameRef.dungeonManager;
     final isInBossRoom =
         dungeonManager != null &&
         dungeonManager.currentRoomId == 'dungeon_room_3';
 
-    // 記錄調試信息
     debugPrint('Boss死亡，當前房間: ${dungeonManager?.currentRoomId}');
 
     // 創建死亡特效
@@ -1112,7 +1255,7 @@ class BossComponent extends PositionComponent
       );
     }
 
-    // 添加主要爆炸效果
+    // 添加主要爆炸效果和創建傳送門
     gameRef.gameWorld.add(
       TimerComponent(
         period: 1.0,
@@ -1125,43 +1268,35 @@ class BossComponent extends PositionComponent
             ),
           );
 
-          // 如果在Boss房間，創建通往神秘迴廊的傳送門
+          // 如果在Boss房間，創建傳送門
           if (isInBossRoom) {
             debugPrint('確認在Boss房間，準備顯示通知和創建迴廊');
 
-            // 顯示通知
-            gameRef.showInteractionPrompt('一條神秘迴廊出現了...');
+            gameRef.showInteractionPrompt('一條鏡中迴廊出現了...');
 
-            // 延遲創建傳送門
             gameRef.gameWorld.add(
               TimerComponent(
                 period: 2.0,
                 removeOnFinish: true,
                 onTick: () {
-                  debugPrint('正在創建通往神秘迴廊的傳送門...');
+                  debugPrint('正在創建通往鏡中迴廊的傳送門...');
 
                   try {
-                    // 計算傳送門位置
                     final portalPosition = Vector2(
                       dungeonManager!.roomSize.x * 0.8,
                       dungeonManager.roomSize.y * 0.3,
                     );
 
-                    // 創建傳送門
                     final secretPortal = PortalComponent(
                       position: portalPosition,
                       type: PortalType.dungeonRoom,
                       destinationId: 'secret_corridor',
-                      portalName: '神秘迴廊',
+                      portalName: '鏡中迴廊',
                       color: Colors.purple.shade700,
                     );
 
-                    // 直接添加到遊戲世界
                     gameRef.gameWorld.add(secretPortal);
-
-                    debugPrint('神秘迴廊傳送門創建成功，位置: $portalPosition');
-
-                    // 隱藏提示
+                    debugPrint('鏡中迴廊傳送門創建成功，位置: $portalPosition');
                     gameRef.hideInteractionPrompt();
                   } catch (e) {
                     debugPrint('創建傳送門時發生錯誤: $e');
@@ -1179,7 +1314,7 @@ class BossComponent extends PositionComponent
     // 添加淡出效果
     add(OpacityEffect.fadeOut(EffectController(duration: 1.0)));
 
-    // 最後移除自身
+    // 移除自身
     removeFromParent();
 
     debugPrint('Boss $bossName 已經被擊敗！');
@@ -1202,18 +1337,16 @@ class BossComponent extends PositionComponent
   ) {
     super.onCollisionStart(intersectionPoints, other);
 
-    // 如果碰到玩家的子彈，受到傷害
+    // 與玩家子彈碰撞處理
     if (other is BulletComponent && !other.isEnemyBullet) {
       takeDamage(other.damage);
-
-      // 阻止子彈繼續飛行
       other.removeFromParent();
     }
 
-    // 如果碰到玩家，直接造成傷害
+    // 與玩家直接碰撞處理
     if (other is PlayerComponent && _currentAttackCooldown <= 0) {
-      // 記錄碰撞前先輸出調試信息
       debugPrint('Boss 與玩家碰撞！嘗試造成 ${damage.toInt()} 點傷害');
+
       try {
         other.takeDamage(damage.toInt());
         debugPrint('Boss 成功對玩家造成傷害');
@@ -1223,7 +1356,6 @@ class BossComponent extends PositionComponent
 
       _currentAttackCooldown = attackCooldown;
 
-      // 添加碰撞攻擊視覺效果
       try {
         parent?.add(
           ExplosionComponent(
@@ -1243,13 +1375,11 @@ class BossComponent extends PositionComponent
   double _opacity = 1.0;
   @override
   set opacity(double value) {
-    // 添加調試日誌來追蹤透明度變更
     if (value < 0 || value > 1) {
       developer.log('警告: Boss設置無效的透明度值: $value', name: 'OpacityDebug');
       value = value.clamp(0, 1);
     }
 
-    // 紀錄透明度變更
     if ((value - _opacity).abs() > 0.1) {
       developer.log('Boss透明度從 $_opacity 變更到 $value', name: 'OpacityDebug');
     }

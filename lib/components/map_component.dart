@@ -48,59 +48,8 @@ class MapComponent extends Component with HasGameReference {
   }
 
   Future<void> _addObstacles() async {
-    // 添加一些隨機的障礙物
-    final obstacles = [
-      // 中心附近的障礙物
-      Obstacle(
-        position: Vector2(mapSize.x * 0.3, mapSize.y * 0.3),
-        size: Vector2(50, 50),
-        color: Colors.brown,
-      ),
-      Obstacle(
-        position: Vector2(mapSize.x * 0.7, mapSize.y * 0.3),
-        size: Vector2(50, 50),
-        color: Colors.brown,
-      ),
-      Obstacle(
-        position: Vector2(mapSize.x * 0.3, mapSize.y * 0.7),
-        size: Vector2(50, 50),
-        color: Colors.brown,
-      ),
-      Obstacle(
-        position: Vector2(mapSize.x * 0.7, mapSize.y * 0.7),
-        size: Vector2(50, 50),
-        color: Colors.brown,
-      ),
-
-      // 水平障礙物
-      Obstacle(
-        position: Vector2(mapSize.x * 0.2, mapSize.y * 0.5),
-        size: Vector2(100, 30),
-        color: Colors.brown.shade800,
-      ),
-      Obstacle(
-        position: Vector2(mapSize.x * 0.8, mapSize.y * 0.5),
-        size: Vector2(100, 30),
-        color: Colors.brown.shade800,
-      ),
-
-      // 垂直障礙物
-      Obstacle(
-        position: Vector2(mapSize.x * 0.5, mapSize.y * 0.2),
-        size: Vector2(30, 100),
-        color: Colors.brown.shade800,
-      ),
-      Obstacle(
-        position: Vector2(mapSize.x * 0.5, mapSize.y * 0.8),
-        size: Vector2(30, 100),
-        color: Colors.brown.shade800,
-      ),
-    ];
-
-    for (final obstacle in obstacles) {
-      await add(obstacle);
-      this.obstacles.add(obstacle);
-    }
+    // 已移除所有障礙物，僅保留邊界牆
+    // obstacles 列表將保持為空
   }
 
   // 檢查指定位置是否與障礙物碰撞

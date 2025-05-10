@@ -13,7 +13,7 @@ final shopManagerProvider = Provider<ShopManager>((ref) {
 /// 管理商店物品和折扣的類
 class ShopManager {
   final Map<String, Item> _allItems; // 所有可用的物品
-  Map<String, Item> _shopItems = {}; // 當前商店銷售的物品
+  final Map<String, Item> _shopItems = {}; // 當前商店銷售的物品
   double _discountRate = 1.0; // 折扣率 (1.0表示原價，0.8表示8折)
   String _shopName = ""; // 商店名稱
 

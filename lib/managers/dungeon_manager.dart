@@ -206,11 +206,6 @@ class DungeonManager {
         position: Vector2(roomSize.x * 0.5, roomSize.y * 0.4),
         bossName: '蘋果怪客',
         color: Colors.deepPurple,
-        health: 1500,
-        damage: 25,
-        speed: 60,
-        enemySize: 50,
-        attackRange: 180,
       ),
       obstacles: [
         // Boss房間障礙物 - 王座周圍的柱子
@@ -405,6 +400,9 @@ class DungeonManager {
   void _hideMainWorld() {
     if (!_isMainWorldVisible) return;
 
+    // 切換到地下城音樂
+    game.switchToDungeonMusic();
+
     _mainWorldComponents.clear();
 
     // 保存並隱藏所有NPC
@@ -446,6 +444,9 @@ class DungeonManager {
   /// 恢復主世界
   void _showMainWorld() {
     if (_isMainWorldVisible) return;
+
+    // 切換回主世界音樂
+    game.switchToMainWorldMusic();
 
     // 恢復所有主世界元素
     for (final component in _mainWorldComponents) {

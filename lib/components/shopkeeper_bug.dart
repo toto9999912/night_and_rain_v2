@@ -19,17 +19,18 @@ class ShopkeeperBug extends ShopkeeperNpc {
 
   // 記錄動畫時間
   double _animationTime = 0;
-  // 米蟲商人的對話內容
-  static const List<String> _bugConversations = [
-    '五月特惠！全館只要一折！這是我們年度最大優惠！',
-    '冒險者，現在是五月，所有商品只要原價的十分之一！',
-    '這個月的特價活動讓我們的庫存快被掃空了！趕快挑選吧！',
-    '我老闆說我瘋了，居然做一折特價，但我就是要回饋顧客！',
-    '不要猶豫了！五月特價只有這個月，錯過就要等明年！',
-    '今天運氣真好，你來的正是我們年度最大折扣的時候！',
+
+  // 米蟲商人的簡化對話內容 - 直接引導玩家購買
+  static const List<String> _bugSalesConversations = [
+    '最近很多冒險者都搶著購買我們特製的「鼾聲甜睡露」！一口下去，體力直接滿格！要不要來一瓶？',
+    '嘿，冒險者！我們的「懶骨頭精華」正在熱賣中，一瓶抵得上睡三天的效果！你看起來需要一些！',
+    '「周公會面券」剛到貨！這可是米蟲教主親自祝福過的，聽說喝了能在夢中見到周公指點！限量發售！',
+    '想要輕鬆打怪？我們的「躺平能量水」讓你不費吹灰之力就能恢復全部魔力！超值特價中！',
+    '「米蟲之淚」是我們的招牌商品，據說是米蟲教徒躺著流出的感動淚水釀造的，治療效果一流！',
+    '最新上架的「星座祝福液」可是金牛使者親自調配的，喝了之後連死亡都能躺平度過！',
   ];
 
-  // 米蟲商店的商品列表
+  // 米蟲商店的商品列表 - 更新了藥水ID
   static const List<String> _bugShopItems = [
     // 武器
     'pistol_ricebug', 'pistol_copper', 'pistol_silver',
@@ -37,9 +38,15 @@ class ShopkeeperBug extends ShopkeeperNpc {
     'machinegun_ricebug',
     'sniper_ricebug',
 
-    // 消耗品
-    'health_potion', 'health_potion_premium',
-    'mana_potion', 'mana_potion_premium',
+    // 消耗品 - 更新了藥水ID
+    'health_potion_basic',
+    'health_potion_medium',
+    'health_potion_advanced',
+    'health_potion_legendary',
+    'mana_potion_basic',
+    'mana_potion_medium',
+    'mana_potion_advanced',
+    'mana_potion_legendary',
   ];
 
   // 特別行銷活動 - 折扣
@@ -54,11 +61,12 @@ class ShopkeeperBug extends ShopkeeperNpc {
         shopItems: _bugShopItems,
         shopName: '米蟲精品商店',
         greetings: const [
-          '嘿，現在是米蟲教主誕辰！五月特惠全館一折！過來看看我的商品吧！',
-          '聽說你要去地下城探險？趁著五月特價，把裝備都更新一下吧！',
-          '五月限定！所有武器和藥水只要一折，絕對讓你驚喜！',
+          '嘿，冒險者！我這兒有全國最優質的米蟲教特製藥水，直接點擊就能購買！',
+          '要來瓶「星座祝福液」嗎？金牛使者親自調配的，效果絕對讓你驚艷！',
+          '「鼾聲甜睡露」熱賣中！據說喝了能一覺睡到自然醒，同時恢復全部生命值！',
         ],
       );
+
   @override
   Future<void> onLoad() async {
     await super.onLoad();
@@ -86,64 +94,49 @@ class ShopkeeperBug extends ShopkeeperNpc {
       onTick: _updateIdleAnimation,
       repeat: true,
     );
-    _idleAnimationTimer!.start(); // 設定對話樹
-    _setupDialogueTree();
+    _idleAnimationTimer!.start();
+
+    // 設定簡化的對話樹
+    _setupSimplifiedDialogueTree();
   }
 
-  // 設定對話樹
-  void _setupDialogueTree() {
-    // 隨機選擇一個對話內容
-    final randomIndex = Random().nextInt(_bugConversations.length);
-    final randomConversation = _bugConversations[randomIndex];
-    final discountText =
-        _hasSpecialDiscount
-            ? '今天是你的幸運日！五月全館大特價！所有商品都只要原價的十分之一！這是本年度最低價！'
-            : '我的價格絕對公道，物超所值！';
+  // 設定簡化的對話樹 - 直接導向購物
+  void _setupSimplifiedDialogueTree() {
+    // 隨機選擇一個銷售話術
+    final randomIndex = Random().nextInt(_bugSalesConversations.length);
+    final salesPitch = _bugSalesConversations[randomIndex];
 
-    // 設置對話樹
+    final discountMessage =
+        _hasSpecialDiscount ? '而且現在是五月特惠，全部商品只要一折！' : '我保證價格絕對公道！';
+
+    // 簡化的對話樹，只有一個步驟直接進入商店
+    dialogueTree.clear();
     dialogueTree.addAll({
       'start': Dialogue(
-        npcText: randomConversation,
-        responses: [
-          PlayerResponse(text: '我想看看你的商品', nextDialogueId: 'show_shop'),
-          PlayerResponse(
-            text: '你今天有什麼特別優惠嗎？',
-            nextDialogueId: 'discount_question',
-          ),
-          PlayerResponse(text: '你的商品品質如何？', nextDialogueId: 'quality_question'),
-          PlayerResponse(
-            text: '我先看看再說',
-            nextDialogueId: null, // 結束對話
-          ),
-        ],
-      ),
-      'discount_question': Dialogue(
-        npcText: discountText,
-        responses: [
-          PlayerResponse(text: '那我要看看你的商品', nextDialogueId: 'show_shop'),
-          PlayerResponse(
-            text: '我再考慮一下',
-            nextDialogueId: null, // 結束對話
-          ),
-        ],
-      ),
-      'quality_question': Dialogue(
-        npcText: '所有武器都經過親自測試，藥水也都是用最純淨的材料釀造的！品質保證！',
-        responses: [
-          PlayerResponse(text: '聽起來不錯，我想看看', nextDialogueId: 'show_shop'),
-          PlayerResponse(
-            text: '我再考慮一下',
-            nextDialogueId: null, // 結束對話
-          ),
-        ],
-      ),
-      'show_shop': Dialogue(
-        npcText:
-            '這些都是我的精選商品，慢慢挑選，別客氣！${_hasSpecialDiscount ? '記得現在是五月特價，所有商品只要一折，錯過就要等明年啦！' : ''}',
+        npcText: '$salesPitch $discountMessage',
         responses: [
           PlayerResponse(
-            text: '開始購物',
+            text: '我想看看你的商品',
             action: openShop,
+            nextDialogueId: null, // 直接開啟商店並結束對話
+          ),
+          PlayerResponse(text: '現在有什麼特價商品？', nextDialogueId: 'special_items'),
+          PlayerResponse(
+            text: '先不用了，謝謝',
+            nextDialogueId: null, // 結束對話
+          ),
+        ],
+      ),
+      'special_items': Dialogue(
+        npcText: '我們的「星座祝福液」和「鼾聲甜睡露」正在特價中！這可是米蟲教主親自祝福過的珍品！$discountMessage',
+        responses: [
+          PlayerResponse(
+            text: '好，我要看看',
+            action: openShop,
+            nextDialogueId: null, // 直接開啟商店並結束對話
+          ),
+          PlayerResponse(
+            text: '我再考慮一下',
             nextDialogueId: null, // 結束對話
           ),
         ],
@@ -195,11 +188,11 @@ class ShopkeeperBug extends ShopkeeperNpc {
     return super.discountRate; // 使用建構時設定的折扣率
   }
 
-  // 覆蓋父類的對話方法，確保對話後能打開商店
+  // 覆蓋父類的對話方法，確保每次對話都是新的隨機銷售話術
   @override
   void startDialogue() {
     // 重設對話樹，以確保每次對話都是新的隨機內容
-    _setupDialogueTree();
+    _setupSimplifiedDialogueTree();
 
     // 呼叫父類的方法來啟動對話界面
     super.startDialogue();

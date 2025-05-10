@@ -3,7 +3,7 @@ import 'dart:math';
 import 'package:flame_audio/flame_audio.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'loading_screen.dart';
+import 'intro_screen.dart';
 import '../widgets/achievement_dialog.dart'; // 引入旅程成就對話框
 
 class MainMenuScreen extends StatefulWidget {
@@ -151,18 +151,16 @@ class _MainMenuScreenState extends State<MainMenuScreen>
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // 遊戲標題圖片
-                _buildAnimatedLogo(screenSize),
-
-                // 按鈕組
+                _buildAnimatedLogo(screenSize), // 按鈕組
                 _buildAnimatedButton(
                   '新的日記',
                   icon: Icons.play_arrow_rounded,
                   onPressed: () {
-                    // 切換到載入畫面
+                    // 切換到引導畫面
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const LoadingScreen(),
+                        builder: (context) => const IntroScreen(),
                       ),
                     );
                   },
@@ -175,13 +173,13 @@ class _MainMenuScreenState extends State<MainMenuScreen>
                   '生日特別企劃',
                   icon: Icons.cake_rounded,
                   onPressed: () {
-                    // 切換到載入畫面，並標記為特別企劃
+                    // 切換到引導畫面，並標記為特別企劃
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
                         builder:
                             (context) =>
-                                const LoadingScreen(isBirthdaySpecial: true),
+                                const IntroScreen(isBirthdaySpecial: true),
                       ),
                     );
                   },
@@ -359,66 +357,69 @@ class _MainMenuScreenState extends State<MainMenuScreen>
     required VoidCallback onPressed,
     required IconData icon,
   }) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween<double>(begin: 0.95, end: 1.02),
-      duration: const Duration(milliseconds: 1800),
-      curve: Curves.easeInOut,
-      builder: (context, value, child) {
-        return Transform.scale(
-          scale: value,
-          child: Container(
-            width: 220,
-            height: 48,
-            margin: const EdgeInsets.symmetric(vertical: 5),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF5C4B8B), Color(0xFF8F7AC4)],
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFFCAA1FF).withValues(alpha: 0.5),
-                  blurRadius: 12,
-                  spreadRadius: 1,
+    return GestureDetector(
+      onTap: onPressed,
+      child: TweenAnimationBuilder<double>(
+        tween: Tween<double>(begin: 0.95, end: 1.02),
+        duration: const Duration(milliseconds: 1800),
+        curve: Curves.easeInOut,
+        builder: (context, value, child) {
+          return Transform.scale(
+            scale: value,
+            child: Container(
+              width: 220,
+              height: 48,
+              margin: const EdgeInsets.symmetric(vertical: 5),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF5C4B8B), Color(0xFF8F7AC4)],
                 ),
-              ],
-              border: Border.all(color: const Color(0xFFAEEFFF), width: 1.5),
-            ),
-            child: Stack(
-              children: [
-                // 按鈕內容
-                Center(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(icon, size: 22, color: Colors.white),
-                      const SizedBox(width: 12),
-                      Text(
-                        text,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.white,
-                          letterSpacing: 0.8,
-                          shadows: [
-                            Shadow(
-                              color: Colors.black45,
-                              offset: Offset(0, 1),
-                              blurRadius: 2,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFCAA1FF).withValues(alpha: 0.5),
+                    blurRadius: 12,
+                    spreadRadius: 1,
                   ),
-                ),
-              ],
+                ],
+                border: Border.all(color: const Color(0xFFAEEFFF), width: 1.5),
+              ),
+              child: Stack(
+                children: [
+                  // 按鈕內容
+                  Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(icon, size: 22, color: Colors.white),
+                        const SizedBox(width: 12),
+                        Text(
+                          text,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white,
+                            letterSpacing: 0.8,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black45,
+                                offset: Offset(0, 1),
+                                blurRadius: 2,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }

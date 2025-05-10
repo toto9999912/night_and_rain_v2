@@ -89,9 +89,9 @@ class NightAndRainGame extends FlameGame
 
   // 交互提示信息
   TextComponent? _interactionPromptComponent;
-
   // 音樂控制變數
   bool _isBgmPlaying = false;
+  bool _isDungeonBgmPlaying = false;
 
   @override
   Future<void> onLoad() async {
@@ -99,6 +99,7 @@ class NightAndRainGame extends FlameGame
 
     // 預先加載背景音樂
     await FlameAudio.audioCache.load('bgm.mp3');
+    await FlameAudio.audioCache.load('dungeon_bgm.mp3');
 
     // 播放背景音樂 (循環播放)
     _playBackgroundMusic();
@@ -495,9 +496,44 @@ class NightAndRainGame extends FlameGame
           // 使用 bgm.mp3 作為遊戲背景音樂
           FlameAudio.bgm.play('bgm.mp3', volume: 0.25);
           _isBgmPlaying = true;
+          _isDungeonBgmPlaying = false;
         });
       } catch (e) {
         print('背景音樂播放失敗: $e');
+      }
+    }
+  }
+
+  // 切換到地下城音樂
+  void switchToDungeonMusic() {
+    if (!_isDungeonBgmPlaying) {
+      try {
+        // 先停止主世界音樂
+        FlameAudio.bgm.stop();
+        // 播放地下城音樂
+        FlameAudio.bgm.play('dungeon_bgm.mp3', volume: 0.25);
+        _isBgmPlaying = false;
+        _isDungeonBgmPlaying = true;
+        debugPrint('已切換到地下城音樂');
+      } catch (e) {
+        debugPrint('地下城音樂播放失敗: $e');
+      }
+    }
+  }
+
+  // 切換回主世界音樂
+  void switchToMainWorldMusic() {
+    if (!_isBgmPlaying) {
+      try {
+        // 先停止地下城音樂
+        FlameAudio.bgm.stop();
+        // 播放主世界音樂
+        FlameAudio.bgm.play('bgm.mp3', volume: 0.25);
+        _isBgmPlaying = true;
+        _isDungeonBgmPlaying = false;
+        debugPrint('已切換回主世界音樂');
+      } catch (e) {
+        debugPrint('主世界音樂播放失敗: $e');
       }
     }
   }

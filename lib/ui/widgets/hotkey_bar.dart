@@ -17,12 +17,9 @@ class HotkeyBar extends ConsumerWidget {
       fit: BoxFit.scaleDown,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.3),
+          color: Colors.black.withOpacity(0.3),
           borderRadius: BorderRadius.circular(30),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.1),
-            width: 1,
-          ),
+          border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         child: Row(
@@ -36,6 +33,7 @@ class HotkeyBar extends ConsumerWidget {
               },
               isActive: item != null,
               icon: item?.icon ?? Icons.close,
+              keyNumber: slot.toString(),
             );
           }),
         ),
@@ -49,101 +47,56 @@ class HotkeyButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onPressed;
   final bool isActive;
+  final String keyNumber;
 
   const HotkeyButton({
     super.key,
     required this.icon,
     required this.onPressed,
     this.isActive = false,
+    required this.keyNumber,
   });
 
   @override
   Widget build(BuildContext context) {
-    final double buttonSize = 46;
+    final double buttonSize = 48; // 與背包中的熱鍵大小一致
 
     return GestureDetector(
       onTap: onPressed,
-      child: SizedBox(
+      child: Container(
         width: buttonSize,
         height: buttonSize,
+        margin: const EdgeInsets.symmetric(horizontal: 2),
+        decoration: BoxDecoration(
+          color: isActive ? Colors.blue.withOpacity(0.3) : Colors.black45,
+          border: Border.all(
+            color: isActive ? Colors.yellow : Colors.white30,
+            width: isActive ? 2 : 1,
+          ),
+          borderRadius: BorderRadius.circular(6),
+        ),
         child: Stack(
           children: [
-            // 背景和邊框
-            Container(
-              width: buttonSize,
-              height: buttonSize,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color:
-                    isActive
-                        ? const Color(0xFF387AAF).withValues(alpha: 0.6)
-                        : Colors.black.withValues(alpha: 0.5),
-                border: Border.all(
-                  color:
-                      isActive
-                          ? Colors.white.withValues(alpha: 0.7)
-                          : Colors.white.withValues(alpha: 0.2),
-                  width: 1.5,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color:
-                        isActive
-                            ? const Color(0xFF387AAF).withValues(alpha: 0.4)
-                            : Colors.black.withValues(alpha: 0.2),
-                    blurRadius: 6,
-                    spreadRadius: 1,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-            ),
-
-            // 輕微光澤效果
-            ClipOval(
-              child: Container(
-                width: buttonSize,
-                height: buttonSize,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Colors.white.withValues(alpha: 0.15),
-                      Colors.white.withValues(alpha: 0.05),
-                    ],
-                  ),
+            // 熱鍵數字
+            Positioned(
+              top: 2,
+              left: 4,
+              child: Text(
+                keyNumber,
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
 
-            // 數字標籤
-            Align(
-              alignment: Alignment.topCenter,
-              child: Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Icon(icon),
-              ),
-            ),
-
-            // 中央物品槽
+            // 顯示物品圖示
             Center(
-              child: Container(
-                width: 26,
-                height: 26,
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.4),
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.15),
-                    width: 1,
-                  ),
-                ),
-                child: Icon(
-                  Icons.add,
-                  color: Colors.white.withValues(alpha: 0.5),
-                  size: 14,
-                ),
+              child: Icon(
+                icon,
+                color: isActive ? const Color(0xFF87CEEB) : Colors.white54,
+                size: 24,
               ),
             ),
           ],

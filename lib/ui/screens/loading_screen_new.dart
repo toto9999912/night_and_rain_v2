@@ -40,7 +40,6 @@ class _LoadingScreenState extends ConsumerState<LoadingScreen>
   final List<String> _preloadAssets = [
     'audio/bgm.mp3',
     'audio/menu.mp3',
-    'audio/dungeon_bgm.mp3',
     'AstrologerMumu.png',
     'ShopkeeperBug.png',
     'MenuTitle.png',
