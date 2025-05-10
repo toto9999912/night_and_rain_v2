@@ -299,7 +299,7 @@ class DungeonManager {
         final mirrorMan = MirrorManComponent(
           position: Vector2(roomSize.x * 0.5, roomSize.y * 0.5),
           name: '藏鏡人',
-          color: Colors.lightBlue.shade300,
+          color: Colors.transparent,
           dialogues: ['歡迎來到鏡像世界...', '就算你絕頂聰明，也不要妄想自己能猜出密碼', '用數字表達自己，找到真相...'],
         );
         game.gameWorld.add(mirrorMan);

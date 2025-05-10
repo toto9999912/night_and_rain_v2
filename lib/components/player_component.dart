@@ -345,11 +345,10 @@ class PlayerComponent extends PositionComponent
     _updateAimDirection();
   }
 
-  // 更新精靈圖的朝向
   void _updateSpriteDirection() {
     if (_spriteComponent == null) return;
 
-    // 檢查鍵盤按鍵決定朝向，而不是用位置差異
+    // 检查键盘按键决定朝向
     bool isMovingLeft =
         _keysPressed.contains(LogicalKeyboardKey.keyA) ||
         _keysPressed.contains(LogicalKeyboardKey.arrowLeft);
@@ -357,42 +356,50 @@ class PlayerComponent extends PositionComponent
         _keysPressed.contains(LogicalKeyboardKey.keyD) ||
         _keysPressed.contains(LogicalKeyboardKey.arrowRight);
 
-    // 當按下左方向鍵且當前不是面向左
-    if (isMovingLeft && !_isFacingLeft) {
-      // 向左移動，翻轉精靈圖
-      _spriteComponent!.flipHorizontally();
-      _isFacingLeft = true;
-      debugPrint('玩家轉向左側');
-    }
-    // 當按下右方向鍵且當前是面向左
-    else if (isMovingRight && _isFacingLeft) {
-      // 向右移動，恢復精靈圖
-      _spriteComponent!.flipHorizontally();
-      _isFacingLeft = false;
-      debugPrint('玩家轉向右側');
+    // 如果左右键都没按或都按了，保持当前方向
+    if (isMovingLeft == isMovingRight) {
+      return;
     }
 
-    // 不再需要保存上一幀位置
+    // 如果只按了左键且当前不是面向左
+    if (isMovingLeft && !_isFacingLeft) {
+      // 使用缩放而不是flipHorizontally方法
+      _spriteComponent!.scale.x = -_spriteComponent!.scale.x.abs();
+      _isFacingLeft = true;
+      debugPrint('玩家转向左侧');
+    }
+    // 如果只按了右键且当前是面向左
+    else if (isMovingRight && _isFacingLeft) {
+      // 使用缩放而不是flipHorizontally方法
+      _spriteComponent!.scale.x = _spriteComponent!.scale.x.abs();
+      _isFacingLeft = false;
+      debugPrint('玩家转向右侧');
+    }
   }
 
-  // 更新呼吸效果
   void _updateBreathingEffect(double dt) {
     if (_spriteComponent == null) return;
 
-    // 更新呼吸時間
+    // 更新呼吸时间
     _breathingTime += dt;
     if (_breathingTime >= _breathingPeriod) {
       _breathingTime -= _breathingPeriod;
     }
 
-    // 計算呼吸縮放係數 (使用正弦函數產生平滑的上下呼吸效果)
+    // 计算呼吸缩放系数 (使用正弦函数产生平滑的上下呼吸效果)
     _breathingScale =
         1.0 +
         _breathingIntensity *
             math.sin(_breathingTime / _breathingPeriod * math.pi * 2);
 
-    // 應用縮放效果 (只在Y軸方向上縮放，製造上下呼吸的效果)
-    _spriteComponent!.scale = Vector2(1.0, _breathingScale);
+    // 保留X轴的当前缩放值（保持翻转状态）
+    final currentXScale = _spriteComponent!.scale.x;
+
+    // 只更新Y轴缩放，保持X轴缩放不变
+    _spriteComponent!.scale = Vector2(
+      currentXScale, // 保持X轴缩放不变（可能是-1.0或1.0）
+      _breathingScale, // 更新Y轴缩放实现呼吸效果
+    );
   }
 
   void _regenerateMana() {

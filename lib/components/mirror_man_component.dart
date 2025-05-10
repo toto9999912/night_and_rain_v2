@@ -38,7 +38,7 @@ class MirrorManComponent extends NpcComponent {
     double interactionRange = 60,
     Vector2? size,
   }) : super(
-         size: size ?? Vector2.all(32),
+         size: size ?? Vector2.all(64),
          greetings: dialogues,
          interactionRadius: interactionRange,
          supportConversation: true,
@@ -87,7 +87,7 @@ class MirrorManComponent extends NpcComponent {
     // 創建精靈圖元件
     _spriteComponent = SpriteComponent(
       sprite: sprite,
-      size: Vector2(40, 40), // 設定精靈圖大小
+      size: Vector2(64, 64), // 設定精靈圖大小
       anchor: Anchor.center,
     );
 

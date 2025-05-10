@@ -189,29 +189,29 @@ class NightAndRainGame extends FlameGame
 
     // 放在地圖中央偏左的位置
     final wanderingNpc1 = WanderingNpc(
-      name: '行人小明',
+      name: '米蟲村民Ａ',
       position: Vector2(mapSize.x * 0.4, mapSize.y * 0.5),
       color: Colors.teal,
-      greetings: ['今天天氣真好！', '你好啊，冒隠者！', '這個地方很危險，小心點。'],
+      greetings: ['今天天氣真好！', '你好啊！', '你問地下城在哪裡？下面直走不就是了', '我在這裡等我的貓。'],
     );
     gameWorld.add(wanderingNpc1);
 
     // 放在地圖中央偏右的位置
     final wanderingNpc2 = WanderingNpc(
-      name: '流浪者阿花',
+      name: '米蟲村民Ｂ',
       position: Vector2(mapSize.x * 0.6, mapSize.y * 0.6),
       color: Colors.deepOrange,
-      greetings: ['聽說森林裡有寶藏...', '有見過我的貓嗎？', '這裡的怪物越來越多了。'],
+      greetings: ['聽說蕾絲翠占卜超準的', '我又被米蟲奸商騙了...', '據說地下城深處藏著一個藏鏡人'],
       speed: 40.0, // 稍微慢一點
     );
     gameWorld.add(wanderingNpc2);
 
     // 放在地圖的底部
     final wanderingNpc3 = WanderingNpc(
-      name: '探險家老王',
+      name: '米蟲村民Ｃ',
       position: Vector2(mapSize.x * 0.5, mapSize.y * 0.8),
       color: Colors.indigo,
-      greetings: ['我已經探索過很多地方了。', '想聽聽我的冒險故事嗎？', '小夥子，你看起來很有潛力！'],
+      greetings: ['我已經探索過很多地方了', '想聽聽我的冒險故事嗎？', '小夥子，你看起來很有潛力！'],
       speed: 60.0, // 稍微快一點
       wanderRadius: 200.0, // 移動範圍更大
     );
