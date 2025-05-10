@@ -11,6 +11,7 @@ import '../overlays/hud_overlay.dart';
 import '../overlays/password_input_overlay.dart';
 import '../overlays/player_dashboard_overlay.dart';
 import '../overlays/shop_overlay.dart';
+import '../overlays/mirror_password_overlay.dart';
 
 class LoadingScreen extends ConsumerStatefulWidget {
   final bool isBirthdaySpecial;
@@ -164,6 +165,8 @@ class _LoadingScreenState extends ConsumerState<LoadingScreen>
                           (context, game) => GameOverOverlay(game: game),
                       'PasswordInputOverlay':
                           (context, game) => PasswordInputOverlay(game: game),
+                      'MirrorPasswordOverlay':
+                          (context, game) => MirrorPasswordOverlay(game: game),
                     },
                     initialActiveOverlays: const ['HudOverlay'],
                   ),

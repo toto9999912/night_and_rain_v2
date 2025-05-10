@@ -71,7 +71,8 @@ class DungeonManager {
       backgroundColor: Colors.grey.shade900,
       size: roomSize,
       portalPositions: {
-        'main_world': Vector2(roomSize.x * 0.5, roomSize.y * 0.8), // 回到主世界
+        // 移除返回主世界的傳送門，使其成為單向道
+        // 'main_world': Vector2(roomSize.x * 0.5, roomSize.y * 0.8), // 回到主世界
         'dungeon_room_2': Vector2(roomSize.x * 0.8, roomSize.y * 0.5), // 去往房間2
       },
       enemyConfigs: [
@@ -121,11 +122,12 @@ class DungeonManager {
     // 房間2 - 中間房間（混合類型敵人）
     _rooms['dungeon_room_2'] = DungeonRoom(
       id: 'dungeon_room_2',
-      name: '黑暗走廊',
+      name: '黑暗樓梯',
       backgroundColor: Colors.blueGrey.shade900,
       size: roomSize,
       portalPositions: {
-        'dungeon_room_1': Vector2(roomSize.x * 0.2, roomSize.y * 0.5), // 回到房間1
+        // 移除返回房間1的傳送門，使其成為單向道
+        // 'dungeon_room_1': Vector2(roomSize.x * 0.2, roomSize.y * 0.5), // 回到房間1
         'dungeon_room_3': Vector2(
           roomSize.x * 0.5,
           roomSize.y * 0.2,
@@ -157,7 +159,7 @@ class DungeonManager {
         ),
       ],
       obstacles: [
-        // 走廊障礙物 - 黑暗走廊的柱子
+        // 走廊障礙物 - 黑暗樓梯的柱子
         ObstacleData(
           position: Vector2(roomSize.x * 0.3, roomSize.y * 0.3),
           size: Vector2(30, 30),
@@ -199,7 +201,8 @@ class DungeonManager {
       backgroundColor: Colors.red.shade900.withOpacity(0.5),
       size: roomSize,
       portalPositions: {
-        'dungeon_room_2': Vector2(roomSize.x * 0.5, roomSize.y * 0.8), // 回到房間2
+        // 移除返回房間2的傳送門，使其成為單向道
+        // 'dungeon_room_2': Vector2(roomSize.x * 0.5, roomSize.y * 0.8), // 回到房間2
       },
       enemyConfigs: [],
       bossConfig: BossConfig(
@@ -235,10 +238,11 @@ class DungeonManager {
       backgroundColor: Colors.indigo.shade900.withOpacity(0.7),
       size: roomSize,
       portalPositions: {
-        'dungeon_room_3': Vector2(
-          roomSize.x * 0.1,
-          roomSize.y * 0.5,
-        ), // 回到Boss房間
+        // 移除返回Boss房間的傳送門，使其成為單向道
+        // 'dungeon_room_3': Vector2(
+        //   roomSize.x * 0.1,
+        //   roomSize.y * 0.5,
+        // ), // 回到Boss房間
       },
       enemyConfigs: [], // 沒有敵人
       obstacles: [
@@ -295,24 +299,11 @@ class DungeonManager {
         // 添加鏡像人NPC
         final mirrorMan = MirrorManComponent(
           position: Vector2(roomSize.x * 0.5, roomSize.y * 0.5),
-          name: '鏡像人',
+          name: '藏鏡人',
           color: Colors.lightBlue.shade300,
-          dialogues: [
-            '歡迎來到鏡像世界...',
-            '你看到的是真實的自己嗎？',
-            '寶箱的密碼就是你的倒影...',
-            '用數字表達自己，找到真相...',
-          ],
+          dialogues: ['歡迎來到鏡像世界...', '就算你絕頂聰明，也不要妄想自己能猜出密碼', '用數字表達自己，找到真相...'],
         );
         game.gameWorld.add(mirrorMan);
-
-        // 添加寶箱 - 需要密碼打開
-        final treasureChest = TreasureChestComponent(
-          position: Vector2(roomSize.x * 0.5, roomSize.y * 0.5 - 60),
-          name: '神秘寶箱',
-          password: '42815', // 這是密碼，可以根據遊戲需求修改
-        );
-        game.gameWorld.add(treasureChest);
       },
     );
   }
@@ -330,8 +321,12 @@ class DungeonManager {
         _activateRoom(destinationId);
         break;
       case PortalType.returnToMainWorld:
-        // 從地下城返回主世界
-        _returnToMainWorld();
+        // 從地下城返回主世界 - 現在只能通過特殊情況（如解謎成功）才能返回
+        // 例如：解謎成功後返回主選單或主世界
+        if (destinationId == 'puzzle_completed') {
+          // 如果是特殊情況（解謎成功），才允許返回主世界
+          _returnToMainWorld();
+        }
         break;
     }
   }
@@ -611,11 +606,10 @@ class DungeonRoom {
       String portalName;
       Color portalColor;
 
-      // 決定傳送門類型
+      // 決定傳送門類型 - 主世界門被禁用，只有往前的路
       if (destinationId == 'main_world') {
-        portalType = PortalType.returnToMainWorld;
-        portalName = '返回主世界';
-        portalColor = Colors.green;
+        // 不再添加返回主世界的傳送門
+        return; // 跳過此次迭代
       } else {
         portalType = PortalType.dungeonRoom;
 
@@ -626,7 +620,7 @@ class DungeonRoom {
             portalColor = Colors.blue;
             break;
           case 'dungeon_room_2':
-            portalName = '前往黑暗走廊';
+            portalName = '前往黑暗樓梯';
             portalColor = Colors.orange;
             break;
           case 'dungeon_room_3':
@@ -758,10 +752,8 @@ class DungeonRoom {
 
       game.resetPlayerPosition(portalPos + playerOffset);
       return;
-    }
-
-    // 默認位置（如果沒有找到合適的位置）
-    game.resetPlayerPosition(Vector2(size.x / 2, size.y / 2));
+    } // 默認位置（如果沒有找到合適的位置）- 修改為左下角
+    game.resetPlayerPosition(Vector2(50, size.y - 50));
   }
 }
 

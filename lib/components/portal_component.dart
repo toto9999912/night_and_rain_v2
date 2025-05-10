@@ -117,7 +117,8 @@ class PortalComponent extends PositionComponent
         add(
           CircleComponent(
             radius: portalSize / 2,
-            paint: Paint()..color = Colors.green.withOpacity(0.7),
+            paint:
+                Paint()..color = Colors.purple.withOpacity(0.7), // 改變回主世界傳送門顏色
           ),
         );
         break;

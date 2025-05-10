@@ -4,8 +4,9 @@ import 'dart:math';
 
 import '../main.dart';
 import 'npc_component.dart';
+import 'treasure_chest_component.dart';
 
-/// 鏡像人NPC組件 - 只在鏡中迴廊中出現的特殊NPC
+/// 藏鏡人NPC組件 - 只在鏡中迴廊中出現的特殊NPC
 class MirrorManComponent extends NpcComponent {
   /// 脈動效果值
   double _pulseValue = 0;
@@ -33,7 +34,7 @@ class MirrorManComponent extends NpcComponent {
     required super.position,
     required super.name,
     required super.color,
-    List<String> dialogues = const ['鏡子裡的你...', '或許知道通往寶藏的密碼...'],
+    List<String> dialogues = const ['鏡子裡的你...或許知道通往寶藏的密碼...'],
     double interactionRange = 60,
     Vector2? size,
   }) : super(
@@ -42,10 +43,40 @@ class MirrorManComponent extends NpcComponent {
          interactionRadius: interactionRange,
          supportConversation: true,
        );
-
   @override
   Future<void> onLoad() async {
     await super.onLoad();
+
+    // 設置對話樹
+    dialogueTree.addAll({
+      'start': Dialogue(
+        npcText: '【藏鏡人】在這裡等你很久了...我是藏鏡人，來自鏡像世界',
+        nextDialogueId: 'hint',
+      ),
+      'hint': Dialogue(
+        npcText: '【藏鏡人】想要打開寶箱，你需要破譯最後的密碼，請記得，密碼不是你想的那麼簡單',
+        nextDialogueId: 'final',
+      ),
+      'final': Dialogue(
+        npcText: '【藏鏡人】這是你生命中最重要的日子之一',
+        responses: [
+          PlayerResponse(text: '我會找到答案的', action: () => onDialogueFinished()),
+        ],
+      ),
+      'wrong_password': Dialogue(
+        npcText: '【藏鏡人】很高興你記得這個日期，但它並不是正確答案。',
+        responses: [
+          PlayerResponse(text: '我會再試試', action: () => onDialogueFinished()),
+        ],
+      ),
+      'success': Dialogue(
+        npcText: '【藏鏡人】你找到了正確的密碼！寶箱已經出現...',
+        responses: [PlayerResponse(text: '謝謝你', nextDialogueId: 'final')],
+      ),
+    });
+
+    // 設置初始對話ID
+    currentDialogueId = 'start';
 
     // 初始化互動計時器
     _interactionTimer = Timer(0.05, onTick: _updatePulse, repeat: true);
@@ -151,9 +182,39 @@ class MirrorManComponent extends NpcComponent {
 
   // 自定義方法：處理對話完成後的操作
   void onDialogueFinished() {
-    // 對話結束後打開密碼輸入界面
+    // 對話結束後打開鏡像密碼鎖界面
     if (game is NightAndRainGame) {
-      (game as NightAndRainGame).overlays.add('PasswordInputOverlay');
+      (game as NightAndRainGame).overlays.add('MirrorPasswordOverlay');
     }
+  }
+
+  // 處理正確密碼輸入後的操作
+  void onCorrectPasswordEntered() {
+    // 設置對話ID為成功
+    currentDialogueId = 'success';
+
+    // 在玩家附近生成寶箱
+    if (game is NightAndRainGame) {
+      final gameRef = game as NightAndRainGame;
+      final player = gameRef.getPlayer();
+
+      // 在玩家前方生成寶箱
+      final treasurePosition = player.position + Vector2(0, 60);
+
+      // 創建並添加寶箱到遊戲世界
+      final treasureChest = TreasureChestComponent(
+        position: treasurePosition,
+        name: '鏡像寶箱',
+        password: '0120',
+      );
+
+      gameRef.gameWorld.add(treasureChest);
+    }
+  }
+
+  // 處理不正確但特殊的密碼輸入
+  void onSpecialPasswordEntered() {
+    // 設置對話ID為特殊錯誤提示
+    currentDialogueId = 'wrong_password';
   }
 }

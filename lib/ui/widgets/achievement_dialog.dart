@@ -109,13 +109,13 @@ class _AchievementDialogState extends State<AchievementDialog>
     ),
     Achievement(
       id: 'birthday_special',
-      title: '生日慶祝',
-      description: '在遊戲五周年期間登入',
+      title: '解謎高手',
+      description: '成功破譯藏鏡人的謎題',
       icon: FontAwesomeIcons.cakeCandles,
       category: '隱藏',
       isUnlocked: true,
       progress: 0.0,
-      reward: '限定皮膚：雨夜紀念',
+      reward: '限定稱號：福爾摩雨',
       unlockDate: DateTime(2025, 5, 9),
     ),
   ];
