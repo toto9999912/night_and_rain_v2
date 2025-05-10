@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame_audio/flame_audio.dart'; // 引入 flame_audio
+import 'package:flame_tiled/flame_tiled.dart'; // 引入 flame_tiled
 import 'components/greedy_shopkeeper_bug.dart';
 import 'components/map_component.dart';
 import 'components/astrologer_mumu.dart';
@@ -80,9 +81,8 @@ class NightAndRainGame extends FlameGame
 
   // 追蹤滑鼠在世界中的位置
   Vector2 _lastMousePosition = Vector2.zero();
-
   // 設定固定地圖大小
-  final Vector2 mapSize = Vector2(1500, 1500);
+  final Vector2 mapSize = Vector2(1024, 1536);
 
   // 地下城管理器
   DungeonManager? dungeonManager;
@@ -107,9 +107,7 @@ class NightAndRainGame extends FlameGame
     // 確保遊戲在啟動時獲取焦點
     Future.delayed(const Duration(milliseconds: 100), () {
       gameFocusNode.requestFocus();
-    });
-
-    // world + camera
+    }); // world + camera
     gameWorld = World();
     await add(gameWorld);
     _cameraComponent = CameraComponent(world: gameWorld)
@@ -117,21 +115,20 @@ class NightAndRainGame extends FlameGame
     await add(_cameraComponent);
 
     // 添加地圖背景
-    gameWorld.add(
-      RectangleComponent(
-        position: Vector2.zero(),
-        size: mapSize,
-        paint: Paint()..color = Colors.lightGreen,
-        priority: 0,
-      ),
+    _mapComponent = MapComponent(mapSize: Vector2(1024, 1536));
+
+    // 載入 Tiled 地圖 - 從 assets/maps 目錄載入
+    final tiledMap = await TiledComponent.load(
+      'map.tmx', // 注意路徑是相對於 assets 目錄的
+      Vector2.all(32), // 瓦片大小
     );
 
-    // 添加地圖組件（含邊界和障礙物）
-    _mapComponent = MapComponent(mapSize: mapSize);
-    gameWorld.add(_mapComponent);
+    // 設置 Tiled 地圖到 MapComponent
+    _mapComponent.tiledMap = tiledMap;
 
-    // 添加格線
-    gameWorld.add(_GridComponent(tileSize: 32, mapSize: mapSize)..priority = 1);
+    // 添加到遊戲世界
+    gameWorld.add(tiledMap);
+    gameWorld.add(_mapComponent);
 
     // 添加玩家
     _player =
@@ -160,7 +157,7 @@ class NightAndRainGame extends FlameGame
   Future<void> _addNpcs() async {
     // 添加姆姆占星員 - 放在地圖的左上區域
     final astrologerMumu = AstrologerMumu(
-      position: Vector2(mapSize.x * 0.25, mapSize.y * 0.25),
+      position: Vector2(mapSize.x * 0.775, mapSize.y * 0.6),
     );
     gameWorld.add(astrologerMumu);
 
@@ -172,19 +169,19 @@ class NightAndRainGame extends FlameGame
 
     // 添加米蟲商店員 - 放在地圖的右上區域
     final greedyBug = GreedyShopkeeperBug(
-      position: Vector2(mapSize.x * 0.9, mapSize.y * 0.35),
+      position: Vector2(mapSize.x * 0.75, mapSize.y * 0.2),
     );
     gameWorld.add(greedyBug);
 
-    // 添加米蟲商店員 - 放在地圖的右上區域
+    // 地中海50歲老人
     final mediterraneanManNpc = MediterraneanManNpc(
-      position: Vector2(mapSize.x * 0.70, mapSize.y * 0.20),
+      position: Vector2(mapSize.x * 0.25, mapSize.y * 0.25),
     );
     gameWorld.add(mediterraneanManNpc);
 
-    // 添加智者羅伊 - 放在地圖中央位置
+    // 添加豬比 - 放在地圖中央位置
     final sageRoy = PigFriendNpc(
-      position: Vector2(mapSize.x * 0.5, mapSize.y * 0.4),
+      position: Vector2(mapSize.x * 0.3, mapSize.y * 0.6),
     );
     gameWorld.add(sageRoy);
 
@@ -270,9 +267,15 @@ class NightAndRainGame extends FlameGame
   void onMouseMove(PointerHoverInfo info) {
     super.onMouseMove(info);
     // 將滑鼠位置從畫布座標轉換為世界座標
-    _lastMousePosition = _cameraComponent.viewfinder.globalToLocal(
+    Vector2 worldPos = _cameraComponent.viewfinder.globalToLocal(
       info.eventPosition.widget,
     );
+
+    // 確保滑鼠位置不超出地圖範圍
+    worldPos.x = worldPos.x.clamp(0, mapSize.x);
+    worldPos.y = worldPos.y.clamp(0, mapSize.y);
+
+    _lastMousePosition = worldPos;
   }
 
   @override
@@ -300,7 +303,12 @@ class NightAndRainGame extends FlameGame
     // 取得畫布內座標
     final pos = info.eventPosition.widget;
     // 轉換為世界座標
-    final worldPos = _cameraComponent.viewfinder.globalToLocal(pos);
+    Vector2 worldPos = _cameraComponent.viewfinder.globalToLocal(pos);
+
+    // 確保點擊位置不超出地圖範圍
+    worldPos.x = worldPos.x.clamp(0, mapSize.x);
+    worldPos.y = worldPos.y.clamp(0, mapSize.y);
+
     // 同時更新最後的滑鼠位置
     _lastMousePosition = worldPos;
     _player.shoot(worldPos);
@@ -389,8 +397,17 @@ class NightAndRainGame extends FlameGame
 
   // 重置玩家位置到指定位置
   void resetPlayerPosition([Vector2? position]) {
-    // 將玩家移至指定位置或地圖中央
-    _player.position = position ?? mapSize / 2;
+    // 設置默認位置為地圖中央
+    Vector2 targetPosition = position ?? Vector2(mapSize.x / 2, mapSize.y / 2);
+
+    // 確保目標位置在地圖範圍內
+    if (!_mapComponent.isInsideMap(targetPosition, _player.size)) {
+      // 如果不在範圍內，重新設置為地圖中央
+      targetPosition = Vector2(mapSize.x / 2, mapSize.y / 2);
+    }
+
+    // 將玩家移至目標位置
+    _player.position = targetPosition;
 
     // 停止所有可能的移動
     _player.stopAllMovement();
@@ -412,7 +429,7 @@ class NightAndRainGame extends FlameGame
     // 創建地下城管理器，設置入口位置在地圖中央偏下
     dungeonManager = DungeonManager(
       this,
-      entrancePosition: Vector2(mapSize.x * 0.5, mapSize.y * 0.7),
+      entrancePosition: Vector2(mapSize.x * 0.34, mapSize.y * 0.95),
     );
 
     // 初始化地下城（創建入口傳送門）
@@ -436,13 +453,12 @@ class NightAndRainGame extends FlameGame
     if (_interactionPromptComponent != null) {
       _interactionPromptComponent!.removeFromParent();
       _interactionPromptComponent = null;
-    }
-
-    // 創建新的提示文本
+    } // 創建新的提示文本
     _interactionPromptComponent = TextComponent(
       text: prompt,
       textRenderer: TextPaint(
         style: const TextStyle(
+          fontFamily: 'Cubic11', // 使用 Cubic11 字體
           color: Colors.white,
           fontSize: 16,
           fontWeight: FontWeight.bold,

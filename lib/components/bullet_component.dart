@@ -7,7 +7,7 @@ import 'dart:developer' as developer;
 import '../enum/item_rarity.dart';
 import 'boss/boss_component.dart';
 import 'enemy_component.dart';
-import 'map_component.dart';
+
 import '../effects/explosion_effect.dart';
 
 // 添加全局輔助函數
@@ -285,15 +285,15 @@ class BulletComponent extends PositionComponent
     }
 
     // 處理與障礙物和邊界的碰撞
-    if (other is Obstacle || other is BoundaryWall) {
-      _hasCollided = true;
+    // if (other is Obstacle || other is BoundaryWall) {
+    //   _hasCollided = true;
 
-      // 產生爆炸效果 - 使用與到達最大射程相同的參數
-      _createExplosion(color, 0); // 大小參數已不再使用，傳0即可
+    //   // 產生爆炸效果 - 使用與到達最大射程相同的參數
+    //   _createExplosion(color, 0); // 大小參數已不再使用，傳0即可
 
-      // 移除子彈
-      removeFromParent();
-    }
+    //   // 移除子彈
+    //   removeFromParent();
+    // }
 
     // 如果碰到敵人，就對敵人造成傷害並移除子彈
     // TODO: 實現敵人碰撞邏輯

@@ -299,22 +299,27 @@ class PlayerComponent extends PositionComponent
       // 正常移動處理
       if (move.length > 0) {
         move.normalize();
-        final nextPosition = position + move * speed * dt;
+        final nextPosition = position + move * speed * dt; // 首先檢查是否在地圖邊界內
+        if (mapComponent.isInsideMap(nextPosition, size)) {
+          // 再檢查是否與障礙物碰撞
+          if (!mapComponent.checkObstacleCollision(nextPosition, size)) {
+            position = nextPosition;
+          } else {
+            // 嘗試分別在 X 和 Y 方向上移動（在牆邊滑動）
+            final nextPositionX = Vector2(nextPosition.x, position.y);
+            final nextPositionY = Vector2(position.x, nextPosition.y);
 
-        // 檢查是否與障礙物碰撞
-        if (!mapComponent.checkObstacleCollision(nextPosition, size)) {
-          position = nextPosition;
-        } else {
-          // 嘗試分別在 X 和 Y 方向上移動（在牆邊滑動）
-          final nextPositionX = Vector2(nextPosition.x, position.y);
-          final nextPositionY = Vector2(position.x, nextPosition.y);
+            // 檢查X方向移動是否在地圖內且無障礙物
+            if (mapComponent.isInsideMap(nextPositionX, size) &&
+                !mapComponent.checkObstacleCollision(nextPositionX, size)) {
+              position = nextPositionX;
+            }
 
-          if (!mapComponent.checkObstacleCollision(nextPositionX, size)) {
-            position = nextPositionX;
-          }
-
-          if (!mapComponent.checkObstacleCollision(nextPositionY, size)) {
-            position = nextPositionY;
+            // 檢查Y方向移動是否在地圖內且無障礙物
+            if (mapComponent.isInsideMap(nextPositionY, size) &&
+                !mapComponent.checkObstacleCollision(nextPositionY, size)) {
+              position = nextPositionY;
+            }
           }
         }
       }
@@ -426,25 +431,25 @@ class PlayerComponent extends PositionComponent
         other.removeFromParent(); // 子彈命中後消失
       }
     }
-    // 處理與障礙物的碰撞
-    else if (other is Obstacle || other is BoundaryWall) {
-      // 計算反彈方向（從碰撞點到玩家中心）
-      final playerCenter = position + size / 2;
-      final collisionCenter = Vector2.zero();
+    // // 處理與障礙物的碰撞
+    // else if (other is Obstacle || other is BoundaryWall) {
+    //   // 計算反彈方向（從碰撞點到玩家中心）
+    //   final playerCenter = position + size / 2;
+    //   final collisionCenter = Vector2.zero();
 
-      // 計算碰撞點的平均位置
-      for (final point in intersectionPoints) {
-        collisionCenter.add(point);
-      }
+    //   // 計算碰撞點的平均位置
+    //   for (final point in intersectionPoints) {
+    //     collisionCenter.add(point);
+    //   }
 
-      if (intersectionPoints.isNotEmpty) {
-        collisionCenter.scale(1 / intersectionPoints.length);
+    //   if (intersectionPoints.isNotEmpty) {
+    //     collisionCenter.scale(1 / intersectionPoints.length);
 
-        // 計算反彈方向（從碰撞點指向玩家中心）
-        _lastCollisionDirection = (playerCenter - collisionCenter)..normalize();
-        _collisionCooldown = _collisionRecoilTime;
-      }
-    }
+    //     // 計算反彈方向（從碰撞點指向玩家中心）
+    //     _lastCollisionDirection = (playerCenter - collisionCenter)..normalize();
+    //     _collisionCooldown = _collisionRecoilTime;
+    //   }
+    // }
   }
 
   void shoot(Vector2 targetPosition) {

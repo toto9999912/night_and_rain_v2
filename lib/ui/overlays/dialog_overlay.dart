@@ -287,6 +287,7 @@ class _DialogOverlayState extends ConsumerState<DialogOverlay> {
                                       ? "$_currentSpeaker: "
                                       : "${widget.npc.name}: ",
                               style: TextStyle(
+                                fontFamily: 'Cubic11',
                                 color:
                                     _currentSpeaker == '旁白'
                                         ? Colors.purple
@@ -300,6 +301,7 @@ class _DialogOverlayState extends ConsumerState<DialogOverlay> {
                             TextSpan(
                               text: _currentDialogue,
                               style: const TextStyle(
+                                fontFamily: 'Cubic11',
                                 color: Colors.white,
                                 fontSize: 16,
                               ),
@@ -325,7 +327,10 @@ class _DialogOverlayState extends ConsumerState<DialogOverlay> {
                             ),
                             child: Text(
                               response.text,
-                              style: const TextStyle(fontSize: 15),
+                              style: const TextStyle(
+                                fontFamily: 'Cubic11',
+                                fontSize: 15,
+                              ),
                             ),
                           ),
                         ),
@@ -376,7 +381,10 @@ class _DialogOverlayState extends ConsumerState<DialogOverlay> {
                                 vertical: 8,
                               ),
                             ),
-                            child: const Text('查看商店'),
+                            child: const Text(
+                              '查看商店',
+                              style: TextStyle(fontFamily: 'Cubic11'),
+                            ),
                           ),
 
                         // "繼續"按鈕 - 當有下一個對話時顯示
@@ -391,7 +399,10 @@ class _DialogOverlayState extends ConsumerState<DialogOverlay> {
                                 vertical: 8,
                               ),
                             ),
-                            child: const Text('按 E 繼續'),
+                            child: const Text(
+                              '按 E 繼續',
+                              style: TextStyle(fontFamily: 'Cubic11'),
+                            ),
                           ),
                         ],
                         const SizedBox(width: 12),
@@ -410,7 +421,10 @@ class _DialogOverlayState extends ConsumerState<DialogOverlay> {
                               vertical: 8,
                             ),
                           ),
-                          child: const Text('離開'),
+                          child: const Text(
+                            '離開',
+                            style: TextStyle(fontFamily: 'Cubic11'),
+                          ),
                         ),
                       ],
                     ),

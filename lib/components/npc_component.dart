@@ -149,7 +149,7 @@ class NpcComponent extends PositionComponent
     const padding = 12.0; // 增加內邊距使氣泡更寬敞
 
     // 氣泡位置（在NPC頭頂）
-    final bubblePosition = Vector2(0, -size.y / 2 - 65); // 稍微調高位置
+    final bubblePosition = Vector2(0, -size.y / 2 - 100); // 大幅調高位置，避免遮擋NPC名字
 
     // 計算文字佈局以確定實際需要的高度
     final textStyle = TextStyle(

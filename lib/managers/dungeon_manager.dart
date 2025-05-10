@@ -617,19 +617,19 @@ class DungeonRoom {
         switch (destinationId) {
           case 'dungeon_room_1':
             portalName = '前往入口房間';
-            portalColor = Colors.blue;
+            portalColor = Colors.blueGrey;
             break;
           case 'dungeon_room_2':
             portalName = '前往黑暗樓梯';
-            portalColor = Colors.orange;
+            portalColor = Colors.orangeAccent;
             break;
           case 'dungeon_room_3':
             portalName = '前往深淵王座';
-            portalColor = Colors.red;
+            portalColor = Colors.redAccent;
             break;
           default:
             portalName = '傳送門';
-            portalColor = Colors.purple;
+            portalColor = Colors.deepPurpleAccent;
         }
       }
 

@@ -101,7 +101,7 @@ class PortalComponent extends PositionComponent
         add(
           CircleComponent(
             radius: portalSize / 2,
-            paint: Paint()..color = color.withOpacity(0.7),
+            paint: Paint()..color = color.withValues(alpha: 0.7),
           ),
         );
         break;
@@ -109,7 +109,7 @@ class PortalComponent extends PositionComponent
         add(
           CircleComponent(
             radius: portalSize / 2,
-            paint: Paint()..color = color.withOpacity(0.6),
+            paint: Paint()..color = color.withValues(alpha: 0.6),
           ),
         );
         break;
@@ -118,18 +118,18 @@ class PortalComponent extends PositionComponent
           CircleComponent(
             radius: portalSize / 2,
             paint:
-                Paint()..color = Colors.purple.withOpacity(0.7), // 改變回主世界傳送門顏色
+                Paint()
+                  ..color = Colors.purple.withValues(alpha: 0.7), // 改變回主世界傳送門顏色
           ),
         );
         break;
-    }
-
-    // 添加名稱標籤
+    } // 添加名稱標籤
     add(
       TextComponent(
         text: portalName,
         textRenderer: TextPaint(
           style: const TextStyle(
+            fontFamily: 'Cubic11', // 使用 Cubic11 字體
             color: Colors.white,
             fontSize: 12,
             fontWeight: FontWeight.bold,
@@ -192,8 +192,8 @@ class PortalComponent extends PositionComponent
               radius: 1 + random.nextDouble() * 2,
               paint:
                   Paint()
-                    ..color = color.withOpacity(
-                      0.6 + random.nextDouble() * 0.4,
+                    ..color = color.withValues(
+                      alpha: 0.6 + random.nextDouble() * 0.4,
                     ),
             ),
           );
@@ -212,9 +212,7 @@ class PortalComponent extends PositionComponent
     super.onCollisionStart(intersectionPoints, other);
 
     if (other is PlayerComponent) {
-      _playerInRange = true;
-
-      // 顯示交互提示
+      _playerInRange = true; // 顯示交互提示（使用遊戲中的全局方法，確保字體統一）
       final interactionText = "按 E 使用${portalName}";
       game.showInteractionPrompt(interactionText);
 
