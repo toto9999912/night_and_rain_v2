@@ -224,8 +224,7 @@ class NightAndRainGame extends FlameGame
 
     // 從 itemsDataProvider 獲取初始武器 - 更新為新的物品 ID
     final itemsData = ref.read(itemsDataProvider);
-    final initialWeapon = itemsData['pistol_copper'] as Weapon; // 銅牛級手槍
-    final testWeapon = itemsData['machinegun_gold'] as Weapon;
+    final initialWeapon = itemsData['shotgun_silver'] as Weapon; // 銅牛級手槍
 
     // 獲取紅藥水和藍藥水的原型
     final healthPotionPrototype =
@@ -238,9 +237,6 @@ class NightAndRainGame extends FlameGame
 
     // 添加到玩家庫存並裝備武器
     inventoryNotifier.addItem(initialWeapon);
-
-    // 添加到玩家庫存並裝備武器
-    inventoryNotifier.addItem(testWeapon);
 
     playerNotifier.equipWeapon(initialWeapon);
 

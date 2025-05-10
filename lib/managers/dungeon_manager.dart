@@ -1,8 +1,8 @@
 import 'package:flame/components.dart';
+import 'package:flame_tiled/flame_tiled.dart';
 import 'package:flutter/material.dart';
 import 'package:flame/collisions.dart';
 import 'dart:math' as math;
-
 import '../components/enemy_component.dart';
 import '../components/boss/boss_component.dart';
 import '../components/portal_component.dart';
@@ -10,7 +10,6 @@ import '../components/npc_component.dart';
 import '../components/player_component.dart';
 import '../components/map_component.dart';
 import '../components/mirror_man_component.dart';
-import '../components/treasure_chest_component.dart';
 import '../main.dart';
 
 /// 地下城管理器，負責地下城的創建和管理
@@ -198,7 +197,7 @@ class DungeonManager {
     _rooms['dungeon_room_3'] = DungeonRoom(
       id: 'dungeon_room_3',
       name: '深淵王座',
-      backgroundColor: Colors.red.shade900.withOpacity(0.5),
+      backgroundColor: Colors.red.shade900.withValues(alpha: 0.5),
       size: roomSize,
       portalPositions: {
         // 移除返回房間2的傳送門，使其成為單向道
@@ -235,7 +234,7 @@ class DungeonManager {
     _rooms['secret_corridor'] = DungeonRoom(
       id: 'secret_corridor',
       name: '神秘迴廊',
-      backgroundColor: Colors.indigo.shade900.withOpacity(0.7),
+      backgroundColor: Colors.indigo.shade900.withValues(alpha: 0.7),
       size: roomSize,
       portalPositions: {
         // 移除返回Boss房間的傳送門，使其成為單向道
@@ -415,9 +414,11 @@ class DungeonManager {
           component is! EnemyComponent &&
           component is! BossComponent &&
           component is! PortalComponent) {
-        // 地圖元素需要保存起來
+        // 關鍵修改：更廣泛地捕獲所有地圖相關元素
+        // 特別是確保捕獲 TiledComponent
         if (component is RectangleComponent ||
             component is MapComponent ||
+            component is TiledComponent || // 添加這行，確保 TiledComponent 被處理
             component is BoundaryWall ||
             component is Obstacle) {
           componentsToHide.add(component);
@@ -579,7 +580,7 @@ class DungeonRoom {
         size: size,
         paint:
             Paint()
-              ..color = Colors.white.withOpacity(0.1)
+              ..color = Colors.white.withValues(alpha: 0.1)
               ..style = PaintingStyle.stroke
               ..strokeWidth = 2,
       ),

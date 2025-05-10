@@ -15,7 +15,7 @@ class IntroScreen extends StatefulWidget {
 class _IntroScreenState extends State<IntroScreen> with WidgetsBindingObserver {
   final List<String> _introMessages = [
     '哈囉！非雨',
-    '我是福爾摩夜，因為蘋果力場的緣故我暫時無法進去幫你',
+    '我是福爾摩夜，因為蘋果怪客設下的蘋果力場使我無法進去協助你',
     '但我接下來說的話，請你務必要仔細聆聽！',
     '接下來，你即將探索神秘的Night and Rain世界',
     '尋找蘋果怪客、奪回被偷走的生日禮物，是我們的首要任務！',
@@ -23,8 +23,10 @@ class _IntroScreenState extends State<IntroScreen> with WidgetsBindingObserver {
     '• 你可以優先拆開二號禮物袋的黃色錦囊，裡面有我可以給你的相關協助',
     '• 在米蟲眷村收集可靠線索，了解蘋果怪客的情報',
     '• 米蟲商店提供各種武器和道具，別忘了準備充足再前往地下城',
-    '• 藥品可以在危急時刻救你一命，記得購買和使用',
-    '• 接下來的旅途異常艱難，但我相信憑藉你的果敢跟智慧一定能化險為夷的',
+    '• 按下WASD鍵可以上下左右移動',
+    '• 按下C鍵可以打開背包，查看物品和裝備',
+    '• 按下Q鍵可以快速切換武器，當然你也可以透過背包快速裝備武器到裝備欄',
+    '• 滑鼠左鍵或是空白鍵可以進行射擊',
     '',
     '準備好了嗎？按下 E 鍵或 Enter 鍵開始你的冒險...',
   ];

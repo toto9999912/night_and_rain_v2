@@ -26,18 +26,21 @@ class MediterraneanManNpc extends NpcComponent {
         color: Colors.transparent, // 使用透明色，因為我們會使用精靈圖
         supportConversation: true, // 支持對話
         isInteractive: true,
-        greetings: ['年輕人，過來聊聊天吧！', '看起來像是個有趣的冒險者！', '嘿！這邊！'],
+        greetings: ['年輕人，過來聊聊天吧！', '我...我才不是50歲', '嘿！這邊！'],
         // 建立對話樹
         dialogueTree: {
           // 初始對話
           'start': Dialogue(
-            npcText: '年輕人，願意聽個老骨頭的故事嗎？也許能學點什麼。',
+            npcText: '年輕人，願意聽個老頭的故事嗎？也許能學點什麼。',
             nextDialogueId: 'super',
           ),
           'super': Dialogue(
-            npcText: '【非雨】 ',
+            npcText: '【非雨】蛤...可以不要嗎？ ',
             responses: [
-              PlayerResponse(text: '反正我也閒著，說來聽聽。'),
+              PlayerResponse(
+                text: '反正我也閒著，說來聽聽。',
+                nextDialogueId: 'story_part1',
+              ),
               PlayerResponse(text: '不了，我很忙。', nextDialogueId: 'leave'),
             ],
           ),
@@ -45,13 +48,13 @@ class MediterraneanManNpc extends NpcComponent {
           // 故事第一部分
           'story_part1': Dialogue(
             npcText:
-                '我年輕時遇到一個女孩...我們一起走過風雨，笑過、吵過，也差點被一頭熊吃掉——她總是愛惡作劇，搞得我哭笑不得。可惜啊，後來……',
+                '我年輕時遇到一個很有趣女孩...我們一起走過闖蕩世界，是對方冒險的最佳拍檔，旅途中發生了許多刺激又好玩的冒險。她既壞心又善良，別看她慵懶總說自己是大懶蟲，她總會對該做的事情認真勤奮。可惜造化弄人阿...我們到最後卻...',
             nextDialogueId: 'narrator1',
           ),
 
           // 旁白1
           'narrator1': Dialogue(
-            npcText: '【旁白】老人沉默片刻，轉身望向身後，一道孤單的背影在陽光下拉得老長……',
+            npcText: '【旁白】老人沉默片刻，轉身望向身後，一道孤單的背影在陽光下拉得老長，似乎在預示著這個故事最後將以悲劇收尾',
             responses: [
               PlayerResponse(
                 text: '然後呢？你別吊我胃口啊。',
@@ -69,7 +72,7 @@ class MediterraneanManNpc extends NpcComponent {
 
           // 故事第二部分
           'story_part2': Dialogue(
-            npcText: '後來啊……我以為她離開了，結果她只是去準備「整我」的道具……',
+            npcText: '後來啊……嘿嘿',
             nextDialogueId: 'narrator2',
           ),
 
@@ -87,15 +90,15 @@ class MediterraneanManNpc extends NpcComponent {
 
           // 最終部分
           'final_part': Dialogue(
-            npcText: '欸欸欸！妳又來！我正講得動情呢，結果又被妳搗亂啦～',
+            npcText: '欸欸欸！妳又來！我正講到最精采的部分呢，結果又被妳搗亂啦～害我整人失敗了',
             nextDialogueId: 'end',
           ),
 
           // 對話結束
           'end': Dialogue(
-            npcText: '哈哈哈，年輕人，我的故事雖鬧，但幸福從來不是偶然，只有珍惜當下，才能抓住屬於自己的好結局。',
+            npcText: '哈哈哈，年輕人，我的故事雖然完美，但幸福從來不是必然，唯有雙方誠心相待，你們才能像我一樣抓住屬於自己的好結局。',
             responses: [
-              PlayerResponse(text: '謝啦老哥，我會記住的。', nextDialogueId: 'leave'),
+              PlayerResponse(text: '謝啦老先生，我會記住的。', nextDialogueId: 'leave'),
             ],
           ),
 

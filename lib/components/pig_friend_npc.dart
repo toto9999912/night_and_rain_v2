@@ -28,9 +28,59 @@ class PigFriendNpc extends NpcComponent {
         interactionRadius: 80, // 將互動範圍從 120 縮小到 80
         greetings: [
           '小非雨！！生日快樂！！',
-          '因為夥伴功能還沒實踐ＱＱ，所以我還幫不上忙',
+          '呼哧…呼哧…我正在研究 BOSS 的能力。',
           '你是說蘋果怪客嗎？好像往地下城過去囉！',
         ],
+        dialogueTree: {
+          // ===== 入口 =====
+          'start': Dialogue(
+            npcText: '哈囉～小非雨，好久不見了',
+            nextDialogueId: 'offer_info',
+          ),
+
+          // ===== 問玩家要不要聽情報 =====
+          'offer_info': Dialogue(
+            npcText: '我知道你正在追查蘋果怪客，身為妳的好朋友，我一定會幫妳的。妳有甚麼需要問得可以向我提問哦！',
+            responses: [
+              PlayerResponse(
+                text: '真～是太厲害了，這你也知道阿，那就麻煩豬豬告訴我囉～',
+                nextDialogueId: 'phase_overview',
+              ),
+              PlayerResponse(text: '等等，我想先別聽', nextDialogueId: 'end'),
+            ],
+          ),
+
+          // ===== 簡介各階段 =====
+          'phase_overview': Dialogue(
+            npcText: '那個壞蛋總共有 ❶ ❷ ❸ 三個階段，每轉換一次就會短暫無敵，還會放出大範圍爆炸！\n想深入了解哪一部分？',
+            responses: [
+              PlayerResponse(text: '攻擊模式？', nextDialogueId: 'attack_patterns'),
+              PlayerResponse(text: '弱點是什麼？', nextDialogueId: 'weakness'),
+              PlayerResponse(text: '我知道夠多了，謝啦！', nextDialogueId: 'end'),
+            ],
+          ),
+
+          // ===== 攻擊模式細節 =====
+          'attack_patterns': Dialogue(
+            npcText:
+                '■ 第一階段：射出圓形彈幕，小心別被包圍。\n'
+                '■ 第二階段：加上三束光束掃射，地上的紅線就是預警！\n'
+                '■ 第三階段：會瞬移並召喚小怪干擾。\n'
+                '記得保持距離，因為王的近距離攻擊傷害非常高！',
+            nextDialogueId: 'phase_overview',
+          ),
+
+          // ===== 弱點說明 =====
+          'weakness': Dialogue(
+            npcText:
+                '我覺得使用機關槍是克制的它的最佳武器，因為這個Boss Bug好像蠻多的...！\n'
+                '狙擊槍的攻擊很常莫名無效，連小b自己測試的時候都常滿頭問號呢',
+            nextDialogueId: 'phase_overview',
+          ),
+
+          // ===== 結束 =====
+          'end': Dialogue(npcText: '嗚...因為夥伴功能沒有做出來，不然我也好想陪妳去地下城探險'),
+        },
       );
   @override
   Future<void> onLoad() async {

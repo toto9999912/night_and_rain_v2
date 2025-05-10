@@ -116,7 +116,6 @@ class _AchievementDialogState extends State<AchievementDialog>
       isUnlocked: true,
       progress: 0.0,
       reward: '限定稱號：福爾摩雨',
-      unlockDate: DateTime(2025, 5, 9),
     ),
   ];
 

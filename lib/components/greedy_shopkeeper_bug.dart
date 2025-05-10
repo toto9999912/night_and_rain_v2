@@ -33,15 +33,11 @@ class GreedyShopkeeperBug extends ShopkeeperNpc {
   // 米蟲奸商的稀有商品列表
   static const List<String> _greedyBugShopItems = [
     // 稀有武器
-    'pistol_gold', 'pistol_dragon',
-    'shotgun_silver', 'shotgun_dragon',
-    'machinegun_silver', 'machinegun_gold',
-    'sniper_silver', 'sniper_gold',
+    'sniper_copper', 'pistol_copper',
+    'shotgun_copper', 'machinegun_silver',
 
     // 稀有消耗品
-    'health_potion_legendary', 'mana_potion_legendary',
-    'speed_potion_premium', 'invisibility_potion',
-    'strength_potion', 'resistance_potion',
+    'health_potion_advanced', 'mana_potion_advanced',
   ];
 
   // 價格倍數 - 比原價貴五倍

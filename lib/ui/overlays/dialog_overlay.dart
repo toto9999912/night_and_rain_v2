@@ -71,6 +71,10 @@ class _DialogOverlayState extends ConsumerState<DialogOverlay> {
     if (widget.npc.dialogueTree.isNotEmpty) {
       // 如果有對話樹，使用交互式對話模式
       _loadDialogueFromTree();
+    } else if (widget.npc.supportConversation &&
+        widget.npc.greetings.isNotEmpty) {
+      // 如果沒有對話樹但支持對話且有問候語，顯示隨機問候
+      _selectRandomDialogue();
     } else {
       // 如果沒有任何對話內容，顯示默認訊息
       setState(() {

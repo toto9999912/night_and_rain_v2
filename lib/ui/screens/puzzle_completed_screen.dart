@@ -15,11 +15,9 @@ class PuzzleCompletedScreen extends StatefulWidget {
 
 class _PuzzleCompletedScreenState extends State<PuzzleCompletedScreen> {
   final List<String> _messages = [
-    '恭喜！你成功解開了鏡像謎題',
-    '藏鏡人湮沒在迷霧中，而寶箱已經打開...',
-    '',
-    '這只是冒險的開始，更多謎題等待著你去解開',
-    '...',
+    '恭喜非雨解開了藏鏡人的謎題啦XD',
+    '藏鏡人湮沒在迷霧中，你已經獲得打開寶箱的權利',
+    '接下來請你跟著主持人(夜)的指引，打開第三個禮物吧～',
     '按下 E 鍵或 Enter 鍵返回主選單...',
   ];
 

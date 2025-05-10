@@ -23,7 +23,8 @@ class AstrologerMumu extends NpcComponent {
 
   AstrologerMumu({required super.position})
     : super(
-        name: '幸運星-蕾絲翠',
+        name: '蕾絲翠',
+
         greetings: [
           '歡迎來占卜',
           '我收到水瓶使者的邀請過來的',
@@ -129,7 +130,7 @@ class AstrologerMumu extends NpcComponent {
           ),
           'end_talk2': Dialogue(
             npcText:
-                '【神祕的聲音】根據你的選擇，我幫你預測今天的你的運勢極好，對你最有利的顏色是『藍色』，幸運數字是『01』跟『24』，跟你最有默契的星座是『水瓶座』。',
+                '【神祕的聲音】根據你的選擇，我幫你預測今天的你的運勢極好，對你最有利的顏色是『藍色』，幸運數字是『01』跟『20』，跟你最有默契的星座是『水瓶座』。',
             nextDialogueId: 'end_talk3',
           ),
           'end_talk3': Dialogue(npcText: '【神祕的聲音】呵～呵～你是不是在猶豫要不要相信呢？跟隨你自己的內心吧！'),
@@ -212,6 +213,20 @@ class AstrologerMumu extends NpcComponent {
         ),
       );
     }
+    final textComponent = TextComponent(
+      text: '幸運星',
+      textRenderer: TextPaint(
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontFamily: 'Cubic11', // 使用Cubic11字體
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      anchor: Anchor.center,
+      position: Vector2(0, -size.y / 2 - 36),
+    );
+    add(textComponent);
   }
 
   @override
