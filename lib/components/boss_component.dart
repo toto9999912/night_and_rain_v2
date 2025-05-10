@@ -10,6 +10,7 @@ import 'enemy_component.dart';
 import 'player_component.dart';
 import 'map_component.dart';
 import '../main.dart';
+import 'portal_component.dart';
 
 /// Boss元件，直接繼承自PositionComponent，擁有獨立的戰鬥邏輯、技能和智能
 class BossComponent extends PositionComponent
@@ -46,6 +47,14 @@ class BossComponent extends PositionComponent
   final MapComponent mapComponent;
 
   // 玩家最後看到的位置，用於跟隨
+
+  // New sprite-related properties
+  SpriteComponent? _spriteComponent;
+  Sprite? _phase1Sprite;
+  Sprite? _phase2Sprite;
+  Sprite? _phase3Sprite;
+  bool _isFacingLeft = false;
+  Vector2 _lastPosition = Vector2.zero();
 
   // 生命條顯示相關
   bool _showHealthBar = true; // Boss總是顯示生命條
@@ -110,19 +119,30 @@ class BossComponent extends PositionComponent
   Future<void> onLoad() async {
     await super.onLoad();
 
-    // 添加碰撞形狀
+    // Add collision hitbox
     add(CircleHitbox()..collisionType = CollisionType.active);
 
-    // 添加Boss視覺效果
-    add(BossVisual(size: enemySize, color: color, bossName: bossName));
+    // Load sprites for different phases
+    _phase1Sprite = await Sprite.load('BossPhase1.png');
+    _phase2Sprite = await Sprite.load('BossPhase2.png');
+    _phase3Sprite = await Sprite.load('BossPhase3.png');
 
-    // 特殊視覺效果
-    add(
-      // 添加脈衝光環效果
-      TimerComponent(period: 2.0, repeat: true, onTick: _addPulseEffect),
+    // Create sprite component
+    _spriteComponent = SpriteComponent(
+      sprite: _phase1Sprite,
+      size: Vector2.all(enemySize * 1.5), // Adjust size as needed
+      anchor: Anchor.center,
     );
 
-    // 添加Boss名稱標籤
+    add(_spriteComponent!);
+
+    // Store initial position
+    _lastPosition = position.clone();
+
+    // Add pulse effect
+    add(TimerComponent(period: 2.0, repeat: true, onTick: _addPulseEffect));
+
+    // Add boss name label
     add(
       TextComponent(
         text: bossName,
@@ -148,22 +168,22 @@ class BossComponent extends PositionComponent
 
     if (_isDead) return;
 
-    // 更新攻擊冷卻
+    // Update attack cooldown
     if (_currentAttackCooldown > 0) {
       _currentAttackCooldown -= dt;
     }
 
-    // 更新特殊攻擊冷卍
+    // Update special attack cooldown
     if (_specialAttackCooldown > 0) {
       _specialAttackCooldown -= dt;
     }
 
-    // 更新召喚冷卍
+    // Update summon cooldown
     if (_summonCooldown > 0) {
       _summonCooldown -= dt;
     }
 
-    // 處理特殊行為計時器
+    // Handle special move timer
     if (_isPerformingSpecialMove) {
       _specialMoveTimer -= dt;
       if (_specialMoveTimer <= 0) {
@@ -171,30 +191,45 @@ class BossComponent extends PositionComponent
       }
     }
 
-    // 檢查階段轉換
+    // Check phase transition
     _checkPhaseTransition();
 
-    // 主動尋找並追踪玩家 - 更積極的行為
+    // Aggressive player tracking
     _bossAggressiveTracking(dt);
 
-    // 如果不在特殊行為中，處理攻擊行為
+    // If not performing special move, handle attacks
     if (!_isPerformingSpecialMove) {
-      // 基本攻擊 - 比一般敵人更頻繁
       _bossPrimaryAttack(dt);
 
-      // 使用特殊攻擊
       if (_specialAttackCooldown <= 0) {
         _performSpecialAttack();
-        _specialAttackCooldown =
-            specialAttackInterval / _currentPhase; // 隨階段提高頻率
+        _specialAttackCooldown = specialAttackInterval / _currentPhase;
       }
 
-      // 召喚小怪
       if (_summonCooldown <= 0 && _currentPhase >= 2) {
-        // 第二階段開始才召喚
         _summonMinions();
         _summonCooldown = summonInterval;
       }
+    }
+
+    // Detect movement direction and update sprite orientation
+    if (_spriteComponent != null) {
+      final movement = position - _lastPosition;
+      if (movement.length > 0.1) {
+        // Add threshold to avoid flipping on small movements
+        if (movement.x < 0 && !_isFacingLeft) {
+          // Moving left, flip sprite
+          _spriteComponent!.flipHorizontally();
+          _isFacingLeft = true;
+        } else if (movement.x > 0 && _isFacingLeft) {
+          // Moving right, restore sprite
+          _spriteComponent!.flipHorizontally();
+          _isFacingLeft = false;
+        }
+      }
+
+      // Update last position
+      _lastPosition = position.clone();
     }
   }
 
@@ -493,6 +528,21 @@ class BossComponent extends PositionComponent
   void _enterPhase(int phase) {
     _currentPhase = phase;
     debugPrint('Boss進入第$_currentPhase階段！');
+
+    // Update sprite based on phase
+    if (_spriteComponent != null) {
+      switch (phase) {
+        case 1:
+          _spriteComponent!.sprite = _phase1Sprite;
+          break;
+        case 2:
+          _spriteComponent!.sprite = _phase2Sprite;
+          break;
+        case 3:
+          _spriteComponent!.sprite = _phase3Sprite;
+          break;
+      }
+    }
 
     // 階段轉換特效
     _performPhaseTransitionEffect();
@@ -881,37 +931,51 @@ class BossComponent extends PositionComponent
     );
 
     // 短暫無敵並閃爍
-    // add(
-    //   ColorEffect(
-    //     Colors.white,
-    //     const Offset(0.0, 1.0),
-    //     EffectController(duration: 0.1, reverseDuration: 0.1, infinite: true),
-    //   ),
-    // );
+    final flash = ColorEffect(
+      Colors.white, // 遮色片顏色
+      EffectController(
+        duration: 0.1,
+        reverseDuration: 0.1,
+        infinite: true, // 無限循環，由計時器手動移除
+      ),
+      opacityFrom: 0.0, // 不透明度範圍
+      opacityTo: 0.8,
+    );
 
-    // 3秒後停止閃爍
+    if (_spriteComponent != null) {
+      _spriteComponent!.add(flash);
+    } else {
+      // 沒有 sprite 時才退而求其次加在自己身上
+      add(flash);
+    }
+
+    // ③ 三秒後結束閃爍並解除無敵
     add(
       TimerComponent(
-        period: 3.0,
+        period: 3,
         removeOnFinish: true,
         onTick: () {
-          if (this.children.any((component) => component is ColorEffect)) {
-            this.children.whereType<ColorEffect>().forEach(
-              (effect) => effect.removeFromParent(),
-            );
-          }
+          flash.removeFromParent();
+          _isPerformingSpecialMove = false; // 若要同時解除無敵
         },
       ),
     );
   }
 
-  /// 受到傷害
   void takeDamage(double amount) {
     if (_isDead) return;
 
-    // 如果處於階段轉換的特殊狀態，則減少傷害
+    // 如果處於階段轉換的特殊狀態，則完全無敵
     if (_isPerformingSpecialMove) {
-      amount *= 0.2; // 只接受20%的傷害
+      // 完全無敵，不受任何傷害
+      return;
+    }
+
+    // 限制單次傷害最多為最大生命值的30%
+    double maxDamageAllowed = maxHealth * 0.3;
+    if (amount > maxDamageAllowed) {
+      amount = maxDamageAllowed;
+      debugPrint('傷害超過上限，已限制為最大生命值的30%: $maxDamageAllowed');
     }
 
     health -= amount;
@@ -928,7 +992,6 @@ class BossComponent extends PositionComponent
     }
   }
 
-  @override
   void _renderHealthBar(Canvas canvas) {
     const barHeight = 6.0; // 增加生命條高度
     final barWidth = enemySize * 1.5; // 增加生命條寬度
@@ -993,7 +1056,6 @@ class BossComponent extends PositionComponent
     );
   }
 
-  @override
   void _die() {
     _isDead = true;
 
@@ -1037,6 +1099,41 @@ class BossComponent extends PositionComponent
               size: Vector2.all(enemySize * 5),
             ),
           );
+
+          // 檢查是否在第三個地下城房間 (Boss房)
+          final dungeonManager = game.dungeonManager;
+          if (dungeonManager != null &&
+              dungeonManager.currentRoomId == 'dungeon_room_3') {
+            // 顯示通知
+            game.showInteractionPrompt('一條神秘迴廊出現了...');
+
+            // 延遲2秒創建通往秘密迴廊的傳送門
+            add(
+              TimerComponent(
+                period: 2.0,
+                removeOnFinish: true,
+                onTick: () {
+                  // 在適當位置創建傳送門
+                  final secretPortal = PortalComponent(
+                    position: Vector2(
+                      dungeonManager.roomSize.x * 0.8,
+                      dungeonManager.roomSize.y * 0.3,
+                    ),
+                    type: PortalType.dungeonRoom,
+                    destinationId: 'secret_corridor', // 關聯到新的秘密走廊
+                    portalName: '神秘迴廊',
+                    color: Colors.purple.shade700, // 紫色調
+                  );
+
+                  // 添加到遊戲世界
+                  parent?.add(secretPortal);
+
+                  // 隱藏提示
+                  game.hideInteractionPrompt();
+                },
+              ),
+            );
+          }
 
           // 最後移除自身
           removeFromParent();

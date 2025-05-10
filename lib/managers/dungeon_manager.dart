@@ -9,6 +9,8 @@ import '../components/portal_component.dart';
 import '../components/npc_component.dart';
 import '../components/player_component.dart';
 import '../components/map_component.dart';
+import '../components/mirror_man_component.dart';
+import '../components/treasure_chest_component.dart';
 import '../main.dart';
 
 /// 地下城管理器，負責地下城的創建和管理
@@ -202,7 +204,7 @@ class DungeonManager {
       enemyConfigs: [],
       bossConfig: BossConfig(
         position: Vector2(roomSize.x * 0.5, roomSize.y * 0.4),
-        bossName: '深淵領主',
+        bossName: '蘋果怪客',
         color: Colors.deepPurple,
         health: 1500,
         damage: 25,
@@ -229,6 +231,94 @@ class DungeonManager {
           color: Colors.deepPurple.shade900,
         ),
       ],
+    );
+
+    // 秘密走廊 - 只能在擊敗Boss後透過特殊傳送門進入
+    _rooms['secret_corridor'] = DungeonRoom(
+      id: 'secret_corridor',
+      name: '神秘迴廊',
+      backgroundColor: Colors.indigo.shade900.withOpacity(0.7),
+      size: roomSize,
+      portalPositions: {
+        'dungeon_room_3': Vector2(
+          roomSize.x * 0.1,
+          roomSize.y * 0.5,
+        ), // 回到Boss房間
+      },
+      enemyConfigs: [], // 沒有敵人
+      obstacles: [
+        // 中央區域 - 寶箱台座
+        ObstacleData(
+          position: Vector2(roomSize.x * 0.5 - 50, roomSize.y * 0.5 - 50),
+          size: Vector2(100, 100),
+          color: Colors.indigo.shade800,
+        ),
+        // 裝飾性的柱子
+        ObstacleData(
+          position: Vector2(roomSize.x * 0.3, roomSize.y * 0.2),
+          size: Vector2(30, 30),
+          color: Colors.purple.shade800,
+        ),
+        ObstacleData(
+          position: Vector2(roomSize.x * 0.7, roomSize.y * 0.2),
+          size: Vector2(30, 30),
+          color: Colors.purple.shade800,
+        ),
+        ObstacleData(
+          position: Vector2(roomSize.x * 0.3, roomSize.y * 0.8),
+          size: Vector2(30, 30),
+          color: Colors.purple.shade800,
+        ),
+        ObstacleData(
+          position: Vector2(roomSize.x * 0.7, roomSize.y * 0.8),
+          size: Vector2(30, 30),
+          color: Colors.purple.shade800,
+        ),
+        // 鏡子框架
+        ObstacleData(
+          position: Vector2(roomSize.x * 0.5 - 100, roomSize.y * 0.3 - 5),
+          size: Vector2(200, 10),
+          color: Colors.grey.shade600,
+        ),
+        ObstacleData(
+          position: Vector2(roomSize.x * 0.5 - 100, roomSize.y * 0.7 - 5),
+          size: Vector2(200, 10),
+          color: Colors.grey.shade600,
+        ),
+        ObstacleData(
+          position: Vector2(roomSize.x * 0.5 - 105, roomSize.y * 0.3),
+          size: Vector2(10, 400),
+          color: Colors.grey.shade600,
+        ),
+        ObstacleData(
+          position: Vector2(roomSize.x * 0.5 + 95, roomSize.y * 0.3),
+          size: Vector2(10, 400),
+          color: Colors.grey.shade600,
+        ),
+      ],
+      specialSetup: (game, room) {
+        // 添加鏡像人NPC
+        final mirrorMan = MirrorManComponent(
+          position: Vector2(roomSize.x * 0.5, roomSize.y * 0.5),
+          name: '鏡像人',
+          color: Colors.lightBlue.shade300,
+          dialogues: [
+            '歡迎來到鏡像世界...',
+            '你看到的是真實的自己嗎？',
+            '寶箱的密碼就是你的倒影...',
+            '用數字表達自己，找到真相...',
+          ],
+        );
+        game.gameWorld.add(mirrorMan);
+
+        // 添加寶箱 - 需要密碼打開
+        final treasureChest = TreasureChestComponent(
+          position: Vector2(roomSize.x * 0.5, roomSize.y * 0.5 - 60),
+          name: '神秘寶箱',
+          password: '42815', // 這是密碼，可以根據遊戲需求修改
+        );
+        game.gameWorld.add(treasureChest);
+      },
     );
   }
 
@@ -395,6 +485,9 @@ class DungeonRoom {
   /// 房間內的障礙物
   final List<ObstacleData> obstacles;
 
+  /// 特殊設置函數 - 用於添加自定義元素到房間
+  final Function(NightAndRainGame, DungeonRoom)? specialSetup;
+
   DungeonRoom({
     required this.id,
     required this.name,
@@ -404,6 +497,7 @@ class DungeonRoom {
     this.enemyConfigs = const [],
     this.bossConfig,
     this.obstacles = const [],
+    this.specialSetup,
   });
 
   /// 將房間加載到遊戲世界
@@ -435,7 +529,12 @@ class DungeonRoom {
       _addBoss(game);
     }
 
-    // 7. 設置玩家位置（根據來源房間決定）
+    // 7. 執行特殊設置（如果有）
+    if (specialSetup != null) {
+      specialSetup!(game, this);
+    }
+
+    // 8. 設置玩家位置（根據來源房間決定）
     _setPlayerPosition(game);
   }
 

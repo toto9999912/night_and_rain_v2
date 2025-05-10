@@ -8,6 +8,7 @@ import 'package:night_and_rain_v2/providers/items_data_provider.dart';
 import 'package:night_and_rain_v2/providers/player_provider.dart';
 import 'package:night_and_rain_v2/models/consumable.dart';
 import 'package:night_and_rain_v2/models/ranged_weapon.dart';
+import 'package:night_and_rain_v2/components/treasure_chest_component.dart';
 
 /// 密碼輸入覆蓋層，允許玩家輸入密碼獲得特殊獎勵
 class PasswordInputOverlay extends ConsumerStatefulWidget {
@@ -78,6 +79,32 @@ class _PasswordInputOverlayState extends ConsumerState<PasswordInputOverlay> {
 
     // 清空輸入框
     _passwordController.clear();
+
+    // 檢查是否是在神秘走廊中開啟寶箱
+    if (widget.game is NightAndRainGame) {
+      final game = widget.game as NightAndRainGame;
+
+      // 如果在神秘走廊，尋找寶箱
+      if (game.dungeonManager?.currentRoomId == 'secret_corridor') {
+        // 尋找場景中的寶箱
+        final treasureChests =
+            game.gameWorld.children
+                .whereType<TreasureChestComponent>()
+                .toList();
+
+        if (treasureChests.isNotEmpty) {
+          // 嘗試用密碼開啟寶箱
+          if (treasureChests.first.tryOpen(password)) {
+            _showFeedbackMessage('寶箱開啟成功！', Colors.green);
+            _closeOverlay();
+            return;
+          } else {
+            _showFeedbackMessage('密碼錯誤，寶箱沒有反應...', Colors.red);
+            return;
+          }
+        }
+      }
+    }
 
     // 獲取物品數據
     final itemsData = ref.read(itemsDataProvider);

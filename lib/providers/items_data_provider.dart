@@ -204,7 +204,7 @@ final itemsDataProvider = Provider<Map<String, Item>>((ref) {
 
       price: 110,
       range: 500,
-      manaCost: 20,
+      manaCost: 18,
     ),
     // 銅牛級狙擊槍
     'sniper_copper': RangedWeapon(
@@ -218,7 +218,7 @@ final itemsDataProvider = Provider<Map<String, Item>>((ref) {
 
       price: 300,
       range: 650,
-      manaCost: 28,
+      manaCost: 24,
     ),
     // 銀牛級狙擊槍
     'sniper_silver': RangedWeapon(
@@ -232,7 +232,7 @@ final itemsDataProvider = Provider<Map<String, Item>>((ref) {
 
       price: 900,
       range: 800,
-      manaCost: 40,
+      manaCost: 33,
     ),
     // 金牛級狙擊槍
     'sniper_gold': RangedWeapon(
@@ -247,7 +247,7 @@ final itemsDataProvider = Provider<Map<String, Item>>((ref) {
 
       price: 2400,
       range: 1000,
-      manaCost: 60,
+      manaCost: 45,
     ),
 
     // ==================== 藥水系列 ====================
