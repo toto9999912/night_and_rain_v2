@@ -4,7 +4,7 @@ import 'package:flame/collisions.dart';
 import 'dart:math' as math;
 
 import '../components/enemy_component.dart';
-import '../components/boss_component.dart';
+import '../components/boss/boss_component.dart';
 import '../components/portal_component.dart';
 import '../components/npc_component.dart';
 import '../components/player_component.dart';

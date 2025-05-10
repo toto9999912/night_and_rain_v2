@@ -5,7 +5,7 @@ import 'package:flame/particles.dart';
 import 'package:flutter/material.dart';
 import 'dart:developer' as developer;
 import '../enum/item_rarity.dart';
-import 'boss_component.dart';
+import 'boss/boss_component.dart';
 import 'enemy_component.dart';
 import 'map_component.dart';
 import '../effects/explosion_effect.dart';

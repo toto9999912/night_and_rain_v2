@@ -469,7 +469,7 @@ class SelectedItemTip extends StatelessWidget {
                 ),
                 Text(
                   selectedHotkey != null
-                      ? '按數字鍵 ${selectedHotkey} 確認綁定到熱鍵'
+                      ? '按數字鍵 $selectedHotkey 確認綁定到熱鍵'
                       : '按 E 使用，或按數字鍵 1-5 綁定熱鍵',
                   style: TextStyle(color: Colors.white),
                 ),

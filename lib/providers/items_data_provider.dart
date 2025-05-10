@@ -178,12 +178,12 @@ final itemsDataProvider = Provider<Map<String, Item>>((ref) {
     // 金牛級機關槍
     'machinegun_gold': RangedWeapon(
       id: 'machinegun_gold',
-      name: '傳說機關槍',
+      name: '嘴砲之神機關槍',
       description: '據說是一位戰爭英雄使用過的機關槍，幾乎沒有後座力',
       rarity: ItemRarity.goldBull,
       icon: FontAwesomeIcons.bullseye,
       weaponType: WeaponType.machineGun,
-      damage: 12,
+      damage: 100,
 
       price: 4000,
       range: 450,

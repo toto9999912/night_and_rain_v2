@@ -5,12 +5,28 @@ import 'package:flame/collisions.dart';
 import 'package:flame/effects.dart';
 import 'package:flutter/material.dart';
 import 'dart:developer' as developer;
-import 'bullet_component.dart';
-import 'enemy_component.dart';
-import 'player_component.dart';
-import 'map_component.dart';
-import '../main.dart';
-import 'portal_component.dart';
+import '../bullet_component.dart';
+import '../enemy_component.dart';
+import '../player_component.dart';
+import '../map_component.dart';
+import '../../main.dart';
+import '../portal_component.dart';
+import 'aoe_component.dart';
+import 'aoe_indicator_component.dart';
+import 'beam_component.dart';
+import 'beam_warning_component.dart';
+import 'boss_aura_component.dart';
+import 'boss_death_explosion_component.dart';
+import 'boss_phase_transition_effect.dart';
+
+/// Boss攻擊模式枚舉
+enum BossAttackPattern {
+  circularAttack, // 圓形彈幕
+  beamAttack, // 光束攻擊
+  aoeAttack, // 範圍攻擊
+  rapidFire, // 快速射擊
+  teleport, // 瞬移
+}
 
 /// Boss元件，直接繼承自PositionComponent，擁有獨立的戰鬥邏輯、技能和智能
 class BossComponent extends PositionComponent
@@ -83,7 +99,6 @@ class BossComponent extends PositionComponent
   double _specialMoveTimer = 0;
 
   // 範圍攻擊視覺指示器
-  PositionComponent? _aoeIndicator;
 
   BossComponent({
     required Vector2 position,
@@ -99,7 +114,7 @@ class BossComponent extends PositionComponent
     ],
     this.maxHealth = 1000,
     double speed = 40,
-    double damage = 25,
+    double damage = 10,
     this.attackRange = 150,
     this.detectionRange = 500,
     double attackCooldown = 1.5,
@@ -120,7 +135,10 @@ class BossComponent extends PositionComponent
     await super.onLoad();
 
     // Add collision hitbox
-    add(CircleHitbox()..collisionType = CollisionType.active);
+    final hitboxRadius = size.x / 2 * 1.2; // 增加20%的半徑
+    add(
+      CircleHitbox(radius: hitboxRadius)..collisionType = CollisionType.active,
+    );
 
     // Load sprites for different phases
     _phase1Sprite = await Sprite.load('BossPhase1.png');
@@ -231,6 +249,90 @@ class BossComponent extends PositionComponent
       // Update last position
       _lastPosition = position.clone();
     }
+  }
+
+  void _enterPhase(int phase) {
+    _currentPhase = phase;
+    debugPrint('Boss進入第$_currentPhase階段！');
+
+    // 更新精靈圖
+    if (_spriteComponent != null) {
+      switch (phase) {
+        case 1:
+          _spriteComponent!.sprite = _phase1Sprite;
+          break;
+        case 2:
+          _spriteComponent!.sprite = _phase2Sprite;
+          break;
+        case 3:
+          _spriteComponent!.sprite = _phase3Sprite;
+          break;
+      }
+    }
+
+    // 階段轉換特效 - 會在內部設置短暫無敵
+    _performPhaseTransitionEffect();
+
+    // 根據階段調整屬性
+    switch (phase) {
+      case 2:
+        _speedMultiplier *= 1.2;
+        _attackCooldownMultiplier *= 0.8;
+        break;
+      case 3:
+        _speedMultiplier *= 1.5;
+        _attackCooldownMultiplier *= 0.6;
+        _damageMultiplier *= 1.3;
+        break;
+    }
+
+    // 不在此設置_isPerformingSpecialMove，統一由_performPhaseTransitionEffect管理
+  }
+
+  // 階段轉換特效
+  void _performPhaseTransitionEffect() {
+    // 添加視覺特效
+    parent?.add(
+      BossPhaseTransitionEffect(
+        position: position.clone(),
+        color: _currentPhase == 2 ? Colors.orange : Colors.red,
+        size: Vector2.all(enemySize * 3),
+      ),
+    );
+
+    // 設置無敵並閃爍
+    _isPerformingSpecialMove = true;
+    _specialMoveTimer = 3.0; // 確保與計時器同步
+
+    final flash = ColorEffect(
+      Colors.white,
+      EffectController(duration: 0.1, reverseDuration: 0.1, infinite: true),
+      opacityFrom: 0.0,
+      opacityTo: 0.8,
+    );
+
+    if (_spriteComponent != null) {
+      _spriteComponent!.add(flash);
+    } else {
+      add(flash);
+    }
+
+    // 嚴格監控無敵狀態解除
+    add(
+      TimerComponent(
+        period: 3.0,
+        removeOnFinish: true,
+        onTick: () {
+          debugPrint('階段轉換無敵狀態解除');
+          if (flash.parent != null) {
+            flash.removeFromParent();
+          }
+          // 確保無敵狀態被解除
+          _isPerformingSpecialMove = false;
+          _specialMoveTimer = 0;
+        },
+      ),
+    );
   }
 
   // Boss的積極追踪行為
@@ -417,7 +519,7 @@ class BossComponent extends PositionComponent
       position: bulletPosition,
       direction: attackDirection,
       speed: 280, // 高速子彈
-      damage: damage * 0.9, // 較高傷害
+      damage: damage * 0.6, // 較高傷害
       range: 500, // 長距離
       color: color,
       size: enemySize * 0.3, // 較大子彈
@@ -475,7 +577,7 @@ class BossComponent extends PositionComponent
         position: bulletPosition,
         direction: direction,
         speed: 250 + 20 * i.toDouble(), // 子彈速度略有不同，確保使用double
-        damage: damage * 0.7, // 每顆子彈傷害稍低
+        damage: damage * 0.45, // 每顆子彈傷害稍低
         range: 450,
         color: color,
         size: enemySize * 0.25,
@@ -522,51 +624,6 @@ class BossComponent extends PositionComponent
     }
 
     _lastHealthPercentage = healthPercentage;
-  }
-
-  // 進入新階段
-  void _enterPhase(int phase) {
-    _currentPhase = phase;
-    debugPrint('Boss進入第$_currentPhase階段！');
-
-    // Update sprite based on phase
-    if (_spriteComponent != null) {
-      switch (phase) {
-        case 1:
-          _spriteComponent!.sprite = _phase1Sprite;
-          break;
-        case 2:
-          _spriteComponent!.sprite = _phase2Sprite;
-          break;
-        case 3:
-          _spriteComponent!.sprite = _phase3Sprite;
-          break;
-      }
-    }
-
-    // 階段轉換特效
-    _performPhaseTransitionEffect();
-
-    // 根據階段調整屬性
-    switch (phase) {
-      case 2:
-        // 第二階段：增加速度，減少攻擊冷卻
-        _speedMultiplier *= 1.2;
-        _attackCooldownMultiplier *= 0.8;
-        // 短暫無敵
-        _isPerformingSpecialMove = true;
-        _specialMoveTimer = 3.0;
-        break;
-      case 3:
-        // 第三階段：更激進的屬性提升
-        _speedMultiplier *= 1.5;
-        _attackCooldownMultiplier *= 0.6;
-        _damageMultiplier *= 1.3;
-        // 短暫無敵
-        _isPerformingSpecialMove = true;
-        _specialMoveTimer = 3.0;
-        break;
-    }
   }
 
   // 執行特殊攻擊
@@ -619,7 +676,7 @@ class BossComponent extends PositionComponent
         position: bulletPosition,
         direction: direction,
         speed: 150, // 較慢的子彈，更易被躲避
-        damage: damage * 0.6, // 每顆子彈傷害較低
+        damage: damage * 0.35, // 每顆子彈傷害較低
         range: 300,
         color: color,
         size: enemySize * 0.2,
@@ -724,7 +781,7 @@ class BossComponent extends PositionComponent
           final aoe = AoeComponent(
             position: targetPos,
             radius: 120,
-            damage: damage * 0.8,
+            damage: damage * 2,
             duration: 3.0,
             tickInterval: 0.5, // 每0.5秒造成一次傷害
             color: color.withValues(alpha: 0.6),
@@ -919,49 +976,6 @@ class BossComponent extends PositionComponent
     );
   }
 
-  // 階段轉換特效
-  void _performPhaseTransitionEffect() {
-    // 添加視覺特效
-    parent?.add(
-      BossPhaseTransitionEffect(
-        position: position.clone(),
-        color: _currentPhase == 2 ? Colors.orange : Colors.red,
-        size: Vector2.all(enemySize * 3),
-      ),
-    );
-
-    // 短暫無敵並閃爍
-    final flash = ColorEffect(
-      Colors.white, // 遮色片顏色
-      EffectController(
-        duration: 0.1,
-        reverseDuration: 0.1,
-        infinite: true, // 無限循環，由計時器手動移除
-      ),
-      opacityFrom: 0.0, // 不透明度範圍
-      opacityTo: 0.8,
-    );
-
-    if (_spriteComponent != null) {
-      _spriteComponent!.add(flash);
-    } else {
-      // 沒有 sprite 時才退而求其次加在自己身上
-      add(flash);
-    }
-
-    // ③ 三秒後結束閃爍並解除無敵
-    add(
-      TimerComponent(
-        period: 3,
-        removeOnFinish: true,
-        onTick: () {
-          flash.removeFromParent();
-          _isPerformingSpecialMove = false; // 若要同時解除無敵
-        },
-      ),
-    );
-  }
-
   void takeDamage(double amount) {
     if (_isDead) return;
 
@@ -1059,25 +1073,36 @@ class BossComponent extends PositionComponent
   void _die() {
     _isDead = true;
 
-    // 更大型的死亡特效
+    // 獲取當前Boss位置的副本（因為Boss即將移除）
+    final bossPosition = position.clone();
+
+    // 獲取game和dungeonManager引用
+    final gameRef = game;
+    final dungeonManager = gameRef.dungeonManager;
+    final isInBossRoom =
+        dungeonManager != null &&
+        dungeonManager.currentRoomId == 'dungeon_room_3';
+
+    // 記錄調試信息
+    debugPrint('Boss死亡，當前房間: ${dungeonManager?.currentRoomId}');
+
+    // 創建死亡特效
     for (int i = 0; i < 5; i++) {
-      // 延遲添加多個爆炸，創造連鎖爆炸效果
       final delay = i * 0.2;
-      add(
+      gameRef.gameWorld.add(
         TimerComponent(
           period: delay,
           removeOnFinish: true,
           onTick: () {
-            // 隨機在Boss身體各處產生爆炸
             final random = math.Random();
             final offset = Vector2(
               (random.nextDouble() - 0.5) * enemySize,
               (random.nextDouble() - 0.5) * enemySize,
             );
 
-            parent?.add(
+            gameRef.gameWorld.add(
               ExplosionComponent(
-                position: position + offset,
+                position: bossPosition + offset,
                 size: Vector2.all(enemySize * (1.0 + i * 0.3)),
                 color: i % 2 == 0 ? color : Colors.orange,
               ),
@@ -1087,62 +1112,75 @@ class BossComponent extends PositionComponent
       );
     }
 
-    // 死亡時添加最終大爆炸
-    add(
+    // 添加主要爆炸效果
+    gameRef.gameWorld.add(
       TimerComponent(
         period: 1.0,
         removeOnFinish: true,
         onTick: () {
-          parent?.add(
+          gameRef.gameWorld.add(
             BossDeathExplosionComponent(
-              position: position.clone(),
+              position: bossPosition.clone(),
               size: Vector2.all(enemySize * 5),
             ),
           );
 
-          // 檢查是否在第三個地下城房間 (Boss房)
-          final dungeonManager = game.dungeonManager;
-          if (dungeonManager != null &&
-              dungeonManager.currentRoomId == 'dungeon_room_3') {
-            // 顯示通知
-            game.showInteractionPrompt('一條神秘迴廊出現了...');
+          // 如果在Boss房間，創建通往神秘迴廊的傳送門
+          if (isInBossRoom) {
+            debugPrint('確認在Boss房間，準備顯示通知和創建迴廊');
 
-            // 延遲2秒創建通往秘密迴廊的傳送門
-            add(
+            // 顯示通知
+            gameRef.showInteractionPrompt('一條神秘迴廊出現了...');
+
+            // 延遲創建傳送門
+            gameRef.gameWorld.add(
               TimerComponent(
                 period: 2.0,
                 removeOnFinish: true,
                 onTick: () {
-                  // 在適當位置創建傳送門
-                  final secretPortal = PortalComponent(
-                    position: Vector2(
-                      dungeonManager.roomSize.x * 0.8,
+                  debugPrint('正在創建通往神秘迴廊的傳送門...');
+
+                  try {
+                    // 計算傳送門位置
+                    final portalPosition = Vector2(
+                      dungeonManager!.roomSize.x * 0.8,
                       dungeonManager.roomSize.y * 0.3,
-                    ),
-                    type: PortalType.dungeonRoom,
-                    destinationId: 'secret_corridor', // 關聯到新的秘密走廊
-                    portalName: '神秘迴廊',
-                    color: Colors.purple.shade700, // 紫色調
-                  );
+                    );
 
-                  // 添加到遊戲世界
-                  parent?.add(secretPortal);
+                    // 創建傳送門
+                    final secretPortal = PortalComponent(
+                      position: portalPosition,
+                      type: PortalType.dungeonRoom,
+                      destinationId: 'secret_corridor',
+                      portalName: '神秘迴廊',
+                      color: Colors.purple.shade700,
+                    );
 
-                  // 隱藏提示
-                  game.hideInteractionPrompt();
+                    // 直接添加到遊戲世界
+                    gameRef.gameWorld.add(secretPortal);
+
+                    debugPrint('神秘迴廊傳送門創建成功，位置: $portalPosition');
+
+                    // 隱藏提示
+                    gameRef.hideInteractionPrompt();
+                  } catch (e) {
+                    debugPrint('創建傳送門時發生錯誤: $e');
+                  }
                 },
               ),
             );
+          } else {
+            debugPrint('不在Boss房間，不創建迴廊');
           }
-
-          // 最後移除自身
-          removeFromParent();
         },
       ),
     );
 
     // 添加淡出效果
     add(OpacityEffect.fadeOut(EffectController(duration: 1.0)));
+
+    // 最後移除自身
+    removeFromParent();
 
     debugPrint('Boss $bossName 已經被擊敗！');
   }
@@ -1217,930 +1255,5 @@ class BossComponent extends PositionComponent
     }
 
     _opacity = value;
-  }
-}
-
-/// Boss攻擊模式枚舉
-enum BossAttackPattern {
-  circularAttack, // 圓形彈幕
-  beamAttack, // 光束攻擊
-  aoeAttack, // 範圍攻擊
-  rapidFire, // 快速射擊
-  teleport, // 瞬移
-}
-
-/// 光束組件 - 用於Boss的光束攻擊
-class BeamComponent extends PositionComponent
-    with HasGameReference, CollisionCallbacks
-    implements OpacityProvider {
-  final Vector2 direction;
-  final double length;
-  final double width;
-  final double damage;
-  final Color color;
-  double _lifespan;
-  final double duration;
-  final bool isEnemyAttack;
-
-  BeamComponent({
-    required Vector2 position,
-    required this.direction,
-    required this.length,
-    required this.damage,
-    required this.duration,
-    this.width = 20,
-    this.color = Colors.red,
-    this.isEnemyAttack = false,
-  }) : _lifespan = duration,
-       super(
-         position: position,
-         size: Vector2(length, width),
-         anchor: Anchor.centerLeft,
-       ) {
-    // 設置角度
-    angle = direction.angleTo(Vector2(1, 0));
-  }
-
-  @override
-  Future<void> onLoad() async {
-    await super.onLoad();
-
-    // 添加碰撞區域
-    add(RectangleHitbox()..collisionType = CollisionType.passive);
-
-    try {
-      // 添加透明度效果前進行日誌記錄
-      developer.log('光束組件添加淡出效果', name: 'OpacityDebug');
-
-      // 添加視覺效果 - 由亮到暗的漸變
-      add(
-        OpacityEffect.fadeOut(
-          EffectController(duration: duration),
-          onComplete: () {
-            developer.log('光束淡出完成，準備移除', name: 'OpacityDebug');
-            removeFromParent();
-          },
-        ),
-      );
-
-      developer.log('光束組件淡出效果已添加', name: 'OpacityDebug');
-    } catch (e) {
-      developer.log('添加光束淡出效果時發生錯誤: $e', name: 'OpacityDebug');
-      // 如果效果添加失敗，還是設置一個定時器來移除光束
-      add(
-        TimerComponent(
-          period: duration,
-          removeOnFinish: true,
-          onTick: () => removeFromParent(),
-        ),
-      );
-    }
-  }
-
-  @override
-  void update(double dt) {
-    super.update(dt);
-
-    _lifespan -= dt;
-    if (_lifespan <= 0) {
-      removeFromParent();
-    }
-  }
-
-  @override
-  void render(Canvas canvas) {
-    final paint =
-        Paint()
-          ..color = color.withValues(alpha: 0.8)
-          ..style = PaintingStyle.fill;
-
-    // 繪製主體光束
-    canvas.drawRect(Rect.fromLTWH(0, -width / 2, length, width), paint);
-
-    // 繪製光束邊緣（更亮的部分）
-    final edgePaint =
-        Paint()
-          ..color = Colors.white.withValues(alpha: 0.5)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2;
-
-    canvas.drawRect(Rect.fromLTWH(0, -width / 2, length, width), edgePaint);
-
-    // 添加一些小粒子效果
-    final random = math.Random();
-    for (int i = 0; i < 10; i++) {
-      final particleX = random.nextDouble() * length;
-      final particleY = (random.nextDouble() - 0.5) * width;
-      final particleSize = 1 + random.nextDouble() * 3;
-
-      canvas.drawCircle(
-        Offset(particleX, particleY),
-        particleSize,
-        Paint()..color = Colors.white.withValues(alpha: 0.7),
-      );
-    }
-  }
-
-  @override
-  void onCollisionStart(
-    Set<Vector2> intersectionPoints,
-    PositionComponent other,
-  ) {
-    super.onCollisionStart(intersectionPoints, other);
-
-    // 只有敵人攻擊才會對玩家造成傷害
-    if (isEnemyAttack && other is PlayerComponent) {
-      debugPrint('光束攻擊命中玩家，嘗試造成 ${damage.toInt()} 點傷害');
-      try {
-        other.takeDamage(damage.toInt());
-        debugPrint('光束成功對玩家造成傷害');
-      } catch (e) {
-        debugPrint('光束對玩家造成傷害時出錯: $e');
-      }
-    }
-  }
-
-  @override
-  double get opacity => _opacity;
-  double _opacity = 1.0;
-  @override
-  set opacity(double value) {
-    // 添加調試日誌來追蹤透明度變更
-    if (value < 0 || value > 1) {
-      developer.log('警告: 光束設置無效的透明度值: $value', name: 'OpacityDebug');
-      value = value.clamp(0, 1);
-    }
-
-    // 只記錄明顯的變化
-    if ((value - _opacity).abs() > 0.1) {
-      developer.log('光束透明度從 $_opacity 變更到 $value', name: 'OpacityDebug');
-    }
-
-    _opacity = value;
-  }
-}
-
-/// 光束警告組件 - 在發射光束前顯示警告線
-class BeamWarningComponent extends PositionComponent {
-  final Vector2 direction;
-  final double length;
-  final Color color;
-  double _lifespan;
-  final double duration;
-
-  BeamWarningComponent({
-    required Vector2 position,
-    required this.direction,
-    required this.length,
-    required this.color,
-    required this.duration,
-  }) : _lifespan = duration,
-       super(
-         position: position,
-         size: Vector2(length, 10),
-         anchor: Anchor.centerLeft,
-       ) {
-    // 設置角度
-    angle = direction.angleTo(Vector2(1, 0));
-  }
-
-  @override
-  void update(double dt) {
-    super.update(dt);
-
-    _lifespan -= dt;
-    if (_lifespan <= 0) {
-      removeFromParent();
-    }
-  }
-
-  @override
-  void render(Canvas canvas) {
-    // 繪製虛線警告
-    final dashPaint =
-        Paint()
-          ..color = color
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2;
-
-    // 閃爍效果
-    final blink = (_lifespan * 10).toInt() % 2 == 0;
-    if (blink) {
-      dashPaint.color = color.withValues(alpha: 0.8);
-    } else {
-      dashPaint.color = color.withValues(alpha: 0.4);
-    }
-
-    // 繪製虛線
-    const dashWidth = 10.0;
-    const dashSpace = 5.0;
-    double currentX = 0;
-
-    while (currentX < length) {
-      canvas.drawLine(
-        Offset(currentX, 0),
-        Offset(currentX + dashWidth, 0),
-        dashPaint,
-      );
-      currentX += dashWidth + dashSpace;
-    }
-  }
-}
-
-/// 範圍攻擊指示器組件
-class AoeIndicatorComponent extends PositionComponent {
-  final double radius;
-  final Color color;
-  double _lifespan;
-  final double duration;
-
-  AoeIndicatorComponent({
-    required Vector2 position,
-    required this.radius,
-    required this.color,
-    required this.duration,
-  }) : _lifespan = duration,
-       super(
-         position: position,
-         size: Vector2.all(radius * 2),
-         anchor: Anchor.center,
-       );
-
-  @override
-  void update(double dt) {
-    super.update(dt);
-
-    _lifespan -= dt;
-    if (_lifespan <= 0) {
-      removeFromParent();
-    }
-  }
-
-  @override
-  void render(Canvas canvas) {
-    // 閃爍效果
-    final blink = (_lifespan * 10).toInt() % 2 == 0;
-    final opacity = blink ? 0.6 : 0.3;
-
-    // 繪製外圈
-    final outlinePaint =
-        Paint()
-          ..color = color.withValues(alpha: opacity)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 3;
-
-    canvas.drawCircle(Offset.zero, radius, outlinePaint);
-
-    // 繪製填充區域
-    final fillPaint =
-        Paint()
-          ..color = color.withValues(alpha: opacity * 0.3)
-          ..style = PaintingStyle.fill;
-
-    canvas.drawCircle(Offset.zero, radius, fillPaint);
-
-    // 添加警告標記
-    final warningPaint =
-        Paint()
-          ..color = Colors.white.withValues(alpha: opacity)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2;
-
-    const warningSize = 20.0;
-
-    // 繪製感嘆號
-    canvas.drawLine(
-      Offset(0, -warningSize / 2),
-      Offset(0, warningSize / 2 - 5),
-      warningPaint,
-    );
-
-    canvas.drawCircle(Offset(0, warningSize / 2 + 2), 2, warningPaint);
-  }
-}
-
-/// 持續範圍傷害組件
-class AoeComponent extends PositionComponent
-    with HasGameReference, CollisionCallbacks
-    implements OpacityProvider {
-  final double radius;
-  final double damage;
-  final Color color;
-  double _lifespan;
-  final double duration;
-  final double tickInterval;
-  double _tickTimer = 0;
-  final List<PlayerComponent> _affectedPlayers = [];
-
-  AoeComponent({
-    required Vector2 position,
-    required this.radius,
-    required this.damage,
-    required this.duration,
-    required this.tickInterval,
-    required this.color,
-  }) : _lifespan = duration,
-       super(
-         position: position,
-         size: Vector2.all(radius * 2),
-         anchor: Anchor.center,
-       );
-
-  @override
-  Future<void> onLoad() async {
-    await super.onLoad();
-
-    // 添加圓形碰撞區域
-    add(CircleHitbox(radius: radius)..collisionType = CollisionType.passive);
-  }
-
-  @override
-  void update(double dt) {
-    super.update(dt);
-
-    _lifespan -= dt;
-    if (_lifespan <= 0) {
-      removeFromParent();
-      return;
-    }
-
-    // 傷害計時器
-    _tickTimer -= dt;
-    if (_tickTimer <= 0) {
-      _tickTimer = tickInterval;
-
-      // 對所有在範圍內的玩家造成傷害
-      for (final player in _affectedPlayers) {
-        try {
-          debugPrint('AOE嘗試對玩家造成 ${damage.toInt()} 點傷害');
-          player.takeDamage(damage.toInt());
-          debugPrint('AOE成功對玩家造成傷害');
-        } catch (e) {
-          debugPrint('AOE對玩家造成傷害時出錯: $e');
-        }
-      }
-    }
-  }
-
-  @override
-  void onCollisionStart(
-    Set<Vector2> intersectionPoints,
-    PositionComponent other,
-  ) {
-    super.onCollisionStart(intersectionPoints, other);
-
-    // 只對玩家造成傷害，忽略Boss和其他敵人
-    if (other is PlayerComponent && !_affectedPlayers.contains(other)) {
-      debugPrint('玩家進入AOE攻擊範圍');
-      _affectedPlayers.add(other);
-
-      // 立即造成第一次傷害
-      try {
-        debugPrint('AOE立即對玩家造成 ${damage.toInt()} 點傷害');
-        other.takeDamage(damage.toInt());
-      } catch (e) {
-        debugPrint('AOE初始傷害失敗: $e');
-      }
-
-      // 重置計時器，準備下一次傷害
-      _tickTimer = tickInterval;
-    }
-  }
-
-  // OpacityProvider 介面實現
-  @override
-  double get opacity => _opacityValue;
-  double _opacityValue = 1.0;
-  @override
-  set opacity(double value) {
-    if (value < 0 || value > 1) {
-      developer.log('警告: AOE設置無效的透明度值: $value', name: 'OpacityDebug');
-      value = value.clamp(0, 1);
-    }
-    _opacityValue = value;
-  }
-
-  @override
-  void render(Canvas canvas) {
-    // 計算基於剩餘生命的不透明度
-    final lifespanOpacity = (_lifespan / duration).clamp(0.1, 0.6);
-
-    // 結合全局透明度設定
-    final effectiveOpacity = lifespanOpacity * _opacityValue;
-
-    // 繪製外圈
-    final outlinePaint =
-        Paint()
-          ..color = color.withValues(alpha: effectiveOpacity)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2;
-
-    canvas.drawCircle(Offset.zero, radius, outlinePaint);
-
-    // 繪製填充區域
-    final fillPaint =
-        Paint()
-          ..color = color.withValues(alpha: effectiveOpacity * 0.7)
-          ..style = PaintingStyle.fill;
-
-    canvas.drawCircle(Offset.zero, radius, fillPaint);
-
-    // 添加流動效果 - 小圓點
-    final random = math.Random();
-    final particlePaint =
-        Paint()..color = Colors.white.withValues(alpha: effectiveOpacity);
-
-    for (int i = 0; i < 20; i++) {
-      final angle = random.nextDouble() * 2 * math.pi;
-      final distance = random.nextDouble() * radius;
-      final particleSize = 1 + random.nextDouble() * 2;
-
-      final x = math.cos(angle) * distance;
-      final y = math.sin(angle) * distance;
-
-      canvas.drawCircle(Offset(x, y), particleSize, particlePaint);
-    }
-  }
-
-  @override
-  void onCollisionEnd(PositionComponent other) {
-    super.onCollisionEnd(other);
-
-    // 如果玩家離開範圍，從受影響列表移除
-    if (other is PlayerComponent) {
-      _affectedPlayers.remove(other);
-    }
-  }
-}
-
-/// Boss光環效果組件
-class BossAuraComponent extends PositionComponent implements OpacityProvider {
-  final double radius;
-  final Color color;
-  double _lifespan = 1.0;
-  double _opacity = 1.0;
-
-  BossAuraComponent({
-    required Vector2 position,
-    required this.radius,
-    required this.color,
-  }) : super(
-         position: position,
-         size: Vector2.all(radius * 2),
-         anchor: Anchor.center,
-       );
-
-  @override
-  void update(double dt) {
-    super.update(dt);
-
-    _lifespan -= dt;
-    if (_lifespan <= 0) {
-      removeFromParent();
-    }
-  }
-
-  @override
-  void render(Canvas canvas) {
-    // 繪製光環
-    final paint =
-        Paint()
-          ..color = color.withValues(alpha: 0.6 * _lifespan * _opacity)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 5 * _lifespan;
-
-    canvas.drawCircle(
-      Offset.zero,
-      radius * (1 + (1 - _lifespan) * 0.5), // 光環會慢慢擴大
-      paint,
-    );
-  }
-
-  // OpacityProvider 介面實現
-  @override
-  double get opacity => _opacity;
-  @override
-  set opacity(double value) {
-    if (value < 0 || value > 1) {
-      developer.log('警告: 光環效果設置無效的透明度值: $value', name: 'OpacityDebug');
-      value = value.clamp(0, 1);
-    }
-    _opacity = value;
-  }
-}
-
-/// Boss階段轉換效果
-class BossPhaseTransitionEffect extends PositionComponent
-    implements OpacityProvider {
-  final Color color;
-  double _lifespan = 1.5;
-  double _scale = 0;
-  final double _maxScale = 1.0;
-  double _opacity = 1.0;
-
-  BossPhaseTransitionEffect({
-    required Vector2 position,
-    required this.color,
-    required Vector2 size,
-  }) : super(position: position, size: size, anchor: Anchor.center);
-
-  @override
-  void update(double dt) {
-    super.update(dt);
-
-    // 更新生命週期
-    _lifespan -= dt;
-    if (_lifespan <= 0) {
-      removeFromParent();
-      return;
-    }
-
-    // 擴散效果
-    if (_lifespan > 0.75) {
-      // 前半部分擴大
-      _scale = (_maxScale * (1.5 - _lifespan) / 0.75).clamp(0.0, _maxScale);
-    } else {
-      // 後半部分保持最大並漸漸消失
-      _scale = _maxScale;
-    }
-  }
-
-  @override
-  void render(Canvas canvas) {
-    // 確保半徑至少為1，避免繪製尺寸為0的形狀
-    final radius = math.max(size.x / 2 * _scale, 1.0);
-
-    // 確保顏色的透明度在有效範圍內，並應用全局透明度設定
-    final outlineOpacity = (0.8 * (_lifespan / 1.5) * _opacity).clamp(0.0, 1.0);
-    final fillOpacity = (0.3 * (_lifespan / 1.5) * _opacity).clamp(0.0, 1.0);
-    final rayOpacity = (0.5 * (_lifespan / 1.5) * _opacity).clamp(0.0, 1.0);
-
-    // 外圈
-    final outlinePaint =
-        Paint()
-          ..color = color.withValues(alpha: outlineOpacity)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 5;
-
-    // 內圈
-    final fillPaint =
-        Paint()
-          ..color = color.withValues(alpha: fillOpacity)
-          ..style = PaintingStyle.fill;
-
-    // 繪製圓形
-    canvas.drawCircle(Offset.zero, radius, fillPaint);
-    canvas.drawCircle(Offset.zero, radius, outlinePaint);
-
-    // 添加光線效果
-    final rayCount = 8;
-    final rayPaint =
-        Paint()
-          ..color = color.withValues(alpha: rayOpacity)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 3;
-
-    for (int i = 0; i < rayCount; i++) {
-      final angle = 2 * math.pi * i / rayCount;
-      final innerRadius = radius * 0.8;
-      final outerRadius = radius * 1.5;
-
-      canvas.drawLine(
-        Offset(math.cos(angle) * innerRadius, math.sin(angle) * innerRadius),
-        Offset(math.cos(angle) * outerRadius, math.sin(angle) * outerRadius),
-        rayPaint,
-      );
-    }
-  }
-
-  // OpacityProvider 介面實現
-  @override
-  double get opacity => _opacity;
-  @override
-  set opacity(double value) {
-    if (value < 0 || value > 1) {
-      developer.log('警告: 階段轉換效果設置無效的透明度值: $value', name: 'OpacityDebug');
-      value = value.clamp(0, 1);
-    }
-    _opacity = value;
-  }
-}
-
-/// Boss死亡爆炸效果
-class BossDeathExplosionComponent extends PositionComponent
-    implements OpacityProvider {
-  final List<Color> colors = [Colors.red, Colors.orange, Colors.yellow];
-  double _lifespan = 2.0;
-  double _currentRadius = 0;
-  final double _maxRadius;
-  double _opacity = 1.0;
-
-  BossDeathExplosionComponent({
-    required Vector2 position,
-    required Vector2 size,
-  }) : _maxRadius = size.x / 2,
-       super(position: position, size: size, anchor: Anchor.center);
-
-  @override
-  void update(double dt) {
-    super.update(dt);
-
-    // 更新生命週期
-    _lifespan -= dt;
-    if (_lifespan <= 0) {
-      removeFromParent();
-      return;
-    }
-
-    // 擴散效果
-    if (_lifespan > 1.0) {
-      // 前半部分快速擴大
-      _currentRadius = _maxRadius * (1 - _lifespan / 2) * 2;
-    } else {
-      // 保持最大半徑並慢慢消失
-      _currentRadius = _maxRadius;
-    }
-  }
-
-  @override
-  void render(Canvas canvas) {
-    // 根據生命週期選擇顏色
-    final colorIndex = ((_lifespan * 5) % colors.length).floor().clamp(
-      0,
-      colors.length - 1,
-    );
-    final color = colors[colorIndex];
-
-    // 計算有效透明度，結合生命週期和全局透明度設定
-    final effectiveOpacity = (_lifespan / 2) * _opacity;
-
-    // 外圈
-    final outlinePaint =
-        Paint()
-          ..color = color.withValues(alpha: 0.9 * effectiveOpacity)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 8;
-
-    // 內圈
-    final fillPaint =
-        Paint()
-          ..color = color.withValues(alpha: 0.4 * effectiveOpacity)
-          ..style = PaintingStyle.fill;
-
-    // 繪製主爆炸圓
-    canvas.drawCircle(Offset.zero, _currentRadius, fillPaint);
-    canvas.drawCircle(Offset.zero, _currentRadius, outlinePaint);
-
-    // 添加碎片效果
-    final random = math.Random();
-    final debrisPaint =
-        Paint()..color = Colors.white.withValues(alpha: 0.7 * effectiveOpacity);
-
-    for (int i = 0; i < 50; i++) {
-      final angle = random.nextDouble() * 2 * math.pi;
-      final distance = random.nextDouble() * _currentRadius;
-      final debrisSize = 1 + random.nextDouble() * 4;
-
-      canvas.drawCircle(
-        Offset(math.cos(angle) * distance, math.sin(angle) * distance),
-        debrisSize,
-        debrisPaint,
-      );
-    }
-
-    // 添加光束效果
-    final rayCount = 12;
-    final rayPaint =
-        Paint()
-          ..color = Colors.white.withValues(alpha: 0.6 * effectiveOpacity)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 3;
-
-    for (int i = 0; i < rayCount; i++) {
-      final angle = 2 * math.pi * i / rayCount;
-      final rayLength = _currentRadius * 1.5;
-
-      canvas.drawLine(
-        Offset.zero,
-        Offset(math.cos(angle) * rayLength, math.sin(angle) * rayLength),
-        rayPaint,
-      );
-    }
-  }
-
-  // OpacityProvider 介面實現
-  @override
-  double get opacity => _opacity;
-  @override
-  set opacity(double value) {
-    if (value < 0 || value > 1) {
-      developer.log('警告: 死亡爆炸效果設置無效的透明度值: $value', name: 'OpacityDebug');
-      value = value.clamp(0, 1);
-    }
-
-    // 記錄顯著的透明度變化
-    if ((value - _opacity).abs() > 0.1) {
-      developer.log('死亡爆炸效果透明度從 $_opacity 變更到 $value', name: 'OpacityDebug');
-    }
-
-    _opacity = value;
-  }
-}
-
-/// Boss視覺效果組件
-class BossVisual extends Component {
-  final double size;
-  final Color color;
-  final String bossName;
-  final math.Random _random = math.Random();
-  double _animationTimer = 0;
-
-  BossVisual({required this.size, required this.color, required this.bossName});
-
-  @override
-  void update(double dt) {
-    super.update(dt);
-    _animationTimer += dt;
-  }
-
-  @override
-  void render(Canvas canvas) {
-    // 繪製Boss的主體 - 使用高階的幾何形狀彰顯與一般敵人的不同
-    final paint = Paint()..color = color;
-
-    // 繪製Boss的主體 - 使用複雜圖形
-    _drawBossBody(canvas, paint);
-
-    // 繪製眼睛 - 更加明亮和威脅
-    _drawBossEyes(canvas);
-
-    // 繪製能量核心
-    _drawEnergyCore(canvas);
-
-    // 繪製Boss的護甲裝飾
-    _drawArmorDetails(canvas, paint);
-  }
-
-  // 繪製Boss的主體
-  void _drawBossBody(Canvas canvas, Paint paint) {
-    // 八角星形狀的主體
-    final path = Path();
-    final numPoints = 16;
-    final outerRadius = size / 2;
-    final innerRadius = size / 2 * 0.6;
-
-    for (int i = 0; i < numPoints; i++) {
-      final radius = i % 2 == 0 ? outerRadius : innerRadius;
-      final angle = 2 * math.pi * i / numPoints;
-      final x = math.cos(angle) * radius;
-      final y = math.sin(angle) * radius;
-
-      if (i == 0) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
-      }
-    }
-    path.close();
-
-    // 填充主體
-    canvas.drawPath(path, paint);
-
-    // 添加輪廓
-    final outlinePaint =
-        Paint()
-          ..color = color.withValues(alpha: 0.7)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2;
-    canvas.drawPath(path, outlinePaint);
-  }
-
-  // 繪製Boss的眼睛
-  void _drawBossEyes(Canvas canvas) {
-    // 眼睛顏色 - 更加明亮且充滿威脅
-    final eyeColor = Colors.red.shade700;
-    final eyePaint = Paint()..color = eyeColor;
-
-    // 繪製兩個大型眼睛
-    canvas.drawCircle(Offset(-size / 5, -size / 4), size / 7, eyePaint);
-    canvas.drawCircle(Offset(size / 5, -size / 4), size / 7, eyePaint);
-
-    // 眼睛中心的高光
-    final glowPaint = Paint()..color = Colors.red.shade300;
-
-    // 脈動效果 - 讓高光隨時間變化
-    final glowSize = size / 15 + math.sin(_animationTimer * 3) * size / 40;
-
-    canvas.drawCircle(Offset(-size / 5, -size / 4), glowSize, glowPaint);
-    canvas.drawCircle(Offset(size / 5, -size / 4), glowSize, glowPaint);
-
-    // 繪製眼睛外圈
-    final eyeOutlinePaint =
-        Paint()
-          ..color = Colors.white.withValues(alpha: 0.5)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.5;
-
-    canvas.drawCircle(Offset(-size / 5, -size / 4), size / 7, eyeOutlinePaint);
-    canvas.drawCircle(Offset(size / 5, -size / 4), size / 7, eyeOutlinePaint);
-  }
-
-  // 繪製能量核心
-  void _drawEnergyCore(Canvas canvas) {
-    // 中心能量核心 - 脈動發光效果
-    final coreSize = size / 6 + math.sin(_animationTimer * 2) * size / 30;
-
-    // 核心漸變效果
-    final gradient = RadialGradient(
-      colors: [
-        Colors.white,
-        color.withBlue(math.min(color.blue + 50, 255)),
-        color,
-      ],
-      stops: const [0.0, 0.5, 1.0],
-    );
-
-    final rect = Rect.fromCircle(center: Offset.zero, radius: coreSize);
-
-    final corePaint =
-        Paint()
-          ..shader = gradient.createShader(rect)
-          ..style = PaintingStyle.fill;
-
-    canvas.drawCircle(Offset.zero, coreSize, corePaint);
-
-    // 添加核心光暈
-    final glowPaint =
-        Paint()
-          ..color = Colors.white.withValues(alpha: 0.3)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2;
-
-    canvas.drawCircle(Offset.zero, coreSize * 1.2, glowPaint);
-  }
-
-  // 繪製護甲細節
-  void _drawArmorDetails(Canvas canvas, Paint basePaint) {
-    // 暗色調護甲
-    final armorPaint =
-        Paint()
-          ..color = color.withRed((color.red - 30).clamp(0, 255))
-          ..style = PaintingStyle.fill;
-
-    // 護甲紋理 - 放射狀線條
-    final linePaint =
-        Paint()
-          ..color = Colors.black.withValues(alpha: 0.3)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.5;
-
-    // 繪製護甲板塊
-    for (int i = 0; i < 6; i++) {
-      final angle = math.pi / 3 * i;
-
-      final plateOffset = size / 4;
-      final plateWidth = size / 6;
-      final plateHeight = size / 3;
-
-      final platePath = Path();
-      platePath.moveTo(
-        math.cos(angle) * plateOffset,
-        math.sin(angle) * plateOffset,
-      );
-      platePath.lineTo(
-        math.cos(angle) * (plateOffset + plateWidth),
-        math.sin(angle) * (plateOffset + plateWidth),
-      );
-      platePath.lineTo(
-        math.cos(angle) * (plateOffset + plateWidth) +
-            math.cos(angle + math.pi / 2) * plateHeight / 2,
-        math.sin(angle) * (plateOffset + plateWidth) +
-            math.sin(angle + math.pi / 2) * plateHeight / 2,
-      );
-      platePath.lineTo(
-        math.cos(angle) * plateOffset +
-            math.cos(angle + math.pi / 2) * plateHeight / 2,
-        math.sin(angle) * plateOffset +
-            math.sin(angle + math.pi / 2) * plateHeight / 2,
-      );
-      platePath.close();
-
-      canvas.drawPath(platePath, armorPaint);
-      canvas.drawPath(platePath, linePaint);
-    }
-
-    // 添加一些隨機裝飾點 - 小螺栓或能量點
-    final detailPaint = Paint()..color = Colors.white.withValues(alpha: 0.6);
-    for (int i = 0; i < 8; i++) {
-      final angle = 2 * math.pi * i / 8 + math.pi / 8;
-      final distance = size * 0.35;
-      final detailSize = size * 0.02;
-
-      canvas.drawCircle(
-        Offset(math.cos(angle) * distance, math.sin(angle) * distance),
-        detailSize,
-        detailPaint,
-      );
-    }
   }
 }
