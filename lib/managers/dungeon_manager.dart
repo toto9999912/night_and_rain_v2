@@ -858,7 +858,7 @@ class BoundaryWall extends PositionComponent with CollisionCallbacks {
 /// 障礙物類 - 用於碰撞檢測
 class Obstacle extends PositionComponent with CollisionCallbacks {
   Obstacle({required Vector2 position, required Vector2 size})
-    : super(position: position, size: size) {
+    : super(position: position, size: size, anchor: Anchor.center) {
     add(RectangleHitbox()..collisionType = CollisionType.passive);
   }
 }

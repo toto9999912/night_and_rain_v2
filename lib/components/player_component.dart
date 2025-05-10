@@ -61,12 +61,34 @@ class PlayerComponent extends PositionComponent
   Vector2 _lastCollisionDirection = Vector2.zero();
   static const double _collisionRecoilTime = 0.15; // 反彈時間
   static const double _collisionRecoilForce = 100; // 反彈力度
+  // 精靈圖相關
+  Sprite? _playerSprite;
+  SpriteComponent? _spriteComponent;
+  bool _isFacingLeft = false;
+
+  // 呼吸效果相關
+  double _breathingTime = 0;
+  double _breathingScale = 1.0;
+  static const double _breathingPeriod = 3.0; // 呼吸週期 (秒)
+  static const double _breathingIntensity = 0.05; // 呼吸強度 (縮放變化量)
 
   PlayerComponent({required this.mapComponent}) : super();
-
   @override
   Future<void> onLoad() async {
     await super.onLoad();
+
+    // 載入玩家精靈圖
+    _playerSprite = await Sprite.load('Rain.png');
+
+    // 創建精靈組件 - 增大尺寸，與NPC一致 (32x32)
+    _spriteComponent = SpriteComponent(
+      sprite: _playerSprite,
+      size: Vector2(72, 72), // 調整為固定大小，與NPC一致
+      anchor: Anchor.center,
+    );
+    // 將精靈組件添加到玩家
+    add(_spriteComponent!);
+
     // 初始化魔力恢復計時器
     _manaRegenerationTimer = Timer(
       _manaRegenerationInterval,
@@ -74,14 +96,14 @@ class PlayerComponent extends PositionComponent
       repeat: true,
     );
 
-    // 玩家視覺效果
-    add(RectangleComponent(size: size, paint: Paint()..color = Colors.white));
-
     // 瞄準方向指示器
     add(AimDirectionIndicator());
 
-    // 添加碰撞檢測盒
-    add(RectangleHitbox()..collisionType = CollisionType.active);
+    // 添加碰撞檢測盒 - 調整碰撞盒大小略小於精靈
+    add(
+      RectangleHitbox(size: Vector2(24, 24), position: Vector2(4, 4))
+        ..collisionType = CollisionType.active,
+    );
   }
 
   // 簡化初始化方法
@@ -214,6 +236,9 @@ class PlayerComponent extends PositionComponent
     // 更新魔力恢復計時器
     _manaRegenerationTimer?.update(dt);
 
+    // 更新呼吸效果
+    _updateBreathingEffect(dt);
+
     // 嘗試初始化 Provider（如果尚未初始化）
     if (!_isProviderInitialized) {
       _initializeProvider();
@@ -293,7 +318,12 @@ class PlayerComponent extends PositionComponent
           }
         }
       }
-    } // 確保玩家不會走出地圖邊界
+    }
+
+    // 檢測並更新朝向
+    _updateSpriteDirection();
+
+    // 確保玩家不會走出地圖邊界
     final dungeonManager = game.dungeonManager;
     if (dungeonManager != null && dungeonManager.currentRoomId != null) {
       // 如果在地下城中，限制在當前房間內
@@ -308,6 +338,56 @@ class PlayerComponent extends PositionComponent
 
     // 在移動後更新瞄準方向（因為玩家位置變化）
     _updateAimDirection();
+  }
+
+  // 更新精靈圖的朝向
+  void _updateSpriteDirection() {
+    if (_spriteComponent == null) return;
+
+    // 檢查鍵盤按鍵決定朝向，而不是用位置差異
+    bool isMovingLeft =
+        _keysPressed.contains(LogicalKeyboardKey.keyA) ||
+        _keysPressed.contains(LogicalKeyboardKey.arrowLeft);
+    bool isMovingRight =
+        _keysPressed.contains(LogicalKeyboardKey.keyD) ||
+        _keysPressed.contains(LogicalKeyboardKey.arrowRight);
+
+    // 當按下左方向鍵且當前不是面向左
+    if (isMovingLeft && !_isFacingLeft) {
+      // 向左移動，翻轉精靈圖
+      _spriteComponent!.flipHorizontally();
+      _isFacingLeft = true;
+      debugPrint('玩家轉向左側');
+    }
+    // 當按下右方向鍵且當前是面向左
+    else if (isMovingRight && _isFacingLeft) {
+      // 向右移動，恢復精靈圖
+      _spriteComponent!.flipHorizontally();
+      _isFacingLeft = false;
+      debugPrint('玩家轉向右側');
+    }
+
+    // 不再需要保存上一幀位置
+  }
+
+  // 更新呼吸效果
+  void _updateBreathingEffect(double dt) {
+    if (_spriteComponent == null) return;
+
+    // 更新呼吸時間
+    _breathingTime += dt;
+    if (_breathingTime >= _breathingPeriod) {
+      _breathingTime -= _breathingPeriod;
+    }
+
+    // 計算呼吸縮放係數 (使用正弦函數產生平滑的上下呼吸效果)
+    _breathingScale =
+        1.0 +
+        _breathingIntensity *
+            math.sin(_breathingTime / _breathingPeriod * math.pi * 2);
+
+    // 應用縮放效果 (只在Y軸方向上縮放，製造上下呼吸的效果)
+    _spriteComponent!.scale = Vector2(1.0, _breathingScale);
   }
 
   void _regenerateMana() {
@@ -553,10 +633,37 @@ class PlayerComponent extends PositionComponent
     // 應用傷害並產生視覺效果
     playerNotifier.takeDamage(amount);
 
-    // 顯示受傷效果（紅色閃爍）
-    add(
-      ColorEffect(Colors.red.withOpacity(0.5), EffectController(duration: 0.2)),
-    );
+    // 顯示受傷效果（精靈組件紅色閃爍）
+    if (_spriteComponent != null) {
+      _spriteComponent!.add(
+        ColorEffect(
+          Colors.red.withOpacity(0.7),
+          EffectController(duration: 0.1, reverseDuration: 0.1, repeatCount: 3),
+        ),
+      );
+    } else {
+      // 舊的閃爍效果作為備用
+      add(
+        ColorEffect(
+          Colors.red.withOpacity(0.5),
+          EffectController(duration: 0.2),
+        ),
+      );
+    }
+
+    // 受傷震動效果
+    if (_spriteComponent != null) {
+      _spriteComponent!.add(
+        MoveByEffect(
+          Vector2(5, 0),
+          EffectController(
+            duration: 0.05,
+            reverseDuration: 0.05,
+            repeatCount: 2,
+          ),
+        ),
+      );
+    }
 
     // 受傷反彈效果
     _collisionCooldown = _collisionRecoilTime * 0.7;

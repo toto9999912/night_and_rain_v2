@@ -127,7 +127,7 @@ class MapComponent extends Component with HasGameReference {
 // 邊界牆類
 class BoundaryWall extends PositionComponent with CollisionCallbacks {
   BoundaryWall({required Vector2 position, required Vector2 size})
-    : super(position: position, size: size);
+    : super(position: position, size: size, anchor: Anchor.center);
 
   @override
   Future<void> onLoad() async {
@@ -146,7 +146,7 @@ class Obstacle extends PositionComponent with CollisionCallbacks {
     required Vector2 position,
     required Vector2 size,
     this.color = Colors.brown,
-  }) : super(position: position, size: size);
+  }) : super(position: position, size: size, anchor: Anchor.center);
 
   @override
   Future<void> onLoad() async {
